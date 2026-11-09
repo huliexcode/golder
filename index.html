@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
+<meta name="app-version" content="2.7.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -390,11 +391,16 @@ dialog .livepv{top:0}
 .authbrand{display:flex;align-items:center;gap:10px;color:var(--accent-text);font-weight:700;font-size:22px}
 .authcard h2{font-size:19px}
 .authcard form{display:flex;flex-direction:column;gap:12px}
-.syncpill{all:unset;box-sizing:border-box;display:block;cursor:pointer;margin-top:auto;font-size:12px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.08);color:var(--bg);text-align:center;line-height:1.4}
+.syncpill{all:unset;box-sizing:border-box;display:block;cursor:pointer;margin-top:0;font-size:12px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.08);color:var(--bg);text-align:center;line-height:1.4}
 .syncpill[hidden]{display:none}
 .syncpill[data-st="idle"]{color:#7ee0b0}
 .syncpill[data-st="conflict"],.syncpill[data-st="error"],.syncpill[data-st="offline"]{color:#ffcf6b}
-@media (max-width:899px){.syncpill{position:fixed;top:8px;inset-inline-start:8px;margin:0;z-index:19;background:var(--surface);color:var(--ink);border:1px solid var(--line)}.syncpill[data-st="idle"]{color:var(--ok)}}
+@media (max-width:899px){.sidefoot{position:fixed;top:8px;inset-inline-start:8px;margin:0!important;z-index:19;align-items:flex-start!important}.syncpill{background:var(--surface);color:var(--ink);border:1px solid var(--line)}.syncpill[data-st="idle"]{color:var(--ok)}.verbtn{color:var(--muted)!important;background:var(--surface);border:1px solid var(--line)}}
+.sidefoot{margin-top:auto;display:flex;flex-direction:column;gap:6px;align-items:stretch}
+.verbtn{all:unset;box-sizing:border-box;cursor:pointer;font-size:11.5px;text-align:center;color:rgba(255,255,255,.7);padding:3px 8px;border-radius:8px;position:relative;line-height:1.4}
+.verbtn:hover{text-decoration:underline}
+.verbtn.new::after{content:'';position:absolute;top:3px;inset-inline-end:3px;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.clog{margin:6px 0;padding-inline-start:20px;line-height:1.9}
 
 .prmodes{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin:10px 0}
 .prmode{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px;cursor:pointer;text-align:start;display:flex;flex-direction:column;gap:4px;min-height:96px}
@@ -409,6 +415,66 @@ dialog .livepv{top:0}
 .hook{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface)}
 .hook .hn{flex:1;min-width:180px}.hook small{display:block;color:var(--muted);overflow-wrap:anywhere}
 .evchk{display:flex;flex-wrap:wrap;gap:6px}
+
+.srcn{display:block;color:var(--muted);font-size:11.5px;margin-top:3px;line-height:1.4;font-weight:400}
+.srcn.bc{color:var(--accent-text)}
+.dec{border:1px solid var(--accent);border-radius:12px;background:var(--goldbg);padding:12px;margin:10px 0}
+.dec .dh{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+.dec h3{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:15px;margin:0}
+.deccode{display:flex;flex-wrap:wrap;align-items:center;margin:10px 0;font-family:ui-monospace,Menlo,Consolas,monospace;direction:ltr;font-size:19px}
+.deccode .ch{padding:3px 1px}
+.deccode .tk{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:2px 6px;margin:2px}
+.deccode .tk.ass{border-color:var(--ok)}
+.deccode .sp{color:var(--muted);padding:0 4px}
+.cg{all:unset;display:inline-block;width:12px;height:28px;cursor:pointer;position:relative}
+.cg::after{content:'';position:absolute;top:3px;bottom:3px;left:5px;border-left:2px dotted var(--muted)}
+.cg.on::after{border-left:3px solid var(--accent)}
+.dectoks,.decslots{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.dtok{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 8px;cursor:grab;display:flex;flex-direction:column;gap:4px;min-width:104px}
+.dtok b{font-family:ui-monospace,Menlo,Consolas,monospace;direction:ltr;font-size:15px;text-align:start}
+.dtok .k{font-size:11px;color:var(--accent-text)}
+.dtok.ass{border-color:var(--ok)}
+.dtok select{font-size:12px;min-height:30px;padding:2px 4px}
+.dslot{border:2px dashed var(--line);border-radius:10px;padding:6px 8px;min-width:118px;background:var(--surface);min-height:58px;display:flex;flex-direction:column;gap:2px}
+.dslot.over{border-color:var(--accent);background:var(--goldbg)}
+.dslot.has{border-style:solid;border-color:var(--ok)}
+.dslot small{color:var(--muted);font-size:11px}
+.dslot .dv{font-family:ui-monospace,Menlo,Consolas,monospace;direction:ltr;font-weight:700;text-align:start}
+
+.ltabs{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line);margin-bottom:4px}
+.ltabs button{background:none;border:0;border-bottom:3px solid transparent;padding:10px 4px;cursor:pointer;font-weight:600;color:var(--muted);font-size:14px}
+.ltabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.lpane{display:flex;flex-direction:column;gap:12px}
+.lpane[hidden]{display:none}
+.lrw{position:relative;display:inline-block}
+.lrw.ru{padding:18px 0 0 18px}
+.rul{position:absolute;background:var(--surface);color:var(--muted);font-size:9px;pointer-events:none;overflow:hidden;border:1px solid var(--line);direction:ltr}
+.rul.h{top:0;left:18px;height:16px}
+.rul.v{left:0;top:18px;width:16px}
+.rul.h i{position:absolute;bottom:0;width:1px;background:var(--muted)}
+.rul.h b{position:absolute;top:0;font-weight:400}
+.rul.v i{position:absolute;right:0;height:1px;background:var(--muted)}
+.rul.v b{position:absolute;left:1px;font-weight:400;writing-mode:vertical-rl;transform:rotate(180deg)}
+.lgrid{position:absolute;left:0;top:0;right:0;bottom:0;pointer-events:none;background-image:linear-gradient(to right,rgba(0,0,0,.14) calc(1px/var(--z)),transparent 0),linear-gradient(to bottom,rgba(0,0,0,.14) calc(1px/var(--z)),transparent 0);background-size:1mm 1mm}
+.eph{position:absolute;left:0;top:0;right:0;bottom:0;display:flex;align-items:center;font-size:calc(11px/var(--z));color:#1B6FD1;opacity:.85;overflow:hidden;white-space:nowrap;pointer-events:none;direction:ltr}
+.ltoolbar.al{border:1px solid var(--line);border-radius:10px;padding:4px;background:var(--surface)}
+.ltoolbar.al .btn{min-width:34px;padding:2px 8px}
+.ltoolbar .sep{width:1px;height:22px;background:var(--line);margin:0 2px}
+.ltoolbar .btn[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.einline{flex-direction:column!important;align-items:stretch!important;flex-wrap:nowrap!important}
+.ihead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.irow{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.isec{display:flex;flex-direction:column;gap:6px;margin-top:8px;border-top:1px dashed var(--line);padding-top:8px}
+.iv{display:flex;flex-direction:column;font-size:12px;gap:2px;min-width:0}
+.iv input,.iv select{min-height:34px;padding:4px 8px}
+.pgrid .iv small{color:var(--muted);font-weight:400}
+.inc{position:absolute;top:0;inset-inline-end:0;font-size:11px;font-weight:400;display:inline-flex;gap:4px;align-items:center;color:var(--muted);cursor:pointer}
+.inc input{width:14px;height:14px;margin:0}
+.f{position:relative}
+.frow{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px;margin-top:10px;align-items:start}
+.frow .f small.srcn,.frow .f small.muted{min-height:0}
+#printRoot .plabel{transform:translate(var(--ox,0mm),var(--oy,0mm))}
+#printRoot.rot180 .plabel{transform:translate(var(--ox,0mm),var(--oy,0mm)) rotate(180deg)}
 </style>
 </head>
 <body>
@@ -419,7 +485,7 @@ dialog .livepv{top:0}
       <b>جرد الذهب</b>
     </div>
     <nav class="nav" id="nav" aria-label="التنقل الرئيسي"></nav>
-    <button type="button" class="syncpill" id="syncPill" data-act="pill" hidden></button>
+    <div class="sidefoot"><button type="button" class="syncpill" id="syncPill" data-act="pill" hidden></button><button type="button" class="verbtn" id="verBtn" data-act="verinfo" title="ما الجديد في هذا الإصدار"></button></div>
   </aside>
   <main class="main" id="main"></main>
 </div>
@@ -484,8 +550,8 @@ const DEF_KV=()=>({karatFromCode:true,fields:[{key:'w',field:'weight',type:'numb
 const FCAT=[['price','السعر شامل الضريبة'],['shop','اسم المنشأة'],['karat','العيار والحالة'],['karatN','العيار (رقم)'],['aud','الفئة'],['weight','الوزن'],['size','المقاس'],['wage','الأجرة'],['serial','الرقم التسلسلي'],['name','اسم/وصف القطعة'],['cat','الصنف'],['codeText','نص الرمز']];
 const TPL_DEF={price:'{price} {cur}',shop:'{shop}',karat:'عيار {karat} {cond}',karatN:'{karat}',aud:'{aud}',weight:'{weight} جم',size:'مقاس {size}',wage:'أجرة {wage}/جم',serial:'S/N {serial}',name:'{name}',cat:'{cat}',codeText:'{code}'};
 const TAGDEF={w:80,h:12,tail:20},STDDEF={w:50,h:30,tail:0};
-const DKEYS=['w','h','tail','tailSide','split','fmt','ec','qz','codeMode','codeTpl','printRot','els'];
-const DEF_LABEL=()=>({tpl:'tag',w:80,h:12,tail:20,tailSide:'right',split:50,layout:'roll',cols:3,gap:2,fmt:'qr',ec:'M',qz:2,codeMode:'tpl',codeTpl:'w{}t{}g{}s{}',printRot:0,autoPrint:false,els:null});
+const DKEYS=['w','h','tail','tailSide','split','fmt','ec','qz','codeMode','codeTpl','printRot','thr','offX','offY','els'];
+const DEF_LABEL=()=>({tpl:'tag',w:80,h:12,tail:20,tailSide:'right',split:50,layout:'roll',cols:3,gap:2,fmt:'qr',ec:'M',qz:2,codeMode:'tpl',codeTpl:'w{}t{}g{}s{}',printRot:0,thr:65,offX:0,offY:0,autoPrint:false,els:null});
 function defaultEls(L,kind){
   const W=L.w,H=L.h,out=[];
   const mk=o=>out.push(Object.assign({id:uid(),t:'text',text:'',r:0,fs:6,b:false,al:'left',wr:false},o));
@@ -511,16 +577,16 @@ function normLabel(raw){
   const dl=DEF_LABEL();
   const lb=(raw&&typeof raw==='object'&&raw.tpl)?Object.assign({},dl,raw):dl;
   const nz=(k,mn,mx)=>{const v=parseFloat(lb[k]);lb[k]=isNaN(v)?dl[k]:Math.min(mx,Math.max(mn,v));};
-  nz('w',10,300);nz('h',8,300);nz('tail',0,100);nz('split',20,80);nz('cols',1,10);nz('gap',0,20);nz('qz',0,8);
+  nz('w',10,300);nz('h',8,300);nz('tail',0,100);nz('split',20,80);nz('cols',1,10);nz('gap',0,20);nz('qz',0,8);nz('thr',10,95);nz('offX',-20,20);nz('offY',-20,20);
   lb.tpl=lb.tpl==='std'?'std':'tag';lb.tailSide=lb.tailSide==='left'?'left':'right';lb.layout=lb.layout==='sheet'?'sheet':'roll';
   lb.autoPrint=!!lb.autoPrint;lb.fmt=['qr','auto','CODE128','EAN13'].includes(lb.fmt)?lb.fmt:'qr';lb.ec=['L','M','Q','H'].includes(lb.ec)?lb.ec:'M';
   lb.codeMode=lb.codeMode==='barcode'?'barcode':'tpl';lb.codeTpl=typeof lb.codeTpl==='string'&&lb.codeTpl.trim()?lb.codeTpl.slice(0,120):dl.codeTpl;
   lb.printRot=Number(lb.printRot)===180?180:0;
   const cl=(v,a,b,d)=>{v=parseFloat(v);return isNaN(v)?d:Math.min(b,Math.max(a,v));};
-  lb.els=(Array.isArray(lb.els)?lb.els:[]).filter(e=>e&&['field','text','code','line'].includes(e.t)).map(e=>{
+  lb.els=(Array.isArray(lb.els)?lb.els:[]).filter(e=>e&&['field','text','code','line','rect'].includes(e.t)).map(e=>{
     let t=e.t,text=String(e.text||'');
     if(t==='field'){t='text';text=TPL_DEF[e.k]||(e.k?'{'+e.k+'}':'');}
-    return{id:e.id||uid(),t,text,x:cl(e.x,-500,500,0),y:cl(e.y,-500,500,0),w:cl(e.w,0.3,300,10),h:cl(e.h,0.2,300,3),r:cl(e.r,-360,360,0),fs:cl(e.fs,3,40,6),b:!!e.b,al:['left','center','right'].includes(e.al)?e.al:'left',wr:!!e.wr};
+    return{id:e.id||uid(),t,text,x:cl(e.x,-500,500,0),y:cl(e.y,-500,500,0),w:cl(e.w,0.3,300,10),h:cl(e.h,0.2,300,3),r:cl(e.r,-360,360,0),fs:cl(e.fs,3,40,6),b:!!e.b,i:!!e.i,u:!!e.u,bw:cl(e.bw,0.1,3,0.3),al:['left','center','right'].includes(e.al)?e.al:'left',wr:!!e.wr};
   });
   if(!lb.els.length)lb.els=defaultEls(lb,lb.tpl);
   ['items','pad','al','digits','dfs','bh','bw','qrs','div'].forEach(k=>{delete lb[k];});
@@ -530,7 +596,7 @@ const SEPS=[['auto','تلقائي (مسافة أو - أو / أو , أو *)'],[' 
 const DEF_TREE=[['خاتم',['سادة','فصوص','هندي']],['دبلة',['سادة']],['سوار',['سادة','مشغول']],['قلادة',['سادة','فصوص','هندي']],['حلق',['سادة','فصوص']],['طقم',['سادة','فصوص']],['سلسلة',[]],['دلاية',[]],['جنيه ذهب',[]],['أخرى',[]],[ROOT_BULLION,['سبيكة','قطعة استثمارية'],true]];
 function mkNodes(tree){const out=[];tree.forEach(([n,ks,b])=>{const id=uid();out.push({id,name:n,parent:null,bullion:!!b});ks.forEach(k=>out.push({id:uid(),name:k,parent:id,bullion:false}));});return out;}
 function blank(){
-  return{pieces:[],txs:[],settings:{schema:3,shop:'',currency:'ر.س',vat:15,fx:3.75,premium:0,premiumUsed:0,usd:0,priceSrc:'',pricesAt:'',vatFree:['24'],karats:['24','22','21','18'],nodes:mkNodes(DEF_TREE),prices:{},pricesUsed:{},bfmt:{mode:'pos',sep:'auto',pos:{wd:2,wg:2,bp:3},kv:DEF_KV(),fields:ORDER.map(k=>({k,on:true,div:1}))},label:DEF_LABEL(),serialPrefix:'',serialDigits:5,serialNext:1,audiences:['أطفال','بناتي','نسائي'],wagePerGram:1,printer:null,integ:null,customFields:[]}};
+  return{pieces:[],txs:[],settings:{schema:3,shop:'',currency:'ر.س',vat:15,fx:3.75,premium:0,premiumUsed:0,usd:0,priceSrc:'',pricesAt:'',vatFree:['24'],karats:['24','22','21','18'],nodes:mkNodes(DEF_TREE),prices:{},pricesUsed:{},bfmt:{mode:'pos',sep:'auto',pos:{wd:2,wg:2,bp:3},kv:DEF_KV(),fields:ORDER.map(k=>({k,on:true,div:1}))},label:DEF_LABEL(),serialPrefix:'',serialDigits:5,serialNext:1,audiences:['أطفال','بناتي','نسائي'],wagePerGram:1,printer:null,integ:null,buyAdj:0,customFields:[]}};
 }
 function ensureNode(nodes,name,parent){let n=nodes.find(x=>x.name===name&&(x.parent||null)===(parent||null));if(!n){n={id:uid(),name,parent:parent||null,bullion:false};nodes.push(n);}return n;}
 function pickDesign(lb){const o={};DKEYS.forEach(k=>{o[k]=JSON.parse(JSON.stringify(lb[k]));});return o;}
@@ -574,11 +640,12 @@ function normalize(o){
   if(!Array.isArray(s.audiences))s.audiences=['أطفال','بناتي','نسائي'];
   s.audiences=[...new Set(s.audiences.map(x=>String(x).trim()).filter(Boolean))];
   s.printer=normPrinter(s.printer);
+  {const ba=parseFloat(s.buyAdj);s.buyAdj=isNaN(ba)?0:Math.max(-50,Math.min(50,ba));}
   s.integ=normInteg(s.integ);
   delete s.cats;delete s.invPrefix;delete s.invSeq;
   s.schema=3;
   const pieces=(Array.isArray(o.pieces)?o.pieces:[]).map(p=>{
-    const q=Object.assign({id:uid(),barcode:'',serial:null,karat:'21',aud:'',nodeId:'',name:'',used:false,weight:0,size:'',wage:0,buyPpg:null,cost:0,sellPpg:0,sellAmt:0,vatRate:null,notes:'',extra:{},status:'in'},p);
+    const q=Object.assign({id:uid(),barcode:'',serial:null,karat:'21',aud:'',src:{},extCode:'',nodeId:'',name:'',used:false,weight:0,size:'',wage:0,buyPpg:null,cost:0,sellPpg:0,sellAmt:0,vatRate:null,notes:'',extra:{},status:'in'},p);
     q.karat=String(q.karat);
     if(!q.nodeId){const nm=q.cat||'أخرى';const f=s.nodes.find(x=>x.name===nm);q.nodeId=(f||ensureNode(s.nodes,nm,null)).id;}
     delete q.cat;
@@ -591,6 +658,7 @@ function normalize(o){
     return q;
   });
   pieces.forEach(q=>{if(q.serial&&q.serial.startsWith(s.serialPrefix)){const m=q.serial.slice(s.serialPrefix.length);if(/^\d+$/.test(m)&&m.length<=10){const n=parseInt(m,10)+1;if(n>s.serialNext)s.serialNext=n;}}});
+  if(s.bfmt){s.bfmt.learned=normLearned(s.bfmt.learned);s.bfmt.genOff=(Array.isArray(s.bfmt.genOff)?s.bfmt.genOff:[]).filter(x=>typeof x==='string').slice(0,30);}
   if(!(o.settings&&o.settings.wagePerGram)){
     pieces.forEach(q=>{if(q.weight>0&&q.wage>0)q.wage=rd(q.wage/q.weight,3);});
     (Array.isArray(o.txs)?o.txs:[]).forEach(t=>{if(t.items)t.items.forEach(i=>{if(i.weight>0&&i.wage>0)i.wage=rd(i.wage/i.weight,3);});});
@@ -695,6 +763,7 @@ function findPiece(code){
 /* ---------- prices ---------- */
 const gram24=(usd,used)=>usd/TROY*(S.settings.fx||3.75)*(1+(num(used?S.settings.premiumUsed:S.settings.premium)||0)/100);
 const priceFor=(k,used)=>((used?S.settings.pricesUsed:S.settings.prices)||{})[k]||0;
+const buyAuto=(k,used)=>{const pr=priceFor(k,used);return pr>0?r2(pr*(1+(S.settings.buyAdj||0)/100)):0;};
 function setPricesFromOunce(usd,src){
   const gn=gram24(usd,false),gu=gram24(usd,true);
   S.settings.karats.forEach(k=>{S.settings.prices[k]=r2(gn*num(k)/24);S.settings.pricesUsed[k]=r2(gu*num(k)/24);});
@@ -836,11 +905,12 @@ async function renderLabelCanvas(p,L,dpi){
   const x=cv.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,H);x.fillStyle='#000';x.strokeStyle='#000';
   L.els.forEach(e=>{
     x.save();
-    x.translate((e.x+e.w/2)*k,(e.y+e.h/2)*k);x.rotate((e.r||0)*Math.PI/180);
+    x.translate((e.x+e.w/2+(L.offX||0))*k,(e.y+e.h/2+(L.offY||0))*k);x.rotate((e.r||0)*Math.PI/180);
     const w=e.w*k,h=e.h*k;
     x.beginPath();x.rect(-w/2,-h/2,w,h);x.clip();
     try{
       if(e.t==='line')x.fillRect(-w/2,-h/2,w,h);
+      else if(e.t==='rect'){const lw=Math.max(1,(e.bw||0.3)*k);x.lineWidth=lw;x.strokeRect(-w/2+lw/2,-h/2+lw/2,w-lw,h-lw);}
       else if(e.t==='code')drawCodeCanvas(x,p,L,w,h);
       else drawTextCanvas(x,p,L,e,w,h,dpi);
     }catch(er){}
@@ -878,7 +948,7 @@ function drawCodeCanvas(x,p,L,w,h){
 function drawTextCanvas(x,p,L,e,w,h,dpi){
   const t=renderTpl(e.text,p,L);if(!t)return;
   const fpx=Math.max(6,e.fs*dpi/72),lh=fpx*1.1;
-  x.font=(e.b?'700':'500')+' '+fpx+"px 'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif";
+  x.font=(e.i?'italic ':'')+(e.b?'700':'500')+' '+fpx+"px 'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif";
   x.textBaseline='middle';x.fillStyle='#000';
   x.direction=rtlRx.test(t)?'rtl':'ltr';
   const al=e.al==='right'?'right':e.al==='center'?'center':'left';
@@ -896,16 +966,16 @@ function drawTextCanvas(x,p,L,e,w,h,dpi){
     if(cur)lines.push(cur);
   }else lines=[fit(t)];
   const tot=lines.length*lh;
-  lines.forEach((ln,i)=>x.fillText(ln,ax,-tot/2+(i+.5)*lh));
+  lines.forEach((ln,i)=>{const yy=-tot/2+(i+.5)*lh;x.fillText(ln,ax,yy);if(e.u){const tw=x.measureText(ln).width,x0=al==='left'?ax:al==='right'?ax-tw:ax-tw/2;x.fillRect(x0,yy+fpx*0.5,tw,Math.max(1,fpx/14));}});
 }
 
 /* ---- 1-bit bitmap + printer languages ---- */
-function canvasBits(cv,blackIs1){
+function canvasBits(cv,blackIs1,thr){
   const W=cv.width,H=cv.height,d=cv.getContext('2d').getImageData(0,0,W,H).data,bpr=Math.ceil(W/8);
   const out=new Uint8Array(bpr*H);
   if(!blackIs1)out.fill(0xFF);
   for(let y=0;y<H;y++)for(let xx=0;xx<W;xx++){
-    const i=(y*W+xx)*4,lum=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2],black=d[i+3]>128&&lum<165;
+    const i=(y*W+xx)*4,lum=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2],black=d[i+3]>128&&lum<(Math.max(10,Math.min(95,thr||65))/100*255);
     if(black){if(blackIs1)out[y*bpr+(xx>>3)]|=0x80>>(xx&7);else out[y*bpr+(xx>>3)]&=~(0x80>>(xx&7));}
   }
   return{bits:out,bpr,w:W,h:H};
@@ -913,19 +983,19 @@ function canvasBits(cv,blackIs1){
 const _te=new TextEncoder();
 const catBytes=(...a)=>{const o=new Uint8Array(a.reduce((n,b)=>n+b.length,0));let i=0;a.forEach(b=>{o.set(b,i);i+=b.length;});return o;};
 function encTSPL(cv,L,PS,n){
-  const b=canvasBits(cv,PS.invert);
+  const b=canvasBits(cv,PS.invert,L.thr);
   const media=PS.media==='gap'?`GAP ${PS.gap} mm,0 mm\r\n`:PS.media==='mark'?`BLINE ${PS.gap} mm,0 mm\r\n`:'GAP 0 mm,0 mm\r\n';
   const head=`SIZE ${rd(L.w,1)} mm,${rd(L.h,1)} mm\r\n${media}DIRECTION 0\r\nREFERENCE 0,0\r\nDENSITY ${PS.density}\r\nSPEED ${PS.speed}\r\nCLS\r\nBITMAP 0,0,${b.bpr},${b.h},0,`;
   return catBytes(_te.encode(head),b.bits,_te.encode(`\r\nPRINT ${n},1\r\n`));
 }
 function encZPL(cv,L,PS,n){
-  const b=canvasBits(cv,!PS.invert);let hex='';
+  const b=canvasBits(cv,!PS.invert,L.thr);let hex='';
   for(let i=0;i<b.bits.length;i++)hex+=(b.bits[i]<16?'0':'')+b.bits[i].toString(16);
   const tot=b.bits.length,mn=PS.media==='gap'?'Y':PS.media==='mark'?'M':'N';
   return _te.encode(`~SD${Math.min(30,PS.density*2)}\n^XA\n^MN${mn}\n^PW${b.w}\n^LL${b.h}\n^LH0,0\n^PR${PS.speed}\n^FO0,0^GFA,${tot},${tot},${b.bpr},${hex.toUpperCase()}^FS\n^PQ${n}\n^XZ\n`);
 }
 function encESC(cv,L,PS,n){
-  const b=canvasBits(cv,!PS.invert),one=[];
+  const b=canvasBits(cv,!PS.invert,L.thr),one=[];
   for(let y0=0;y0<b.h;y0+=240){
     const hh=Math.min(240,b.h-y0);
     one.push(new Uint8Array([0x1D,0x76,0x30,0x00,b.bpr&255,b.bpr>>8,hh&255,hh>>8]),b.bits.subarray(y0*b.bpr,(y0+hh)*b.bpr));
@@ -1119,7 +1189,7 @@ function pieceOut(p,o){
     weight_g:rd(p.weight,3),size:p.size||'',wage_per_gram:rd(p.wage,2),wage_total:rd((p.wage||0)*(p.weight||0),2),
     purchase_price_per_gram:rd(p.buyPpg,2),cost_total:rd(p.cost,2),
     sell_price_per_gram:rd(p.sellPpg,2),sell_price_before_vat:rd(sp,2),vat_rate:p.vatRate==null?null:rd(p.vatRate,2),vat_amount:c.vat,sell_price_incl_vat:c.total,
-    status:p.status,notes:p.notes||'',custom:ex,created_at:p.created||null,sold_at:p.soldAt||null,invoice_no:p.invNo||null};
+    status:p.status,notes:p.notes||'',external_code:p.extCode||'',custom:ex,created_at:p.created||null,sold_at:p.soldAt||null,invoice_no:p.invNo||null};
   if(o.safe){delete r.purchase_price_per_gram;delete r.cost_total;delete r.qr_payload;}
   return r;
 }
@@ -1141,7 +1211,7 @@ function hookLog(h,ev,ok,msg){
 function emitEvent(type,data){
   try{
     const I=S.settings.integ;if(!I||!I.hooks.length||!data)return;
-    const ev={id:uid(),event:type,ts:new Date().toISOString(),shop:S.settings.shop||'',currency:cur(),version:1,data};
+    const ev={id:uid(),event:type,ts:new Date().toISOString(),shop:S.settings.shop||'',currency:cur(),version:1,app_version:APP_VERSION,data};
     let n=0;
     I.hooks.forEach(h=>{if(h.on&&h.url&&h.events.includes(type)){obLoad().push({id:uid(),hook:h.id,ev,tries:0,next:0});n++;}});
     if(n){obSave();flushOutbox();}
@@ -1249,7 +1319,7 @@ function exportStockAll(){
 }
 function exportJSONAll(){
   const [a,b]=ixRange();
-  const data={exported_at:new Date().toISOString(),shop:S.settings.shop||'',currency:cur(),period:{from:a,to:b},
+  const data={app_version:APP_VERSION,exported_at:new Date().toISOString(),shop:S.settings.shop||'',currency:cur(),period:{from:a,to:b},
     pieces:S.pieces.map(p=>pieceOut(p)),sales:S.txs.filter(x=>x.type==='sale'&&ixIn(txDay(x))).map(saleOut),
     expenses:S.txs.filter(x=>x.type==='expense'&&ixIn(txDay(x))).map(x=>({id:x.id,date:txDay(x),amount:x.amount,category:x.cat||'',note:x.note||''}))};
   saveTextFile('jard-export-'+a+'_'+b+'.json',JSON.stringify(data,null,1),'application/json;charset=utf-8');
@@ -1563,6 +1633,348 @@ function genEAN(){
   return code;
 }
 const clonePiece=p=>Object.assign({},p,{extra:Object.assign({},p.extra||{})});
+
+/* ================= barcode decoder: drag & drop mapping, learned formats, value sources ================= */
+const SRC_FIELDS=['weight','size','wage','buyPpg','cost','serial'];
+const SEP_RX=/[\s,;\/*|:+\-_#]/;
+const DEC_NUM=new Set(['weight','wage','buyPpg','cost']);
+const decFields=()=>[['weight','الوزن'],['size','المقاس'],['wage','الأجرة/جم'],['buyPpg','سعر غرام الشراء'],['cost','إجمالي التكلفة'],['name','الوصف']].concat(S.settings.audiences.length?[['aud','الفئة']]:[],S.settings.customFields.map(c=>['x:'+c.key,c.label]),[['serial','الرقم التسلسلي']]);
+const decLabel=f=>(decFields().find(x=>x[0]===f)||[f,f])[1];
+const kvToDec=f=>({weight:'weight',size:'size',makingCharge:'wage',buyPpg:'buyPpg',purchasePrice:'cost',serialNumber:'serial',aud:'aud',name:'name'}[f]||(String(f).startsWith('x:')?f:null));
+const decToKv=f=>({weight:'weight',size:'size',wage:'makingCharge',buyPpg:'buyPpg',cost:'purchasePrice',serial:'serialNumber',aud:'aud',name:'name'}[f]||(String(f).startsWith('x:')?f:null));
+function normLearned(a){
+  return (Array.isArray(a)?a:[]).filter(t=>t&&['sep','fixed','kvs'].includes(t.kind)&&t.map&&typeof t.map==='object').slice(0,30).map(t=>({id:String(t.id||uid()),sig:String(t.sig||''),name:String(t.name||'تنسيق').slice(0,40),kind:t.kind,seps:String(t.seps||'').slice(0,12),cuts:(Array.isArray(t.cuts)?t.cuts:[]).map(x=>parseInt(x,10)).filter(x=>x>0),len:parseInt(t.len,10)||0,n:parseInt(t.n,10)||0,map:t.map,keyMap:(t.keyMap&&typeof t.keyMap==='object')?t.keyMap:{},serialMode:['combo','full','auto','token'].includes(t.serialMode)?t.serialMode:'auto',barcodeMode:t.barcodeMode==='keep'?'keep':'gen',sample:String(t.sample||'').slice(0,120)}));
+}
+function tokenize(code,cfg){
+  const c=String(code),t=[];
+  if(cfg.kind==='fixed'){
+    const cuts=[0].concat((cfg.cuts||[]).filter(x=>x>0&&x<c.length).sort((a,b)=>a-b),[c.length]);
+    for(let i=0;i<cuts.length-1;i++)if(cuts[i+1]>cuts[i])t.push({s:cuts[i],e:cuts[i+1],text:c.slice(cuts[i],cuts[i+1])});
+    return t;
+  }
+  const set=cfg.seps?new Set(cfg.seps.split('')):null,isSep=ch=>set?set.has(ch):SEP_RX.test(ch);
+  let i=0;
+  while(i<c.length){
+    while(i<c.length&&isSep(c[i]))i++;
+    if(i>=c.length)break;
+    let j=i;while(j<c.length&&!isSep(c[j]))j++;
+    t.push({s:i,e:j,text:c.slice(i,j)});i=j;
+  }
+  return t;
+}
+function tokenKV(code){const t=[],re=/([a-zA-Z]+)\{([^}]*)\}/g;let m;while((m=re.exec(code)))t.push({s:m.index,e:m.index+m[0].length,text:m[2].trim(),key:m[1]});return t;}
+function defaultCuts(code){
+  const P=S.settings.bfmt.pos,c=latin(code).replace(/٫/g,'.'),m=c.match(/^(\d+)\.(.*)$/);
+  if(!m)return [];
+  const c1=m[1].length+1+P.wd,c2=c1+P.wg,c3=c2+P.bp;
+  return [c1,c2,c3].filter(x=>x>0&&x<code.length);
+}
+function decGuessMap(dec){
+  const bf=S.settings.bfmt,map={},t=dec.tokens;
+  if(bf.mode==='sep'){
+    const f=bf.fields.filter(x=>x.on);
+    if(dec.kind==='sep'){t.forEach((_,i)=>{if(f[i])map[i]=f[i].k;});}
+    else if(f.some(x=>x.k==='serial')&&t.length===1)map[0]='serial';
+  }else if(bf.mode==='pos'&&dec.kind==='fixed'){
+    const P=bf.pos;
+    if(t.length&&/^\d+\.\d+$/.test(latin(t[0].text).replace(/٫/g,'.')))map[0]='weight';
+    else if(t.length===1)map[0]='serial';
+    if(t.length===4&&t[1].text.length===P.wg&&/^\d+$/.test(latin(t[1].text))&&t[2].text.length===P.bp&&/^\d+$/.test(latin(t[2].text))){map[1]='wage';map[2]='buyPpg';map[3]='serial';}
+  }else{
+    if(t.length&&/^\d+([.٫]\d+)?$/.test(latin(t[0].text))&&/[.٫]/.test(t[0].text))map[0]='weight';
+    else if(t.length===1)map[0]='serial';
+  }
+  return map;
+}
+function decPlatform(dec){
+  const bf=S.settings.bfmt;
+  if(dec.kind==='kv')return dec.tokens.length>0&&dec.tokens.every((_,i)=>i in dec.map);
+  if(bf.mode==='pos'&&dec.kind==='fixed')return dec.tokens.length===4&&dec.map[3]==='serial'&&dec.map[0]==='weight';
+  if(bf.mode==='sep')return dec.kind==='sep'&&dec.tokens.length>1&&dec.tokens.length===bf.fields.filter(x=>x.on).length;
+  return false;
+}
+const KVS_KEYS={W:'weight',T:'wage',G:'buyPpg',S:'size',SI:'size',NU:'serial',N:'serial',C:'cost',P:'cost'};
+function kvsTokens(code,seps){
+  const sepT=tokenize(code,{kind:'sep',seps}),out=[];
+  for(const t of sepT){const m=/^([A-Za-z]{1,3})(\d[\d.]*)$/.exec(t.text);if(!m)return null;out.push({s:t.s,e:t.e,key:m[1],text:m[2],raw:t.text});}
+  return out.length?out:null;
+}
+function decBarcodeMode(dec){const v=Object.values(dec.map);return(v.includes('weight')&&!v.includes('serial'))?'gen':'keep';}
+function decAuto(code){
+  const bf=S.settings.bfmt;
+  if(/[a-zA-Z]+\{[^}]*\}/.test(code)){
+    const tokens=tokenKV(code),map={};
+    tokens.forEach((t,i)=>{const cfg=bf.kv.fields.find(f=>f.key===t.key)||bf.kv.fields.find(f=>f.key.toLowerCase()===t.key.toLowerCase());const fl=cfg&&cfg.on?kvToDec(cfg.field):null;if(fl)map[i]=fl;});
+    const dec={code,kind:'kv',tokens,map,open:false,dirty:false};
+    dec.ext=!decPlatform(dec);dec.open=dec.ext;
+    dec.barcodeMode=dec.ext?decBarcodeMode(dec):'keep';
+    dec.serialMode=Object.values(map).includes('serial')?'token':(dec.ext?(dec.barcodeMode==='gen'?'auto':'combo'):'full');
+    return dec;
+  }
+  const seps0=[...new Set(code.split('').filter(ch=>SEP_RX.test(ch)))].join('');
+  const kt=kvsTokens(code,seps0);
+  if(kt){
+    const map={},used=new Set();
+    kt.forEach((t,i)=>{const f=KVS_KEYS[t.key.toUpperCase()];if(f&&!used.has(f)){map[i]=f;used.add(f);}});
+    const dec={code,kind:'kvs',seps:seps0,tokens:kt,map,open:true,dirty:false,ext:true};
+    dec.barcodeMode=decBarcodeMode(dec);
+    dec.serialMode=Object.values(map).includes('serial')?'token':(dec.barcodeMode==='gen'?'auto':'combo');
+    return dec;
+  }
+  let cfg,tokens;
+  const sepT=tokenize(code,{kind:'sep'});
+  if(SEP_RX.test(code)&&sepT.length>=2){cfg={kind:'sep',seps:seps0};}
+  else cfg={kind:'fixed',cuts:defaultCuts(code)};
+  tokens=tokenize(code,cfg);
+  const dec={code,kind:cfg.kind,seps:cfg.seps||'',cuts:cfg.cuts||[],tokens,map:{},open:false,dirty:false};
+  dec.map=decGuessMap(dec);
+  dec.ext=!decPlatform(dec);dec.open=dec.ext;
+  dec.barcodeMode=dec.ext?decBarcodeMode(dec):'keep';
+  dec.serialMode=Object.values(dec.map).includes('serial')?'token':(dec.ext?(dec.barcodeMode==='gen'?'auto':'combo'):'token');
+  return dec;
+}
+function decMatch(code){
+  for(const t of (S.settings.bfmt.learned||[])){
+    let tokens,map;
+    if(t.kind==='kvs'){
+      tokens=kvsTokens(code,t.seps);if(!tokens||tokens.length!==t.n)continue;
+      const keys=Object.keys(t.keyMap||{});
+      if(!tokens.every(x=>keys.includes(x.key))||keys.length!==tokens.length)continue;
+      map={};tokens.forEach((x,i)=>{const f=t.keyMap[x.key];if(f)map[i]=f;});
+    }else{
+      if(t.kind==='fixed'){if(code.length!==t.len)continue;tokens=tokenize(code,{kind:'fixed',cuts:t.cuts});}
+      else tokens=tokenize(code,{kind:'sep',seps:t.seps});
+      if(tokens.length!==t.n)continue;
+      map=Object.assign({},t.map);
+      let ok=true;Object.keys(map).forEach(i=>{const f=map[i],tk=tokens[+i];if(!tk||(DEC_NUM.has(f)&&!/\d/.test(latin(tk.text))))ok=false;});
+      if(!ok)continue;
+    }
+    return{code,kind:t.kind,seps:t.seps,cuts:(t.cuts||[]).slice(),tokens,map,serialMode:t.serialMode,barcodeMode:t.barcodeMode,ext:false,tpl:t.id,tplName:t.name,open:false,dirty:false};
+  }
+  return null;
+}
+const decBuildFor=code=>decMatch(code)||decAuto(code);
+function decVals(dec){
+  const v={extra:{}};
+  Object.keys(dec.map).forEach(i=>{
+    const f=dec.map[i],t=dec.tokens[+i];if(!t)return;
+    const raw=t.text;
+    if(f==='serial')v.serial=raw;
+    else if(DEC_NUM.has(f)){const n=num(raw);v[f]=f==='weight'?rd(n,3):rd(n,2);}
+    else if(f==='size')v.size=latin(raw).trim();
+    else if(f==='name')v.name=raw.trim();
+    else if(f==='aud'){if(S.settings.audiences.includes(raw.trim()))v.aud=raw.trim();}
+    else if(String(f).startsWith('x:'))v.extra[f.slice(2)]=raw.trim();
+  });
+  if(v.cost!=null&&v.weight>0&&v.buyPpg==null)v.buyPpg=r2(Math.max(0,v.cost/v.weight-(v.wage||0)));
+  else if(v.buyPpg!=null&&v.weight>0&&v.cost==null)v.cost=r2(v.weight*(v.buyPpg+(v.wage||0)));
+  return v;
+}
+function composeSerial(v,ex){
+  const parts=[];
+  if(v.weight>0)parts.push(String(rd(v.weight,3)));
+  if(v.size)parts.push(latin(String(v.size)));
+  if(v.wage>0)parts.push(String(rd(v.wage,2)));
+  if(v.buyPpg>0)parts.push(String(rd(v.buyPpg,2)));
+  if(v.cost>0)parts.push(String(rd(v.cost,2)));
+  const base=parts.join('-');if(!base)return '';
+  let sv=base,n=1;
+  while(S.pieces.some(x=>x.id!==ex&&(x.serial===sv||x.barcode===sv)))sv=base+'-'+(++n);
+  return sv;
+}
+function decSerial(dec,v){
+  switch(dec.serialMode){
+    case 'full':return dec.code;
+    case 'auto':return peekSerial();
+    case 'token':return v.serial||'';
+    case 'combo':return composeSerial(v,null);
+  }
+  return null;
+}
+const SER_LBL={combo:'مجمَّع من كل الحقول',full:'الباركود كاملًا',auto:'تسلسل تلقائي من المنصة',token:'جزء من الباركود'};
+function decSrc(dec,v,form){
+  const src={},isK=dec.kind==='kv'||dec.kind==='kvs';
+  Object.keys(dec.map).forEach(i=>{
+    const f=dec.map[i],t=dec.tokens[+i];if(!t||f==='serial')return;
+    src[f]=(isK?'من الباركود: الرمز «'+t.key+'» = «'+t.text+'»':'من الباركود: الجزء '+(+i+1)+' («'+t.text+'»)')+(dec.tpl?' — حسب تنسيق «'+dec.tplName+'»':'');
+  });
+  const mapped=new Set(Object.values(dec.map)),w=v.weight||0;
+  if(!mapped.has('cost')&&v.cost>0)src.cost='محسوب: الوزن × (سعر الغرام + الأجرة) = '+fmt(w)+' × ('+fmt(v.buyPpg||0)+' + '+fmt(v.wage||0)+') = '+fmt(v.cost);
+  if(!mapped.has('buyPpg')&&mapped.has('cost')&&v.buyPpg>0)src.buyPpg='محسوب: التكلفة ÷ الوزن − الأجرة = '+fmt(v.cost)+' ÷ '+fmt(w)+' − '+fmt(v.wage||0)+' = '+fmt(v.buyPpg);
+  ['weight','size','wage','buyPpg','cost'].forEach(n=>{if(!src[n]&&!mapped.has(n))src[n]='غير موجود في الباركود'+(n==='size'||n==='wage'?' — أدخله يدويًا':'');});
+  if(dec.serialMode==='token'){const i=Object.keys(dec.map).find(k=>dec.map[k]==='serial'),t=dec.tokens[+i];if(t)src.serial='من الباركود: '+(isK?'الرمز «'+t.key+'»':'الجزء '+(+i+1))+' («'+t.text+'»)';}
+  else if(dec.serialMode==='combo')src.serial='مجمَّع من كل الحقول: الوزن + المقاس + الأجرة + سعر الغرام + التكلفة';
+  else if(dec.serialMode==='full')src.serial='الباركود كاملًا (مجموع كل الحقول)';
+  else if(dec.serialMode==='auto')src.serial='تسلسل تلقائي من المنصة';
+  return src;
+}
+/* ---- apply decoder to the open form ---- */
+
+function codableFields(){
+  const bf=S.settings.bfmt;
+  if(bf.mode==='kv')return bf.kv.fields.filter(x=>x.on).map(x=>kvToDec(x.field)).filter(Boolean);
+  if(bf.mode==='sep')return bf.fields.filter(x=>x.on).map(x=>x.k);
+  return ['weight','wage','buyPpg','serial'];
+}
+function genIncUI(f){
+  const off=new Set(S.settings.bfmt.genOff||[]);
+  codableFields().forEach(n=>{
+    const el=f.elements[n];if(!el||el.type==='hidden'||f.querySelector('[data-inc="'+n+'"]'))return;
+    const lb=el.closest('label');if(!lb)return;
+    const sp=document.createElement('span');sp.className='inc';sp.title='يدخل هذا الحقل في الباركود المُولَّد';
+    sp.innerHTML=`<input type="checkbox" data-inc="${n}" ${off.has(n)?'':'checked'} ${n==='weight'?'disabled':''}>في الكود`;
+    lb.appendChild(sp);
+  });
+}
+function autoBuyText(k,used){
+  const pr=priceFor(k,used),adj=S.settings.buyAdj||0;
+  return pr>0?'تلقائي: سعر السوق اليوم لعيار '+k+' ('+fmt(pr)+')'+(adj?' '+(adj>0?'+':'')+adj+'%':'')+' — قابل للتعديل':'لا يوجد سعر اليوم لعيار '+k+' — حدّث الأسعار أو أدخله يدويًا';
+}
+function ensureSrcLines(f){
+  SRC_FIELDS.forEach(n=>{const e=f.elements[n];if(!e||f.querySelector('[data-src="'+n+'"]'))return;const lb=e.closest('label');if(lb){const sm=document.createElement('small');sm.className='srcn';sm.dataset.src=n;lb.appendChild(sm);}});
+}
+function paintSrc(f,p){
+  const src=p._src||p.src||{};
+  SRC_FIELDS.forEach(n=>{const el=f.querySelector('[data-src="'+n+'"]');if(!el)return;const t=src[n]||'';el.textContent=t;el.classList.toggle('bc',/^من الباركود/.test(t));});
+}
+function decApply(f,p){
+  const dec=p._dec;if(!dec||!f)return;
+  const v=decVals(dec),mapped=new Set(Object.values(dec.map)),setf=(n,val)=>{const e=f.elements[n];if(e)e.value=val;};
+  const gov=new Set([...mapped,...(v.cost!=null?['cost']:[]),...(v.buyPpg!=null?['buyPpg']:[])]);
+  const prev=dec._gov||new Set();
+  const nv=(x,d)=>x>0?String(rd(x,d)):'';
+  ['weight','wage','buyPpg','cost'].forEach(n=>{if(mapped.has(n)||(n==='weight'&&gov.has(n))||(n==='wage'&&gov.has(n)))setf(n,nv(v[n],n==='weight'?3:2));else if(gov.has(n)||prev.has(n))setf(n,'');});
+  if(gov.has('size'))setf('size',v.size||'');else if(prev.has('size'))setf('size','');
+  if(gov.has('name'))setf('name',v.name||'');else if(prev.has('name'))setf('name','');
+  if(mapped.has('aud')&&v.aud&&f.elements.aud&&f.elements.karat.value!=='24')setf('aud',v.aud);
+  S.settings.customFields.forEach(c=>{const k='x:'+c.key;if(mapped.has(k))setf('x:'+c.key,(v.extra||{})[c.key]||'');else if(prev.has(k))setf('x:'+c.key,'');});
+  dec._gov=new Set([...mapped,...gov]);
+  const w=f.elements.weight;
+  if(w)w.dispatchEvent(new Event('input',{bubbles:true}));
+  if(mapped.has('cost')&&mapped.has('buyPpg')){setf('cost',nv(v.cost,2));setf('buyPpg',nv(v.buyPpg,2));f.dispatchEvent(new Event('recalc'));}
+  const fv=valsFromForm(f);
+  const sv=dec.serialMode==='combo'?composeSerial(fv,null):decSerial(dec,v);
+  if(sv!=null)setf('serial',sv);
+  const src=decSrc(dec,Object.assign({},v,{weight:fv.weight,wage:fv.wage,buyPpg:fv.buyPpg,cost:fv.cost}),fv);
+  p._src=Object.assign(p._src||{},src);
+  f.dispatchEvent(new Event('recalc'));
+  paintSrc(f,p);
+}
+function decSerialRefresh(f,p){
+  const dec=p._dec;if(!dec||dec.serialMode!=='combo')return;
+  const sv=composeSerial(valsFromForm(f),null);
+  if(f.elements.serial)f.elements.serial.value=sv;
+  p._src.serial='مجمَّع من كل الحقول: الوزن + المقاس + الأجرة + سعر الغرام + التكلفة';
+  paintSrc(f,p);
+  f.dispatchEvent(new Event('recalc'));
+}
+/* ---- panel ---- */
+function decPanelHTML(dec){
+  const flds=decFields(),isK=dec.kind==='kv'||dec.kind==='kvs';
+  const pill=dec.tpl?`<span class="pill gold">تنسيق محفوظ: ${esc(dec.tplName)}</span>`:dec.ext?'<span class="pill gold">باركود خارجي — راجع التوافق</span>':'<span class="pill">بتنسيق المنصة</span>';
+  let codeRow='';
+  if(dec.kind==='kv'){
+    codeRow=dec.tokens.map((t,i)=>`<span class="tk ${i in dec.map?'ass':''}"><span style="color:var(--accent-text)">${esc(t.key)}</span>{${esc(t.text)}}</span>`).join('');
+  }else if(dec.kind==='fixed'){
+    const c=dec.code,cuts=new Set(dec.cuts);
+    for(let i=0;i<c.length;i++){codeRow+=`<span class="ch">${esc(c[i])}</span>`;if(i<c.length-1)codeRow+=`<button type="button" class="cg ${cuts.has(i+1)?'on':''}" data-act="deccut" data-i="${i+1}" aria-label="قصّ بعد الحرف ${i+1}" title="اضغط لقصّ الباركود هنا"></button>`;}
+  }else{
+    let pos=0;dec.tokens.forEach((t,i)=>{if(t.s>pos)codeRow+=`<span class="sp">${esc(dec.code.slice(pos,t.s))}</span>`;codeRow+=`<span class="tk ${i in dec.map?'ass':''}">${esc(t.raw||t.text)}</span>`;pos=t.e;});
+    if(pos<dec.code.length)codeRow+=`<span class="sp">${esc(dec.code.slice(pos))}</span>`;
+  }
+  const toks=dec.tokens.map((t,i)=>`<div class="dtok ${i in dec.map?'ass':''}" draggable="true" data-ti="${i}" title="اسحبه إلى الحقل المناسب">${isK?`<span class="k">الرمز ${esc(t.key)}</span>`:`<span class="k">الجزء ${i+1}</span>`}<b>${esc(t.text)}</b><select data-dti="${i}" aria-label="حقل ${esc(t.text)}"><option value="">— بلا حقل —</option>${flds.map(([k,l])=>`<option value="${esc(k)}" ${dec.map[i]===k?'selected':''}>${esc(l)}</option>`).join('')}</select></div>`).join('');
+  const slots=flds.map(([k,l])=>{const ti=Object.keys(dec.map).find(i=>dec.map[i]===k),t=ti!=null?dec.tokens[+ti]:null;return `<div class="dslot ${t?'has':''}" data-df="${esc(k)}"><small>${esc(l)}</small><span class="dv">${t?esc(t.text):'<span class="muted" style="font-weight:400;font-family:inherit">اسحب هنا</span>'}</span>${t?`<button type="button" class="btn ghost sm" style="min-height:24px;padding:0 8px" data-act="decclr" data-f="${esc(k)}">إزالة</button>`:''}</div>`;}).join('');
+  return `<div class="dh"><h3>تفسير الباركود ${pill}</h3><button type="button" class="btn ghost sm" data-act="dectoggle">${dec.open?'إخفاء':'إظهار'}</button></div>
+  ${dec.open?`<p class="hint">الباركود الممسوح: اسحب كل جزء إلى الحقل المناسب (أو اختر الحقل من القائمة تحت الجزء). تُحدَّث القيم فورًا ويظهر مصدر كل قيمة تحت حقلها.</p>
+  <div class="deccode" dir="ltr" aria-label="الباركود الممسوح">${codeRow}</div>
+  ${dec.kind==='sep'?'<div class="row"><button type="button" class="btn ghost sm" data-act="deckind" data-v="fixed">تقسيم يدوي بدل الفواصل</button></div>':dec.kind==='fixed'?'<small class="muted">اضغط بين الأحرف لقصّ الباركود إلى أجزاء.</small>':''}
+  <div class="dectoks">${toks||'<small class="muted">لا توجد أجزاء.</small>'}</div>
+  <div class="decslots">${slots}</div>
+  <div class="row" style="margin-top:8px;align-items:flex-end"><label class="f" style="flex:1;min-width:230px">نص آخر مطبوع على الملصق القديم <small class="muted">(مثل T45/G375/W1.95 أو 45 375 488)</small><input id="decIn" dir="ltr" placeholder="الصقه أو اكتبه ثم اضغط تحليل"></label><button type="button" class="btn ghost" data-act="decparse">تحليل</button></div>
+  <div class="row" style="margin-top:8px;align-items:center"><label class="f inlf">الباركود المحفوظ<select data-dbm><option value="gen" ${dec.barcodeMode==='gen'?'selected':''}>يُولَّد من المنصة (يبقى فارغًا الآن)</option><option value="keep" ${dec.barcodeMode==='keep'?'selected':''}>كما هو (الباركود الممسوح)</option></select></label><label class="f inlf">الرقم التسلسلي<select data-dser>${Object.keys(SER_LBL).map(k=>`<option value="${k}" ${dec.serialMode===k?'selected':''}>${SER_LBL[k]}</option>`).join('')}${dec.serialMode==='manual'?'<option value="manual" selected>أُدخل يدويًا</option>':''}</select></label></div>
+  <small class="muted">الباركود القديم غالبًا يحمل بيانات فقط (مثل الوزن) فلا يصلح معرّفًا فريدًا؛ لذلك تُولِّد المنصة باركودًا جديدًا يجمع كل الحقول مع رقم تسلسلي، ويُحفظ القديم كمرجع.</small>
+  <div class="row" style="margin-top:8px;align-items:center"><label class="chip gold" style="display:inline-flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" data-dlearn ${dec.ext||dec.dirty?'checked':''}>تذكّر هذا التنسيق للأكواد المشابهة</label><button type="button" class="btn ghost sm" data-act="decsave">حفظ التنسيق الآن</button><button type="button" class="btn ghost sm" data-act="decreset">إعادة التعيين</button></div>`:''}`;
+}
+function paintDec(f,p){
+  const box=f.querySelector('#decBox');if(!box||!p._dec)return;
+  box.className='dec';box.innerHTML=decPanelHTML(p._dec);
+}
+function decRefresh(){const f=$('#pf'),p=draft;if(!f||!p||!p._dec)return;decApply(f,p);paintDec(f,p);}
+function decAssign(ti,field){
+  const dec=draft&&draft._dec;if(!dec)return;
+  Object.keys(dec.map).forEach(i=>{if((field&&dec.map[i]===field)||+i===ti)delete dec.map[i];});
+  if(field){dec.map[ti]=field;if(field==='serial')dec.serialMode='token';}
+  if(dec.serialMode==='token'&&!Object.values(dec.map).includes('serial'))dec.serialMode='combo';
+  dec.dirty=true;decRefresh();
+}
+function decSetSerial(m){
+  const dec=draft&&draft._dec;if(!dec)return;
+  if(m==='token'&&!Object.values(dec.map).includes('serial')){toast('اسحب جزءًا من الباركود إلى حقل «الرقم التسلسلي» أولًا','bad');decRefresh();return;}
+  dec.serialMode=m;dec.dirty=true;decRefresh();
+}
+function decCut(i){
+  const dec=draft&&draft._dec;if(!dec||dec.kind!=='fixed')return;
+  const s0=new Set(dec.cuts);if(s0.has(i))s0.delete(i);else s0.add(i);
+  dec.cuts=[...s0].sort((a,b)=>a-b);dec.tokens=tokenize(dec.code,{kind:'fixed',cuts:dec.cuts});
+  Object.keys(dec.map).forEach(k=>{if(+k>=dec.tokens.length)delete dec.map[k];});
+  dec.dirty=true;decRefresh();
+}
+function decLearn(dec){
+  const bf=S.settings.bfmt;
+  if(dec.kind==='kv'){
+    dec.tokens.forEach((t,i)=>{
+      const f=dec.map[i];if(!f)return;const kf=decToKv(f);if(!kf)return;
+      const cfg=bf.kv.fields.find(x=>x.key===t.key);
+      if(cfg){cfg.field=kf;cfg.on=true;}
+      else bf.kv.fields.push({key:t.key,field:kf,type:(KVSTR[kf]||String(kf).startsWith('x:'))?'string':'number',on:true});
+    });
+    toast('أُضيفت رموز الباركود إلى «تنسيق الباركود» وستُفهم تلقائيًا');return;
+  }
+  if(!Object.keys(dec.map).length)return;
+  const keyMap={};
+  if(dec.kind==='kvs')dec.tokens.forEach((t,i)=>{if(dec.map[i])keyMap[t.key]=dec.map[i];});
+  const sig=dec.kind==='kvs'?('kvs|'+dec.tokens.map(t=>t.key).sort().join(',')):dec.kind==='sep'?('sep|'+dec.seps+'|'+dec.tokens.length):('fixed|'+dec.code.length+'|'+dec.cuts.join(','));
+  const tpl={id:uid(),sig,name:'تنسيق '+((bf.learned||[]).length+1),kind:dec.kind,seps:dec.seps||'',cuts:dec.cuts||[],len:dec.code.length,n:dec.tokens.length,map:Object.assign({},dec.map),keyMap,serialMode:dec.serialMode==='manual'?'auto':dec.serialMode,barcodeMode:dec.barcodeMode==='keep'?'keep':'gen',sample:dec.code};
+  bf.learned=bf.learned||[];
+  const i=bf.learned.findIndex(x=>x.sig===sig);
+  if(i>=0){tpl.id=bf.learned[i].id;tpl.name=bf.learned[i].name;bf.learned[i]=tpl;}else{bf.learned.unshift(tpl);bf.learned=bf.learned.slice(0,30);}
+  dec.tpl=tpl.id;dec.tplName=tpl.name;
+  toast('تم حفظ تنسيق الباركود، وستُفهم الأكواد المشابهة تلقائيًا');
+}
+function captureForm(f,p){
+  const v=valsFromForm(f),g=n=>f.elements[n]?f.elements[n].value:'';
+  p.weight=v.weight;p.size=v.size;p.wage=v.wage;p.buyPpg=v.buyPpg;p.cost=v.cost;p.serial=v.serial;p.name=v.name;p.extra=Object.assign({},v.extra);
+  p.sellPpg=num(g('sellPpg'));p.sellAmt=num(g('sellAmt'));p.vatRate=num(g('vatRate'));p.notes=g('notes');
+  if(f.elements.aud)p.aud=f.elements.aud.value;
+}
+function decSetBarcode(m){
+  const f=$('#pf'),p=draft,dec=p&&p._dec;if(!f||!dec)return;
+  captureForm(f,p);
+  dec.barcodeMode=m;dec.dirty=true;
+  if(m==='gen'){p._gen=true;p._extCode=p._extCode||dec.code;p.barcode='';}
+  else{p._gen=false;p.barcode=p._extCode||dec.code;}
+  renderDraft();
+}
+function decParseTyped(){
+  const f=$('#pf'),p=draft,inp=$('#decIn');if(!f||!p||!p._dec||!inp)return;
+  const t=cleanCode(inp.value);if(!t){toast('اكتب نص الملصق القديم أولًا','bad');return;}
+  const old=p._dec,nd=decBuildFor(t);nd.open=true;nd.dirty=true;nd.barcodeMode=old.barcodeMode;
+  if(nd.serialMode==='token'&&!Object.values(nd.map).includes('serial'))nd.serialMode=old.serialMode;
+  p._dec=nd;decRefresh();
+}
+function postBind(f,p){
+  if(p._gen)genIncUI(f);
+  p._src=p._src||Object.assign({},p.src||{});
+  ensureSrcLines(f);
+  if(p._gen&&!p._src.serial)p._src.serial='تسلسل تلقائي من الإعدادات ← الباركود والرقم';
+  paintSrc(f,p);
+  if(p._dec)paintDec(f,p);
+}
+document.addEventListener('dragstart',e=>{const t=e.target.closest&&e.target.closest('.dtok');if(!t)return;try{e.dataTransfer.setData('text/plain',t.dataset.ti);e.dataTransfer.effectAllowed='move';}catch(er){}});
+document.addEventListener('dragover',e=>{const s0=e.target.closest&&e.target.closest('.dslot');if(!s0)return;e.preventDefault();s0.classList.add('over');});
+document.addEventListener('dragleave',e=>{const s0=e.target.closest&&e.target.closest('.dslot');if(s0)s0.classList.remove('over');});
+document.addEventListener('drop',e=>{const s0=e.target.closest&&e.target.closest('.dslot');if(!s0)return;e.preventDefault();s0.classList.remove('over');let ti='';try{ti=e.dataTransfer.getData('text/plain');}catch(er){}if(ti==='')return;decAssign(+ti,s0.dataset.df);});
+
 function draftFromCode(code){
   const r=parseCode(code),v=r.vals;let k=sel.karat,note=r.note||'',ctxEdit=false,kcode=false;
   if(kvKarat()&&v.karat!=null){
@@ -1580,6 +1992,30 @@ function draftFromCode(code){
   const pr=priceFor(k,sel.used);
   const d={barcode:code,serial:v.serial||'',karat:k,aud,nodeId,used:!!sel.used,name:v.name||'',weight:v.weight||0,size:v.size||'',wage:v.wage||0,buyPpg:v.buyPpg||0,cost:v.cost!=null?v.cost:0,sellPpg:pr,sellAmt:0,vatRate:defVat(k),notes:'',extra:Object.assign({},v.extra||{}),status:'in',_note:note,_kcode:kcode,_ctxEdit:ctxEdit,_st:{lastSell:'ppg',touchedSell:false,touchedVat:false}};
   if(!d.cost&&d.weight>0&&d.buyPpg>0)d.cost=r2(d.weight*(d.buyPpg+d.wage));
+  {
+    const dec=decBuildFor(code);d._dec=dec;
+    if(dec.tpl||dec.ext){
+      const dv=decVals(dec);
+      d.weight=dv.weight||0;d.size=dv.size||'';d.wage=dv.wage||0;d.buyPpg=dv.buyPpg||0;d.cost=dv.cost!=null?dv.cost:0;d.name=dv.name||'';
+      d.extra=Object.assign({},d.extra,dv.extra||{});
+      if(dv.aud&&k!=='24')d.aud=dv.aud;
+      if(!d.cost&&d.weight>0&&d.buyPpg>0)d.cost=r2(d.weight*(d.buyPpg+d.wage));
+      const sv=decSerial(dec,Object.assign({},dv,d));if(sv!=null)d.serial=sv;
+      if(dec.barcodeMode==='gen'){d._gen=true;d._extCode=code;d.barcode='';}
+      if(dec.ext){d._note=(d._note||'').replace(r.note||'§','').trim();}
+      if(dec.ext)d._note=(d._note?d._note+' ':'')+(dec.barcodeMode==='gen'?'هذا الباركود القديم يحمل بيانات فقط، فتركتُ حقل الباركود فارغًا وستُولِّد المنصة باركودًا جديدًا يجمع كل الحقول عند إدخال البيانات. راجع «تفسير الباركود» لضبط توافق الأجزاء.':'هذا الباركود ليس بتنسيق المنصة. راجع «تفسير الباركود» وعدّل توافق الأجزاء مع الحقول بالسحب والإفلات.');
+    }
+    d._src=decSrc(dec,d);
+    if(!dec.ext&&!dec.tpl&&dec.map){const i=Object.keys(dec.map).find(k=>dec.map[k]==='serial');if(i==null)delete d._src.serial;}
+  }
+  if(!(d.buyPpg>0)&&!(d.cost>0)){
+    const ab=buyAuto(k,sel.used);
+    if(ab>0){
+      d.buyPpg=ab;d._src=d._src||{};d._src.buyPpg=autoBuyText(k,sel.used);
+      if(d.weight>0){d.cost=r2(d.weight*(d.buyPpg+d.wage));d._src.cost='محسوب: الوزن × (سعر الغرام + الأجرة) = '+fmt(d.weight)+' × ('+fmt(d.buyPpg)+' + '+fmt(d.wage)+') = '+fmt(d.cost);}
+      if(d._dec&&d._dec.serialMode==='combo'){const sv2=composeSerial(d,null);if(sv2)d.serial=sv2;}
+    }
+  }
   if(d.weight>0&&pr>0)d.sellAmt=r2(d.weight*pr);
   return d;
 }
@@ -1614,16 +2050,16 @@ function kvVal(f,v){
   return '';
 }
 function buildCode(v){
-  const bf=S.settings.bfmt,issues=[];
+  const bf=S.settings.bfmt,issues=[],off=new Set(bf.genOff||[]);
   if(!(v.weight>0))return{code:'',issues:['أدخل الوزن ليُولَّد الباركود.']};
   if(bf.mode==='kv'){
     const parts=[];
-    bf.kv.fields.filter(f=>f.on).forEach(f=>{const x=kvVal(f.field,v);if(x!=='')parts.push(f.key+'{'+x+'}');});
+    bf.kv.fields.filter(f=>f.on).forEach(f=>{const dn=kvToDec(f.field);if(dn&&dn!=='weight'&&off.has(dn))return;const x=kvVal(f.field,v);if(x!=='')parts.push(f.key+'{'+x+'}');});
     return{code:parts.join(''),issues};
   }
   if(bf.mode==='sep'){
     const ch=bf.sep==='auto'?'-':bf.sep;
-    const parts=bf.fields.filter(f=>f.on).map(f=>{
+    const parts=bf.fields.filter(f=>f.on&&(f.k==='weight'||!off.has(f.k))).map(f=>{
       if(f.k==='weight')return String(rd(v.weight*(f.div||1),3));
       if(f.k==='wage')return String(rd((v.wage||0)*(f.div||1),2));
       if(f.k==='buyPpg')return String(rd((v.buyPpg||0)*(f.div||1),2));
@@ -1632,25 +2068,26 @@ function buildCode(v){
     });
     return{code:parts.join(ch),issues};
   }
-  const P=bf.pos,wr=rd(v.weight,P.wd),wage=Math.round(v.wage||0),bp=Math.round(v.buyPpg||0);
+  const P=bf.pos,wr=rd(v.weight,P.wd),wage=off.has('wage')?0:Math.round(v.wage||0),bp=off.has('buyPpg')?0:Math.round(v.buyPpg||0);
   if(Math.abs(wr-v.weight)>1e-9)issues.push('سيُرمَّز الوزن بـ '+P.wd+' خانات عشرية ('+wr.toFixed(P.wd)+').');
-  if(Math.abs(wage-(v.wage||0))>1e-9)issues.push('تُرمَّز الأجرة كرقم صحيح ('+wage+').');
-  if(Math.abs(bp-(v.buyPpg||0))>1e-9)issues.push('يُرمَّز سعر غرام الشراء كرقم صحيح ('+bp+').');
+  if(!off.has('wage')&&Math.abs(wage-(v.wage||0))>1e-9)issues.push('تُرمَّز الأجرة كرقم صحيح ('+wage+').');
+  if(!off.has('buyPpg')&&Math.abs(bp-(v.buyPpg||0))>1e-9)issues.push('يُرمَّز سعر غرام الشراء كرقم صحيح ('+bp+').');
   let fatal=false;
   if(wage>=Math.pow(10,P.wg)){issues.unshift('الأجرة ('+wage+') لا تتسع في '+P.wg+' خانات. زد عدد الخانات من الإعدادات ← تنسيق الباركود.');fatal=true;}
   if(bp>=Math.pow(10,P.bp)){issues.unshift('سعر غرام الشراء ('+bp+') لا يتسع في '+P.bp+' خانات. زد عدد الخانات من الإعدادات ← تنسيق الباركود.');fatal=true;}
   if(fatal)return{code:'',issues};
   const pad=(x,n)=>String(x).padStart(n,'0');
-  return{code:wr.toFixed(P.wd)+pad(wage,P.wg)+pad(bp,P.bp)+(v.serial||''),issues};
+  return{code:wr.toFixed(P.wd)+pad(wage,P.wg)+pad(bp,P.bp)+(off.has('serial')?'':(v.serial||'')),issues};
 }
 function genDraft(){
   const k=sel.karat;
-  return{barcode:'',serial:peekSerial(),karat:k,aud:k==='24'?'':sel.aud,nodeId:selNode(),used:!!sel.used,name:'',weight:0,size:'',wage:0,buyPpg:0,cost:0,sellPpg:priceFor(k,sel.used),sellAmt:0,vatRate:defVat(k),notes:'',extra:{},status:'in',_gen:true,_note:'',_st:{lastSell:'ppg',touchedSell:false,touchedVat:false}};
+  return{barcode:'',serial:peekSerial(),karat:k,aud:k==='24'?'':sel.aud,nodeId:selNode(),used:!!sel.used,name:'',weight:0,size:'',wage:0,buyPpg:buyAuto(k,sel.used),cost:0,sellPpg:priceFor(k,sel.used),sellAmt:0,vatRate:defVat(k),notes:'',extra:{},status:'in',_src:{buyPpg:autoBuyText(k,sel.used)},_gen:true,_note:'',_st:{lastSell:'ppg',touchedSell:false,touchedVat:false}};
 }
 function nextBulkDraft(sv){
   const d=genDraft();
   ['weight','size','wage','buyPpg','cost','name','notes','vatRate','sellPpg','sellAmt'].forEach(k=>{d[k]=sv[k];});
   d.extra=Object.assign({},sv.extra||{});
+  d._src=Object.assign({},sv.src||{});
   return d;
 }
 function ctxPills(k,nodeId,used,aud){
@@ -1674,21 +2111,24 @@ function pieceFormHTML(p,mode){
     ${mode==='intake'&&editingExisting&&p.status!=='sold'?'<p class="warn">هذا الباركود موجود مسبقًا. تعدّل الآن بيانات القطعة نفسها.</p>':''}
     ${p._note?`<p class="warn" id="pnote">${esc(p._note)}</p>`:''}
     ${ctx}
+    ${p._dec?'<div id="decBox"></div>':''}
     <fieldset><legend>بيانات القطعة</legend><div class="grid3">
       <label class="f span3">الباركود${p._gen?' <small>(يُولَّد تلقائيًا من البيانات)</small>':''}<div class="inl"><input name="barcode" dir="ltr" value="${esc(p.barcode)}" ${p._gen?'readonly':''}>${p._gen?'':`<button type="button" class="btn ghost" data-act="m-cam">${ic('camera')}<span>مسح</span></button><button type="button" class="btn ghost" data-act="m-gen">توليد</button>`}</div></label>
       <div id="bcStat" class="bcstat span3" aria-live="polite"></div>
+      ${p._gen?'<small class="span3 muted">فعّل أو ألغِ الحقول التي تدخل في الباركود المُولَّد بخانة «في الكود» عند كل حقل (في تنسيق الموضع تُملأ الحقول الملغاة بأصفار).</small>':''}
       ${p._gen?`<div class="span3 row" style="gap:10px"><label class="chip gold" style="display:inline-flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" data-bcman ${genBulk?'disabled':''}>تعديل الباركود يدويًا</label><label class="chip gold" style="display:inline-flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" data-bulk ${genBulk?'checked':''}>طباعة جماعية</label></div><small class="span3 muted" id="bulkHint">${genBulk?'الطباعة الجماعية مفعّلة: اكتب الوزن واضغط Enter ليُحفظ ويُطبع الملصق، ويبقى باقي البيانات كما هو والرقم التسلسلي يتقدم تلقائيًا. ألغِ التأشير للتوقف.':'عند تفعيل الطباعة الجماعية يصبح Enter حفظًا وطباعةً للقطعة، ثم يُحدَّد حقل الوزن للقطعة التالية.'}</small>`:''}
+    </div><div class="frow">
       <label class="f">الوزن<div class="ig"><input name="weight" type="number" step="any" min="0" inputmode="decimal" value="${v(p.weight,3)}"><span>جم</span></div></label>
       <label class="f">المقاس<input name="size" value="${esc(p.size||'')}"></label>
-      <label class="f">الأجرة (لكل جرام)<div class="ig"><input name="wage" type="number" step="any" min="0" inputmode="decimal" value="${v(p.wage)}"><span>${C}</span></div><small id="wageTot" class="muted"></small></label>
+      <label class="f">الأجرة / جم<div class="ig"><input name="wage" type="number" step="any" min="0" inputmode="decimal" value="${v(p.wage)}"><span>${C}</span></div><small id="wageTot" class="muted"></small></label>
       <label class="f">سعر غرام الشراء<div class="ig"><input name="buyPpg" type="number" step="any" min="0" inputmode="decimal" value="${v(p.buyPpg)}"><span>${C}</span></div></label>
-      <label class="f">الرقم التسلسلي<input name="serial" dir="ltr" value="${esc(p.serial||'')}"></label>
       <label class="f">إجمالي التكلفة<div class="ig"><input name="cost" type="number" step="any" min="0" inputmode="decimal" value="${v(p.cost)}"><span>${C}</span></div></label>
+      <label class="f">الرقم التسلسلي<input name="serial" dir="ltr" value="${esc(p.serial||'')}"></label>
     </div></fieldset>
-    <details><summary>التسعير المتوقع والضريبة</summary><div class="grid3">
-      <label class="f">سعر بيع الجرام${pr>0?` <small>سعر اليوم: ${fmt(pr)}</small>`:''}<div class="ig"><input name="sellPpg" type="number" step="any" min="0" inputmode="decimal" value="${v(p.sellPpg)}"><span>${C}</span></div></label>
-      <label class="f">مبلغ البيع المتوقع قبل الضريبة<div class="ig"><input name="sellAmt" type="number" step="any" min="0" inputmode="decimal" value="${v(p.sellAmt)}"><span>${C}</span></div></label>
-      <label class="f">نسبة الضريبة<div class="ig"><input name="vatRate" type="number" step="any" min="0" inputmode="decimal" value="${p.vatRate==null?'':rd(p.vatRate,2)}"><span>%</span></div></label>
+    <details open><summary>التسعير المتوقع والضريبة</summary><div class="frow">
+      <label class="f">سعر بيع الجرام<div class="ig"><input name="sellPpg" type="number" step="any" min="0" inputmode="decimal" value="${v(p.sellPpg)}"><span>${C}</span></div>${pr>0?`<small class="srcn">سعر اليوم لعيار ${esc(p.karat)}: ${fmt(pr)} — قابل للتعديل</small>`:''}</label>
+      <label class="f">مبلغ البيع المتوقع قبل الضريبة<div class="ig"><input name="sellAmt" type="number" step="any" min="0" inputmode="decimal" value="${v(p.sellAmt)}"><span>${C}</span></div><small class="srcn">= سعر بيع الجرام × الوزن (قابل للتعديل)</small></label>
+      <label class="f">نسبة الضريبة<div class="ig"><input name="vatRate" type="number" step="any" min="0" inputmode="decimal" value="${p.vatRate==null?'':rd(p.vatRate,2)}"><span>%</span></div><small class="srcn">الافتراضي ${S.settings.vat}% وتُعفى الأعيرة المحددة في الإعدادات (24)</small></label>
     </div></details>
     <div class="calc" aria-live="polite">
       <div><span>الضريبة المتوقعة</span><b id="o-vat">—</b></div>
@@ -1722,6 +2162,9 @@ function applyParsed(code){
   if(f.elements.weight&&f.elements.weight.value)f.elements.weight.focus();
 }
 function bindPieceForm(f,p,mode){
+  bindPieceForm0(f,p,mode);postBind(f,p);
+}
+function bindPieceForm0(f,p,mode){
   p._st=p._st||{lastSell:'ppg',touchedSell:!!p.id,touchedVat:!!p.id};
   const st=p._st,g=n=>f.elements[n];
   const setv=(n,v,d=2)=>{g(n).value=v>0?String(rd(v,d)):'';};
@@ -1756,6 +2199,7 @@ function bindPieceForm(f,p,mode){
     else h='<span class="pos">✓ الباركود جديد وغير مكرر</span>';
     if(sd)h+=`<span class="neg">⚠ الرقم التسلسلي «${esc(sv)}» مستخدم لقطعة أخرى</span><button type="button" class="btn ghost sm" data-act="openexisting" data-id="${sd.id}">فتح القطعة</button>`;
     if(p._gen&&lastIssues.length)h+=`<small class="muted" style="flex-basis:100%">${lastIssues.map(esc).join('<br>')}</small>`;
+    if(p._extCode){const n0=S.pieces.filter(x=>x.id!==p.id&&x.extCode===p._extCode).length;h+=`<small class="muted" style="flex-basis:100%">الباركود القديم (مرجع): <span class="mono">${esc(p._extCode)}</span>${n0?` — أُدخلت ${n0} قطعة سابقة بنفس الباركود القديم، تأكد أنها ليست مكررة.`:''}</small>`;}
     el.innerHTML=h;
     live();
   }
@@ -1767,7 +2211,7 @@ function bindPieceForm(f,p,mode){
   f.addEventListener('input',e=>{
     const n=e.target.name;
     if(n==='barcode'){checkCode();return;}
-    if(n==='serial'||n==='size'){regen();return;}
+    if(n==='serial'||n==='size'){p._src=p._src||{};p._src[n]='أُدخل يدويًا';if(n==='serial'&&p._dec){p._dec.serialMode='manual';if(p._dec.open)paintDec(f,p);}paintSrc(f,p);regen();return;}
     if(!['weight','wage','buyPpg','cost','sellPpg','sellAmt','vatRate'].includes(n))return;
     const w=num(g('weight').value),wage=num(g('wage').value),bp=num(g('buyPpg').value),c=num(g('cost').value);
     if(n==='weight'){
@@ -1779,7 +2223,16 @@ function bindPieceForm(f,p,mode){
     else if(n==='sellPpg'){st.lastSell='ppg';st.touchedSell=true;setv('sellAmt',num(g('sellPpg').value)*w);}
     else if(n==='sellAmt'){st.lastSell='amt';st.touchedSell=true;setv('sellPpg',w>0?num(g('sellAmt').value)/w:0);}
     else if(n==='vatRate')st.touchedVat=true;
+    if(['weight','wage','buyPpg','cost'].includes(n)){
+      const sr=p._src=p._src||{},bpv=num(g('buyPpg').value),cv=num(g('cost').value),wv=num(g('weight').value),wg=num(g('wage').value);
+      sr[n]='أُدخل يدويًا';
+      if(n==='cost'){if(wv>0)sr.buyPpg='محسوب: التكلفة ÷ الوزن − الأجرة = '+fmt(cv)+' ÷ '+fmt(wv)+' − '+fmt(wg)+' = '+fmt(bpv);}
+      else if(n==='buyPpg'||n==='wage'||(n==='weight'&&bpv>0)){if(bpv>0&&wv>0)sr.cost='محسوب: الوزن × (سعر الغرام + الأجرة) = '+fmt(wv)+' × ('+fmt(bpv)+' + '+fmt(wg)+') = '+fmt(cv);}
+      else if(n==='weight'&&cv>0&&wv>0)sr.buyPpg='محسوب: التكلفة ÷ الوزن − الأجرة = '+fmt(cv)+' ÷ '+fmt(wv)+' − '+fmt(wg)+' = '+fmt(bpv);
+      paintSrc(f,p);
+    }
     recalc();regen();
+    if(p._dec&&p._dec.serialMode==='combo'&&!st._dec)decSerialRefresh(f,p);
   });
   if(mode!=='intake'||p._ctxEdit){
     f.addEventListener('change',e=>{
@@ -1788,6 +2241,12 @@ function bindPieceForm(f,p,mode){
       if(n==='karat'){const cs=g('nodeId'),curc=cs.value;cs.innerHTML=catOptions(kv,'');cs.value=leavesFor(kv).some(x=>x.id===curc)?curc:'';if(kv==='24'&&g('aud'))g('aud').value='';}
       if(!st.touchedSell){const pr=priceFor(kv,us);setv('sellPpg',pr);setv('sellAmt',pr*w);st.lastSell='ppg';}
       if(!st.touchedVat)g('vatRate').value=String(defVat(kv));
+      if(!p.id&&String((p._src||{}).buyPpg||'').startsWith('تلقائي')){
+        const ab=buyAuto(kv,us),w2=num(g('weight').value),wg2=num(g('wage').value);
+        setv('buyPpg',ab);p._src.buyPpg=autoBuyText(kv,us);
+        if(w2>0&&ab>0){setv('cost',w2*(ab+wg2));p._src.cost='محسوب: الوزن × (سعر الغرام + الأجرة) = '+fmt(w2)+' × ('+fmt(ab)+' + '+fmt(wg2)+') = '+fmt(w2*(ab+wg2));}
+        paintSrc(f,p);
+      }
       recalc();
     });
   }
@@ -1823,10 +2282,12 @@ function submitPiece(f,p,mode){
   if(p._gen&&!serial){err('الرقم التسلسلي مطلوب.');f.elements.serial.focus();return;}
   const sdup=serial&&S.pieces.find(x=>x.id!==p.id&&x.serial===serial);
   if(sdup){err('الرقم التسلسلي «'+serial+'» مستخدم لقطعة أخرى ('+dname(sdup)+').');return;}
-  const o={barcode:bc,serial,karat,aud,nodeId,used:fd.get('used')==='1',name:String(fd.get('name')||'').trim(),weight:r3(weight),size:String(fd.get('size')||'').trim(),
+  const o={barcode:bc,serial,karat,aud,nodeId,used:fd.get('used')==='1',name:String(fd.get('name')||'').trim(),weight:r3(weight),size:latin(String(fd.get('size')||'').trim()),
     wage:r2(num(fd.get('wage'))),buyPpg:r2(num(fd.get('buyPpg'))),cost:r2(num(fd.get('cost'))),sellPpg:r2(num(fd.get('sellPpg'))),sellAmt:r2(num(fd.get('sellAmt'))),
     vatRate:Math.max(0,num(fd.get('vatRate'))),notes:String(fd.get('notes')||'').trim(),extra:Object.assign({},p.extra||{})};
   S.settings.customFields.forEach(c=>{o.extra[c.key]=String(fd.get('x:'+c.key)||'').trim();});
+  o.src={};SRC_FIELDS.forEach(n=>{const t=(p._src||p.src||{})[n];if(t)o.src[n]=t;});
+  if(p._extCode)o.extCode=String(p._extCode).slice(0,120);
   let newSaved=null;
   const pItem=q=>({pid:q.id,name:dname(q),barcode:q.barcode,serial:q.serial,karat:q.karat,nodeId:q.nodeId,cat:pathOf(q.nodeId),aud:q.aud||'',used:q.used,weight:q.weight,size:q.size,wage:q.wage,buyPpg:q.buyPpg,amount:q.cost});
   if(!p.id){
@@ -1838,6 +2299,7 @@ function submitPiece(f,p,mode){
     const tx=S.txs.find(t=>t.type==='purchase'&&t.items[0]&&t.items[0].pid===saved.id);
     if(tx){tx.total=saved.cost;tx.items[0]=pItem(saved);}
   }
+  if(mode==='intake'&&p._dec){const ck=f.querySelector('[data-dlearn]');if(ck&&ck.checked&&(p._dec.ext||p._dec.dirty))decLearn(p._dec);}
   save();
   emitEvent(newSaved?'piece.created':'piece.updated',pieceOut(newSaved||piece(p.id)));
   const bulk=!!(mode==='intake'&&newSaved&&p._gen&&genBulk);
@@ -1939,7 +2401,7 @@ function renderRecent(){
   const box=$('#recent');if(!box)return;
   const a=S.pieces.slice().sort((x,y)=>String(y.created||'').localeCompare(String(x.created||''))).slice(0,5);
   if(!a.length){box.innerHTML='';return;}
-  box.innerHTML=`<h3 style="margin-bottom:8px">آخر القطع المُدخلة</h3><div class="tablewrap"><table class="rt"><thead><tr><th>الرقم التسلسلي</th><th>الصنف</th><th>العيار</th><th>الحالة</th><th>الوزن</th><th>المقاس</th><th>أجرة/جم</th><th>غرام الشراء</th><th>التكلفة</th></tr></thead><tbody>${a.map(p=>`<tr><td data-l="الرقم التسلسلي"><span class="mono">${esc(p.serial||p.barcode)}</span></td><td data-l="الصنف">${esc(pathOf(p.nodeId))}</td><td data-l="العيار">${esc(p.karat)}</td><td data-l="الحالة">${p.used?'<span class="chip used">مستعمل</span>':'<span class="chip">جديد</span>'}</td><td data-l="الوزن">${fmtW(p.weight)}</td><td data-l="المقاس">${esc(p.size||'—')}</td><td data-l="الأجرة">${fmt(p.wage)}</td><td data-l="غرام الشراء">${fmt(p.buyPpg)}</td><td data-l="التكلفة">${money(p.cost)}</td></tr>`).join('')}</tbody></table></div>`;
+  box.innerHTML=`<h3 style="margin-bottom:8px">آخر القطع المُدخلة</h3><div class="tablewrap"><table class="rt"><thead><tr><th>الرقم التسلسلي</th><th>الصنف</th><th>العيار</th><th>الحالة</th><th>الوزن</th><th>المقاس</th><th>أجرة/جم</th><th>غرام الشراء</th><th>التكلفة</th></tr></thead><tbody>${a.map(p=>`<tr><td data-l="الرقم التسلسلي" title="${esc((p.src||{}).serial||'')}"><span class="mono">${esc(p.serial||p.barcode)}</span></td><td data-l="الصنف">${esc(pathOf(p.nodeId))}</td><td data-l="العيار">${esc(p.karat)}</td><td data-l="الحالة">${p.used?'<span class="chip used">مستعمل</span>':'<span class="chip">جديد</span>'}</td><td data-l="الوزن" title="${esc((p.src||{}).weight||'')}">${fmtW(p.weight)}</td><td data-l="المقاس" title="${esc((p.src||{}).size||'')}">${esc(p.size||'—')}</td><td data-l="الأجرة" title="${esc((p.src||{}).wage||'')}">${fmt(p.wage)}</td><td data-l="غرام الشراء" title="${esc((p.src||{}).buyPpg||'')}">${fmt(p.buyPpg)}</td><td data-l="التكلفة" title="${esc((p.src||{}).cost||'')}">${money(p.cost)}</td></tr>`).join('')}</tbody></table></div>`;
 }
 
 /* ================= stock ================= */
@@ -1974,12 +2436,12 @@ function renderList(){
   if(!S.pieces.length){box.innerHTML=`<div class="empty"><h2>لا توجد قطع</h2><p>أدخل أول قطعة بمسح الباركود.</p><button class="btn accent" data-act="nav" data-v="intake">${ic('plus')}<span>إدخال قطع</span></button></div>`;tot.innerHTML='';return;}
   if(!a.length){box.innerHTML='<div class="empty"><p>لا توجد نتائج مطابقة.</p></div>';tot.innerHTML='';return;}
   box.innerHTML=`<table class="rt"><thead><tr><th>الرقم التسلسلي</th><th>الصنف</th><th>الفئة</th><th>الحالة</th><th>العيار</th><th>الوزن</th><th>المقاس</th><th>أجرة/جم</th><th>غرام الشراء</th><th>التكلفة</th><th>البيع المتوقع</th><th>الربح المتوقع</th><th>المخزون</th>${cf.map(c=>`<th>${esc(c.label)}</th>`).join('')}<th></th></tr></thead><tbody>${a.map(p=>{const c=calc(p);return `<tr>
-    <td data-l="الرقم التسلسلي" class="full nm"><span class="mono">${esc(p.serial||p.barcode)||'—'}</span>${p.name?`<small>${esc(p.name)}</small>`:''}</td>
+    <td data-l="الرقم التسلسلي" class="full nm" title="${esc((p.src||{}).serial||'')}"><span class="mono">${esc(p.serial||p.barcode)||'—'}</span>${p.name?`<small>${esc(p.name)}</small>`:''}</td>
     <td data-l="الصنف">${esc(pathOf(p.nodeId))}</td>
     <td data-l="الفئة">${esc(p.aud||'—')}</td>
     <td data-l="الحالة">${p.used?'<span class="chip used">مستعمل</span>':'<span class="chip">جديد</span>'}</td>
-    <td data-l="العيار">${esc(p.karat)}</td><td data-l="الوزن">${fmtW(p.weight)}</td><td data-l="المقاس">${esc(p.size||'—')}</td>
-    <td data-l="الأجرة">${fmt(p.wage)}</td><td data-l="غرام الشراء">${fmt(p.buyPpg)}</td><td data-l="التكلفة">${fmt(p.cost)}</td>
+    <td data-l="العيار">${esc(p.karat)}</td><td data-l="الوزن" title="${esc((p.src||{}).weight||'')}">${fmtW(p.weight)}</td><td data-l="المقاس" title="${esc((p.src||{}).size||'')}">${esc(p.size||'—')}</td>
+    <td data-l="الأجرة" title="${esc((p.src||{}).wage||'')}">${fmt(p.wage)}</td><td data-l="غرام الشراء" title="${esc((p.src||{}).buyPpg||'')}">${fmt(p.buyPpg)}</td><td data-l="التكلفة" title="${esc((p.src||{}).cost||'')}">${fmt(p.cost)}</td>
     <td data-l="البيع المتوقع">${fmt(p.sellAmt)}</td>
     <td data-l="الربح المتوقع" class="${c.profit<0?'neg':'pos'}">${fmt(c.profit)}</td>
     <td data-l="المخزون"><span class="chip ${p.status==='sold'?'sold':''}">${p.status==='sold'?'مباع'+(p.invNo?' · '+esc(p.invNo):''):'متوفر'}</span></td>
@@ -2049,13 +2511,14 @@ function renderTpl(str,p,L){
 }
 function elHTML(p,e,L){
   const st=`left:${e.x}mm;top:${e.y}mm;width:${e.w}mm;height:${e.h}mm;transform:rotate(${e.r||0}deg)`;
+  if(e.t==='rect')return `<div class="le" style="${st};border:${e.bw||0.3}mm solid #000"></div>`;
   if(e.t==='line')return `<div class="le" style="${st};background:#000"></div>`;
   if(e.t==='code'){
     const pay=codePayload(p,L);if(!pay)return '';
     return L.fmt==='qr'?`<div class="le qrbox" data-qr="${esc(pay)}" style="${st}"></div>`:`<svg class="le lbc" data-code="${esc(pay)}" style="${st}"></svg>`;
   }
   const t=renderTpl(e.text,p,L);if(!t)return '';
-  return `<div class="le lt2" style="${st};font-size:${e.fs}pt;font-weight:${e.b?700:500}"><span class="lts" dir="auto" style="text-align:${e.al};white-space:${e.wr?'normal':'nowrap'}">${esc(t)}</span></div>`;
+  return `<div class="le lt2" style="${st};font-size:${e.fs}pt;font-weight:${e.b?700:500};font-style:${e.i?'italic':'normal'};text-decoration:${e.u?'underline':'none'}"><span class="lts" dir="auto" style="text-align:${e.al};white-space:${e.wr?'normal':'nowrap'}">${esc(t)}</span></div>`;
 }
 function labelHTML(p,L){
   L=L||S.settings.label;
@@ -2099,7 +2562,7 @@ function browserPrintLabels(items,copies,Lp){
   const root=$('#printRoot'),n=Math.max(1,Math.min(200,parseInt(latin(copies),10)||1)),html=[];
   items.forEach(p=>{for(let i=0;i<n;i++)html.push(labelHTML(p,L));});
   const sheet=L.layout==='sheet';
-  root.className=L.printRot===180?'rot180':'';
+  root.className=L.printRot===180?'rot180':'';root.style.setProperty('--ox',(L.offX||0)+'mm');root.style.setProperty('--oy',(L.offY||0)+'mm');
   root.innerHTML=`<div class="${sheet?'plab-sheet':'plab-roll'}" ${sheet?`style="grid-template-columns:repeat(${Math.max(1,Math.round(L.cols))},${L.w}mm);--gap:${L.gap}mm;justify-content:center"`:''}>${html.join('')}</div>`;
   drawLabelBarcodes(root,L);
   let pg=$('#pgStyle');if(!pg){pg=document.createElement('style');pg.id='pgStyle';document.head.appendChild(pg);}
@@ -2143,9 +2606,10 @@ function edZoom(){
 function tokenList(){return [['price','السعر'],['cur','العملة'],['shop','المنشأة'],['karat','العيار'],['cond','مستعمل (إن وُجد)'],['aud','الفئة'],['state','جديد/مستعمل'],['weight','الوزن'],['size','المقاس'],['wage','الأجرة (للجرام)'],['wageTotal','إجمالي الأجرة'],['serial','الرقم التسلسلي'],['name','الوصف'],['cat','الصنف'],['barcode','الباركود'],['code','محتوى الرمز']].concat(S.settings.customFields.map(c=>['x:'+c.key,c.label]));}
 const tokenSelect=id=>`<label class="f span">إدراج متغير<select id="${id}"><option value="">— اختر —</option>${tokenList().map(([k,l])=>`<option value="${esc(k)}">${esc(l)}  {${esc(k)}}</option>`).join('')}</select></label>`;
 function fieldOptions(){return FCAT.concat(S.settings.customFields.map(c=>['x:'+c.key,c.label]));}
-function elTitle(e){return e.t==='text'?(e.text||'نص فارغ').slice(0,26):e.t==='code'?(S.settings.label.fmt==='qr'?'رمز QR':'باركود'):'خط';}
-function edPush(){ED.hist.push(JSON.stringify(LELS()));if(ED.hist.length>40)ED.hist.shift();}
-function edUndo(){const h=ED.hist.pop();if(!h){toast('لا توجد خطوات للتراجع','bad');return;}S.settings.label.els=JSON.parse(h);ED.sel=ED.sel.filter(id=>elById(id));save();paintEditor();}
+function elTitle(e){return e.t==='text'?(e.text||'نص فارغ').slice(0,26):e.t==='code'?(S.settings.label.fmt==='qr'?'رمز QR':'باركود'):e.t==='rect'?'إطار':'خط';}
+function edPush(){ED.hist.push(JSON.stringify(LELS()));if(ED.hist.length>40)ED.hist.shift();ED.redo=[];}
+function edRedo(){const h=(ED.redo||[]).pop();if(!h){toast('لا توجد خطوات للإعادة','bad');return;}ED.hist.push(JSON.stringify(LELS()));S.settings.label.els=JSON.parse(h);ED.sel=ED.sel.filter(id=>elById(id));save();paintEditor();}
+function edUndo(){const h=ED.hist.pop();if(!h){toast('لا توجد خطوات للتراجع','bad');return;}(ED.redo=ED.redo||[]).push(JSON.stringify(LELS()));S.settings.label.els=JSON.parse(h);ED.sel=ED.sel.filter(id=>elById(id));save();paintEditor();}
 function aabb(e){
   const th=(e.r||0)*Math.PI/180,c=Math.abs(Math.cos(th)),s=Math.abs(Math.sin(th));
   const hw=(e.w*c+e.h*s)/2,hh=(e.w*s+e.h*c)/2,cx=e.x+e.w/2,cy=e.y+e.h/2;
@@ -2157,9 +2621,11 @@ function edAdd(kind,k){
   if(kind==='field'){e.t='text';e.text=TPL_DEF[k]||'{'+k+'}';e.w=Math.min(20,L.w-2);e.h=3;}
   else if(kind==='text'){e.text='نص';e.w=Math.min(15,L.w-2);e.h=3;}
   else if(kind==='code'){const q=Math.max(4,Math.min(10,L.h-2));e.w=q;e.h=q;}
+  else if(kind==='rect'){e.t='rect';e.w=Math.min(20,L.w-2);e.h=Math.min(8,Math.max(2,L.h-2));e.bw=0.3;}
   else{e.t='line';e.w=Math.min(15,L.w-2);e.h=0.3;}
   e.x=rd((L.w-e.w)/2,1);e.y=rd((L.h-e.h)/2,1);
   L.els.push(e);ED.sel=[e.id];save();paintEditor();
+  if(e.t==='text'&&!renderTpl(e.text,sampleForLabel(),L))openInline(e.id);
 }
 function edDel(){if(!ED.sel.length)return;edPush();S.settings.label.els=LELS().filter(e=>!ED.sel.includes(e.id));ED.sel=[];save();paintEditor();}
 function edDup(){
@@ -2246,7 +2712,12 @@ function paintCanvas(){
   const L=S.settings.label,z=edZoom(),p=sampleForLabel(),W=L.w,H=L.h;
   const head=Math.max(0,W-L.tail),tailL=L.tailSide==='left'?0:W-L.tail,fold=(L.tailSide==='left'?L.tail:0)+head*L.split/100;
   const single=ED.sel.length===1;
-  cv.innerHTML=`<div class="lwrap" style="width:${rd(W*MMPX*z,2)}px;height:${rd(H*MMPX*z,2)}px"><div class="lscale" style="--z:${z};transform:scale(${z});width:${W}mm;height:${H}mm">${labelHTML(p,L)}${L.tail>0?`<div class="lguide tail" style="left:${tailL}mm;width:${L.tail}mm"></div>`:''}<div class="lguide fold" style="left:${rd(fold,2)}mm"></div><div class="lov">${L.els.map(e=>`<div class="ebox${ED.sel.includes(e.id)?' sel':''}" data-id="${e.id}" title="${esc(elTitle(e))} — انقر مرتين للتحرير" style="left:${e.x}mm;top:${e.y}mm;width:${e.w}mm;height:${e.h}mm;transform:rotate(${e.r||0}deg)">${single&&ED.sel[0]===e.id?'<i class="rtl"></i><i class="hnd rt" data-h="rt"></i><i class="hnd rs" data-h="rs"></i>':''}</div>`).join('')}</div></div></div>`;
+  const ru=ED.ruler!==false,u=MMPX*z;let rh='',rv='';
+  if(ru){
+    for(let m=0;m<=W;m++){const lg=m%10===0,md=m%5===0;rh+=`<i style="left:${rd(m*u,1)}px;height:${lg?9:md?6:3}px"></i>`;if(lg)rh+=`<b style="left:${rd(m*u+2,1)}px">${m}</b>`;}
+    for(let m=0;m<=H;m++){const lg=m%10===0,md=m%5===0;rv+=`<i style="top:${rd(m*u,1)}px;width:${lg?9:md?6:3}px"></i>`;if(lg)rv+=`<b style="top:${rd(m*u+1,1)}px">${m}</b>`;}
+  }
+  cv.innerHTML=`<div class="lrw${ru?' ru':''}">${ru?`<div class="rul h" style="width:${rd(W*u,1)}px">${rh}</div><div class="rul v" style="height:${rd(H*u,1)}px">${rv}</div>`:''}<div class="lwrap" style="width:${rd(W*MMPX*z,2)}px;height:${rd(H*MMPX*z,2)}px"><div class="lscale" style="--z:${z};transform:scale(${z});width:${W}mm;height:${H}mm">${labelHTML(p,L)}${ED.grid?'<div class="lgrid"></div>':''}${L.tail>0?`<div class="lguide tail" style="left:${tailL}mm;width:${L.tail}mm"></div>`:''}<div class="lguide fold" style="left:${rd(fold,2)}mm"></div><div class="lov">${L.els.map(e=>`<div class="ebox${ED.sel.includes(e.id)?' sel':''}" data-id="${e.id}" title="${esc(elTitle(e))} — انقر مرتين للتحرير" style="left:${e.x}mm;top:${e.y}mm;width:${e.w}mm;height:${e.h}mm;transform:rotate(${e.r||0}deg)">${e.t==='text'&&!renderTpl(e.text,p,L)?`<span class="eph">${esc(e.text)}</span>`:''}${single&&ED.sel[0]===e.id?'<i class="rtl"></i><i class="hnd rt" data-h="rt"></i><i class="hnd rs" data-h="rs"></i>':''}</div>`).join('')}</div></div></div></div>`;
   drawLabelBarcodes(cv,L);
   const zl=$('#zlab');if(zl)zl.textContent=Math.round(z*100)+'%';
   const cp=$('#codePrev');if(cp)cp.textContent=codePayload(p,L)||'—';
@@ -2270,8 +2741,8 @@ function paintProps(){
   const e=es[0];
   const n=(k,l,step)=>`<label>${l}<input type="number" step="${step||0.1}" data-ep="${k}" value="${rd(e[k],2)}"></label>`;
   const txt=e.t==='text';
-  box.innerHTML=`<div class="pgrid">${n('x','اليسار (مم)')}${n('y','الأعلى (مم)')}${n('w',e.t==='line'?'الطول (مم)':'العرض (مم)')}${n('h',e.t==='line'?'السماكة (مم)':'الارتفاع (مم)')}${n('r','الدوران (°)',1)}
-    ${txt?n('fs','حجم الخط (pt)',0.5)+`<label>المحاذاة<select data-ep="al"><option value="left" ${e.al==='left'?'selected':''}>يسار</option><option value="center" ${e.al==='center'?'selected':''}>وسط</option><option value="right" ${e.al==='right'?'selected':''}>يمين</option></select></label><label class="chk"><input type="checkbox" data-ep="b" ${e.b?'checked':''}>غامق</label><label class="chk"><input type="checkbox" data-ep="wr" ${e.wr?'checked':''}>التفاف النص</label>`:''}
+  box.innerHTML=`<div class="pgrid">${n('x','اليسار (مم)')}${n('y','الأعلى (مم)')}${n('w',e.t==='line'?'الطول (مم)':'العرض (مم)')}${n('h',e.t==='line'?'السماكة (مم)':'الارتفاع (مم)')}${n('r','الدوران (°)',1)}${e.t==='rect'?n('bw','سماكة الإطار (مم)',0.1):''}
+    ${txt?n('fs','حجم الخط (pt)',0.5)+`<label>المحاذاة<select data-ep="al"><option value="left" ${e.al==='left'?'selected':''}>يسار</option><option value="center" ${e.al==='center'?'selected':''}>وسط</option><option value="right" ${e.al==='right'?'selected':''}>يمين</option></select></label><label class="chk"><input type="checkbox" data-ep="b" ${e.b?'checked':''}>غامق</label><label class="chk"><input type="checkbox" data-ep="i" ${e.i?'checked':''}>مائل</label><label class="chk"><input type="checkbox" data-ep="u" ${e.u?'checked':''}>تسطير</label><label class="chk"><input type="checkbox" data-ep="wr" ${e.wr?'checked':''}>التفاف النص</label>`:''}
     ${txt?`<label class="span">النص — يقبل المتغيرات<input data-ep="text" value="${esc(e.text)}" dir="auto"></label>${tokenSelect('epTok')}<small class="span muted" id="tplPrev">${esc(tplPrevText(e))}</small>`:''}
     ${e.t==='code'?'<small class="span muted">انقر الرمز مرتين لتعديل ما يظهر فيه (محتوى الرمز).</small>':''}</div>`;
 }
@@ -2296,23 +2767,73 @@ function paintSample(){
 function setSp(t){
   const p=sampleForLabel(),k=t.dataset.sp;
   if(k==='shop'){S.settings.shop=t.value.trim();save();}
+  else if(k==='cur'){S.settings.currency=t.value.trim().slice(0,8)||'ر.س';save();}
+  else if(String(k).startsWith('x:')){p.extra=p.extra||{};p.extra[k.slice(2)]=t.value;}
   else if(k==='used')p.used=t.value==='1';
   else if(k==='karat'||k==='nodeId'||k==='aud')p[k]=t.value;
   else if(['size','serial','name','barcode'].includes(k))p[k]=t.value;
   else p[k]=num(t.value);
   paintCanvas();
   const e=selEls()[0],tp=$('#tplPrev');if(tp&&e&&e.t==='text')tp.textContent=tplPrevText(e);
+  const ip=$('#einPrev');if(ip&&e&&e.t==='text')ip.textContent=tplPrevText(e);
 }
 /* inline editing bar (double-click) */
+const TOKLBL={price:'السعر شامل الضريبة',cur:'العملة',shop:'اسم المنشأة',karat:'العيار',karatN:'العيار',cond:'الحالة',aud:'الفئة',weight:'الوزن',size:'المقاس',wage:'الأجرة للجرام',wageTotal:'إجمالي الأجرة',serial:'الرقم التسلسلي',name:'الوصف',cat:'الصنف',barcode:'الباركود',code:'الباركود'};
+function usedTokens(){
+  const out=[];
+  S.settings.label.els.forEach(e=>{if(e.t==='text')(String(e.text).match(/\{([A-Za-z0-9_:]+)\}/g)||[]).forEach(m=>{const t=m.slice(1,-1);if(!out.includes(t))out.push(t);});});
+  return out;
+}
+function spControl(tok){
+  const p=sampleForLabel();
+  const inp=(k,l,txt,hint)=>`<label class="iv">${l}${hint?` <small>${hint}</small>`:''}<input ${txt?'':'type="number" step="any"'} data-sp="${k}" value="${esc(p[k]==null?'':p[k])}"></label>`;
+  switch(tok){
+    case 'shop':return `<label class="iv">اسم المنشأة <small>(عام — يُحفظ في الإعدادات)</small><input data-sp="shop" value="${esc(S.settings.shop)}"></label>`;
+    case 'cur':return `<label class="iv">رمز العملة <small>(عام)</small><input data-sp="cur" maxlength="8" value="${esc(cur())}"></label>`;
+    case 'price':return inp('sellAmt','السعر قبل الضريبة',0,'(معاينة)')+inp('vatRate','الضريبة %',0,'(معاينة)');
+    case 'karat':case 'karatN':return `<label class="iv">العيار <small>(معاينة)</small><select data-sp="karat">${S.settings.karats.map(k=>`<option value="${esc(k)}" ${String(p.karat)===k?'selected':''}>${esc(k)}</option>`).join('')}</select></label>`;
+    case 'cond':return `<label class="iv">الحالة <small>(معاينة)</small><select data-sp="used"><option value="">جديد</option><option value="1" ${p.used?'selected':''}>مستعمل</option></select></label>`;
+    case 'aud':return `<label class="iv">الفئة <small>(معاينة)</small><select data-sp="aud"><option value="">—</option>${S.settings.audiences.map(a=>`<option value="${esc(a)}" ${p.aud===a?'selected':''}>${esc(a)}</option>`).join('')}</select></label>`;
+    case 'weight':return inp('weight','الوزن (جم)',0,'(معاينة)');
+    case 'size':return inp('size','المقاس',1,'(معاينة)');
+    case 'wage':return inp('wage','الأجرة للجرام',0,'(معاينة)');
+    case 'wageTotal':return `<label class="iv">إجمالي الأجرة <small>(محسوب: الوزن × الأجرة)</small><input readonly value="${esc(String(rd((p.wage||0)*(p.weight||0),2)))}"></label>`;
+    case 'serial':return inp('serial','الرقم التسلسلي',1,'(معاينة)');
+    case 'name':return inp('name','الوصف',1,'(معاينة)');
+    case 'cat':return `<label class="iv">الصنف <small>(معاينة)</small><select data-sp="nodeId"><option value="">—</option>${S.settings.nodes.filter(n=>isLeaf(n.id)).map(n=>`<option value="${n.id}" ${p.nodeId===n.id?'selected':''}>${esc(pathOf(n.id))}</option>`).join('')}</select></label>`;
+    case 'barcode':case 'code':return inp('barcode','الباركود',1,'(معاينة)');
+  }
+  if(String(tok).startsWith('x:')){const c=S.settings.customFields.find(f=>'x:'+f.key===tok);return `<label class="iv">${esc(c?c.label:tok)} <small>(معاينة)</small><input data-sp="${esc(tok)}" value="${esc(((p.extra||{})[tok.slice(2)])||'')}"></label>`;}
+  return '';
+}
+function paintForm(){
+  const box=$('#eform');if(!box)return;
+  const t=usedTokens();
+  box.innerHTML=t.length?`<div class="pgrid" data-enter>${t.map(spControl).join('')}</div>`:'<small class="muted">أضف حقولًا إلى الملصق ليظهر هنا اسم كل حقل وقيمته.</small>';
+}
+function paintPrintSum(){
+  const el=$('#prsum');if(!el)return;
+  const PS=S.settings.printer,M={browser:'طباعة المتصفح',usb:'USB مباشر',serial:'منفذ تسلسلي / بلوتوث Classic',ble:'بلوتوث BLE',net:'شبكة IP عبر الوسيط',queue:'طابعة النظام عبر الوسيط'};
+  el.innerHTML=`<div class="prstat"><span class="dot ${PS.mode==='browser'?'on':(PRN.port||PRN.usb||(PRN.ble&&PRN.ble.dev.gatt.connected)||PS.mode==='net'||PS.mode==='queue')?'on':'bad'}"></span><b>${M[PS.mode]||''}</b>${PS.mode!=='browser'?`<small class="muted">${PS.lang.toUpperCase()} · ${PS.dpi} DPI</small>`:''}</div>`;
+}
 function paintInline(){
   const bar=$('#einline');if(!bar)return;
   const e=ED.inl?elById(ED.inl):null,L=S.settings.label;
-  if(!e||e.t==='line'){bar.hidden=true;return;}
+  if(!e||e.t==='line'||e.t==='rect'){bar.hidden=true;return;}
   bar.hidden=false;
   if(e.t==='text'){
-    bar.innerHTML=`<label class="f" style="flex:1;min-width:200px">نص العنصر <small>(يقبل المتغيرات مثل {weight} و{price})</small><input id="einTxt" value="${esc(e.text)}" dir="auto"></label>${tokenSelect('einTok')}<button type="button" class="btn sm" data-act="einok">تم</button><small class="muted" id="einPrev" style="flex-basis:100%">${esc(tplPrevText(e))}</small>`;
+    const toks=[...new Set((String(e.text).match(/\{([A-Za-z0-9_:]+)\}/g)||[]).map(m=>m.slice(1,-1)))];
+    bar.innerHTML=`<div class="ihead"><b>${esc(elTitle(e))}</b><button type="button" class="btn sm" data-act="einok">تم</button></div>
+      <div class="irow"><label class="f" style="flex:1;min-width:200px">نص العنصر <small>(يقبل المتغيرات مثل {weight} و{price})</small><input id="einTxt" value="${esc(e.text)}" dir="auto"></label>${tokenSelect('einTok')}</div>
+      <small class="muted" id="einPrev">${esc(tplPrevText(e))}</small>
+      ${toks.length?`<div class="isec"><b style="font-size:13px">القيم المستخدمة في هذا العنصر</b><div class="pgrid" data-enter>${toks.map(spControl).join('')}</div></div>`:''}
+      <div class="isec"><b style="font-size:13px">الشكل</b><div class="irow"><label class="iv">الحجم (pt)<input type="number" step="0.5" data-ep="fs" value="${rd(e.fs,1)}" style="width:90px"></label><label class="chk"><input type="checkbox" data-ep="b" ${e.b?'checked':''}>غامق</label><label class="chk"><input type="checkbox" data-ep="i" ${e.i?'checked':''}>مائل</label><label class="chk"><input type="checkbox" data-ep="u" ${e.u?'checked':''}>تسطير</label><label class="iv">المحاذاة<select data-ep="al"><option value="left" ${e.al==='left'?'selected':''}>يسار</option><option value="center" ${e.al==='center'?'selected':''}>وسط</option><option value="right" ${e.al==='right'?'selected':''}>يمين</option></select></label><label class="chk"><input type="checkbox" data-ep="wr" ${e.wr?'checked':''}>التفاف</label></div></div>`;
   }else{
-    bar.innerHTML=`<label class="f" style="min-width:170px">محتوى الرمز<select id="einMode"><option value="tpl" ${L.codeMode==='tpl'?'selected':''}>قالب مفتاح{قيمة}</option><option value="barcode" ${L.codeMode==='tpl'?'':'selected'}>نص الباركود المسجّل</option></select></label><label class="f" style="flex:1;min-width:200px">قالب المحتوى <small>مثل w{}t{}g{}s{}</small><input id="einTxt" dir="ltr" value="${esc(L.codeTpl)}" ${L.codeMode==='tpl'?'':'disabled'}></label><button type="button" class="btn sm" data-act="einok">تم</button><small class="muted mono" id="einPrev" style="flex-basis:100%;direction:ltr;text-align:left">${esc(codePayload(sampleForLabel(),L)||'—')}</small>`;
+    const qr=L.fmt==='qr';
+    bar.innerHTML=`<div class="ihead"><b>${esc(elTitle(e))}</b><button type="button" class="btn sm" data-act="einok">تم</button></div>
+      <div class="irow"><label class="iv">نوع الرمز<select data-lb="fmt">${[['qr','QR'],['CODE128','CODE 128'],['EAN13','EAN-13'],['auto','تلقائي']].map(([v,l])=>`<option value="${v}" ${L.fmt===v?'selected':''}>${l}</option>`).join('')}</select></label>${qr?`<label class="iv">تصحيح الخطأ<select data-lb="ec">${['L','M','Q','H'].map(v=>`<option ${L.ec===v?'selected':''}>${v}</option>`).join('')}</select></label>`:''}<label class="iv">محتوى الرمز<select id="einMode"><option value="tpl" ${L.codeMode==='tpl'?'selected':''}>قالب مفتاح{قيمة}</option><option value="barcode" ${L.codeMode==='tpl'?'':'selected'}>نص الباركود المسجّل</option></select></label><label class="f" style="flex:1;min-width:180px">قالب المحتوى <small>مثل w{}t{}g{}s{}</small><input id="einTxt" dir="ltr" value="${esc(L.codeTpl)}" ${L.codeMode==='tpl'?'':'disabled'}></label></div>
+      <div class="isec"><b style="font-size:13px">عناصر الباركود (QR)</b><div class="flist" id="einChips">${codeChipsHTML()}</div><label class="iv" style="max-width:260px">إضافة عنصر للباركود<select id="einCodeAdd">${codeAddHTML()}</select></label></div>
+      <small class="muted mono" id="einPrev" style="direction:ltr;text-align:left">${esc(codePayload(sampleForLabel(),L)||'—')}</small>`;
   }
 }
 function openInline(id){
@@ -2382,12 +2903,14 @@ function paletteHTML(){
   return fieldOptions().map(([k,l])=>chip(k,l)).join('')+`<button type="button" data-act="eladd" data-kind="text">+ نص ثابت</button><button type="button" class="${hasCode?'usedb':''}" data-act="eladd" data-kind="code">+ رمز QR/باركود${hasCode?' ✓':''}</button><button type="button" data-act="eladd" data-kind="line">+ خط</button>`;
 }
 function paintPalette(){const b=$('#flist');if(b)b.innerHTML=paletteHTML();}
-function paintCodeChips(){
-  const box=$('#codeChips');if(!box)return;
+function codeChipsHTML(){
   const L=S.settings.label;
-  box.innerHTML=L.codeMode==='tpl'?(tplKeys().map(k=>{const c=kvCfg(k);return `<span class="kchip${c?'':' bad'}"><b class="mono">${esc(k)}</b>${esc(c?kvLabel(c.field):'غير معرّف')}<button type="button" data-act="codedel" data-k="${esc(k)}" aria-label="إزالة من الباركود">✕</button></span>`;}).join('')||'<small class="muted">لا عناصر.</small>'):'<small class="muted">الرمز يحمل نص الباركود المسجّل كما هو. أضف أي عنصر ليتحول إلى قالب مفتاح{قيمة}.</small>';
-  const sel=$('#codeAdd');
-  if(sel){const cf=codeFields();sel.innerHTML='<option value="">— اختر عنصرًا لإضافته —</option>'+kvTargets().filter(([f])=>!cf.has(f)).map(([f])=>`<option value="${esc(f)}">${esc(kvLabel(f))}</option>`).join('');}
+  return L.codeMode==='tpl'?(tplKeys().map(k=>{const c=kvCfg(k);return `<span class="kchip${c?'':' bad'}"><b class="mono">${esc(k)}</b>${esc(c?kvLabel(c.field):'غير معرّف')}<button type="button" data-act="codedel" data-k="${esc(k)}" aria-label="إزالة من الباركود">✕</button></span>`;}).join('')||'<small class="muted">لا عناصر.</small>'):'<small class="muted">الرمز يحمل نص الباركود المسجّل كما هو. أضف أي عنصر ليتحول إلى قالب مفتاح{قيمة}.</small>';
+}
+function codeAddHTML(){const cf=codeFields();return '<option value="">— اختر عنصرًا لإضافته —</option>'+kvTargets().filter(([f])=>!cf.has(f)).map(([f])=>`<option value="${esc(f)}">${esc(kvLabel(f))}</option>`).join('');}
+function paintCodeChips(){
+  const box=$('#codeChips');if(box)box.innerHTML=codeChipsHTML();
+  const sel=$('#codeAdd');if(sel)sel.innerHTML=codeAddHTML();
 }
 function kvTableHTML(full){
   const kvc=S.settings.bfmt.kv,L=S.settings.label;
@@ -2397,10 +2920,11 @@ function kvTableHTML(full){
 }
 function paintKv(){const w=$('#kvwrap');if(w)w.innerHTML=kvTableHTML(S.settings.bfmt.mode==='kv');}
 function syncCodeInputs(){const L=S.settings.label,ti=$('[data-lb="codeTpl"]');if(ti){ti.value=L.codeTpl;ti.disabled=L.codeMode!=='tpl';}const cm=$('[data-lb="codeMode"]');if(cm)cm.value=L.codeMode;}
-function refreshLinks(){paintEditor();paintKv();syncCodeInputs();}
+function refreshLinks(){paintEditor();paintKv();syncCodeInputs();if(ED.inl)paintInline();}
 function paintEditor(){
   if(ED.inl&&!elById(ED.inl))closeInline();
-  paintCanvas();paintElList();paintProps();paintDesigns();paintPalette();paintCodeChips();
+  paintCanvas();paintElList();paintProps();paintDesigns();paintPalette();paintCodeChips();paintPrintSum();
+  {const ae0=document.activeElement;if(ED.inl&&!(ae0&&ae0.closest&&ae0.closest('#einline')))paintInline();if(!(ae0&&ae0.closest&&ae0.closest('#eform')))paintForm();}
   const ae=document.activeElement;
   if(!(ae&&ae.closest&&ae.closest('#espv')))paintSample();
 }
@@ -2414,7 +2938,7 @@ function setEp(t){
   else if(k==='text'){e.text=t.value;const tp=$('#tplPrev');if(tp)tp.textContent=tplPrevText(e);}
   else{
     const v=parseFloat(latin(t.value));if(isNaN(v))return;
-    const lim={x:[-500,500],y:[-500,500],w:[0.3,300],h:[0.2,300],r:[-360,360],fs:[3,40]}[k];if(!lim)return;
+    const lim={x:[-500,500],y:[-500,500],w:[0.3,300],h:[0.2,300],r:[-360,360],fs:[3,40],bw:[0.1,3]}[k];if(!lim)return;
     e[k]=Math.min(lim[1],Math.max(lim[0],v));
     if(e.t==='code'&&S.settings.label.fmt==='qr'&&(k==='w'||k==='h')){e.w=e.h=e[k];syncProps();}
   }
@@ -2512,51 +3036,53 @@ function labelSectionHTML(){
   const cur_=PR.find(x=>x[0]===L.w&&x[1]===L.h&&(!tag||x[2]===L.tail));
   const nf_=(k,lab,step)=>`<label class="f">${lab}<input type="number" step="${step||'any'}" data-lb="${k}" value="${L[k]}"></label>`;
   const so=(k,opts)=>`<select data-lb="${k}">${opts.map(([v,l])=>`<option value="${v}" ${L[k]===v?'selected':''}>${l}</option>`).join('')}</select>`;
-  const tb=(act,l,extra)=>`<button type="button" class="btn ghost" data-act="${act}" ${extra||''}>${l}</button>`;
+  const tb=(act,l,extra,title)=>`<button type="button" class="btn ghost" data-act="${act}" ${extra||''} ${title?`title="${title}" aria-label="${title}"`:''}>${l}</button>`;
   const activeD=S.settings.labelDesigns.find(d=>d.id===S.settings.labelActive);
-  return `<section class="panel" id="lblsec"><h2>تصميم الملصق والطباعة</h2><p class="muted">اسحب العناصر على المعاينة لتحريكها، وانقر عنصرًا مرتين لتحرير نصه أو محتوى الرمز في مكانه. المعاينة ثابتة أمامك أثناء التمرير في العمود الجانبي.${activeD?` التصميم المحمّل: <b>${esc(activeD.name)}</b>.`:''}</p>
+  const tab=ED.tab||'design';
+  const tabs=[['label','الملصق'],['design','التصميم'],['form','النموذج'],['print','الطباعة']];
+  const pane=(id,html)=>`<div class="lpane" data-pane="${id}" ${tab===id?'':'hidden'}>${html}</div>`;
+  const P_LABEL=`<div class="lblock"><h3>القالب والمقاس</h3><div class="grid">
+      <label class="f">قالب جاهز<select data-lb="tpl"><option value="tag" ${tag?'selected':''}>ملصق مجوهرات بذيل</option><option value="std" ${tag?'':'selected'}>ملصق عادي</option></select></label>
+      <label class="f">&nbsp;<button type="button" class="btn ghost" data-act="eltpl">تطبيق القالب</button></label>
+      <label class="f span2">مقاس جاهز<select data-lbp="preset"><option value="">مخصص</option>${PR.map(([w,h,t])=>`<option value="${w}x${h}x${t}" ${cur_&&cur_[0]===w&&cur_[1]===h&&cur_[2]===t?'selected':''}>${w}×${h} مم${tag?' · ذيل '+t:''}</option>`).join('')}</select></label>
+      ${nf_('w','الطول الكلي (مم)')}${nf_('h','الارتفاع (مم)')}${nf_('tail','طول الذيل (مم)')}
+      <label class="f">جهة الذيل${so('tailSide',[['right','يمين'],['left','يسار']])}</label>${nf_('split','موضع الطي (%)','1')}</div><small class="muted">يُطبع الملصق كاملًا بطول الذيل، والمنطقة المشطّبة لا يُطبع فيها شيء.</small></div>
+    <div class="lblock"><h3>الاتجاه</h3><div class="row"><label class="f" style="flex:1">اتجاه الطباعة<select data-lb="printRot"><option value="0" ${L.printRot===180?'':'selected'}>بدون تدوير</option><option value="180" ${L.printRot===180?'selected':''}>تدوير 180°</option></select></label>${tb('eflip','⇄ قلب الذيل')}</div></div>
+    <div class="lblock"><h3>مساعدة</h3><div class="row"><label class="chk"><input type="checkbox" data-ed="ruler" ${ED.ruler!==false?'checked':''}>المسطرة</label><label class="chk"><input type="checkbox" data-ed="grid" ${ED.grid?'checked':''}>إظهار الشبكة</label><label class="iv">الالتصاق<select data-ed="snap"><option value="0" ${ED.snap===0?'selected':''}>بلا</option><option value="0.1" ${ED.snap===0.1?'selected':''}>0.1 مم</option><option value="0.5" ${ED.snap===0.5?'selected':''}>0.5 مم</option><option value="1" ${ED.snap===1?'selected':''}>1 مم (الشبكة)</option></select></label></div></div>`;
+  const P_DESIGN=`<div class="lblock"><div class="row">${tb('eladd','+ نص','data-kind="text"')}${tb('eladd','+ خط','data-kind="line"')}${tb('eladd','+ إطار','data-kind="rect"')}${tb('eladd','+ رمز QR/باركود','data-kind="code"')}</div></div>
+    <div class="lblock"><h3>الحقول والباركود (QR)</h3><div class="flist" id="flist"></div><div class="legend"><small class="muted"><span class="lgd used">✓</span>مضاف للملصق</small><small class="muted"><span class="lgd code">▣</span>مضاف للباركود (اضغط ▣ للتبديل)</small></div>
+      <h4 style="margin:12px 0 6px;font-size:13px">عناصر الباركود (QR)</h4><div class="flist" id="codeChips"></div><label class="f" style="margin-top:8px;font-size:13px">إضافة عنصر للباركود<select id="codeAdd"></select></label><small class="muted">تظهر هذه العناصر نفسها في «تنسيق الباركود»، والعكس.</small>
+      <details style="margin-top:10px"><summary>إعدادات الرمز</summary><div class="grid" style="margin-top:8px">
+        <label class="f">نوع الرمز${so('fmt',[['qr','QR (ثنائي الأبعاد)'],['CODE128','CODE 128'],['EAN13','EAN-13 (13 رقمًا)'],['auto','تلقائي']])}</label>
+        ${qr?`<label class="f">تصحيح الخطأ${so('ec',[['L','L'],['M','M'],['Q','Q'],['H','H']])}</label>`+nf_('qz','الهامش الأبيض (وحدات)','1'):''}
+        <label class="f">محتوى الرمز${so('codeMode',[['tpl','قالب مفتاح{قيمة}'],['barcode','نص الباركود المسجّل']])}</label>
+        <label class="f span2">قالب المحتوى<input data-lb="codeTpl" dir="ltr" maxlength="120" value="${esc(L.codeTpl)}" ${L.codeMode==='tpl'?'':'disabled'}></label></div>
+        <small class="muted" style="display:block;margin-top:6px">المحتوى المرمَّز للمعاينة:</small><div class="paypre mono" id="codePrev">—</div><div id="codeWarn"></div></details></div>
+    <div class="lblock"><h3>عناصر الملصق</h3><div id="elist"></div></div>
+    <div class="lblock"><h3>خصائص العنصر</h3><div id="eprops" data-enter></div></div>
+    <div class="lblock"><h3>التصاميم المحفوظة</h3><div class="row" style="flex-wrap:nowrap"><input id="dname" placeholder="اسم التصميم" maxlength="40" aria-label="اسم التصميم"><button type="button" class="btn" data-act="dsave" style="white-space:nowrap">حفظ باسم</button></div><div id="dlist" style="margin-top:8px"></div></div>`;
+  const P_FORM=`<div class="lblock"><h3>قيم الملصق</h3><div id="eform"></div><small class="muted">أسماء الحقول المستخدمة في الملصق وقيمها. اسم المنشأة والعملة يُحفظان في الإعدادات، وبقية القيم للمعاينة والطباعة التجريبية فقط.</small></div>
+    <div class="lblock"><div class="row"><label class="iv">عدد النسخ<input id="lcp" type="number" min="1" max="200" value="1" style="width:90px"></label><button type="button" class="btn accent" data-act="lblform">${ic('print')}<span>طباعة</span></button></div></div>
+    <details class="lblock"><summary>كل بيانات المعاينة</summary><div id="espv" data-enter style="margin-top:8px"></div></details>`;
+  const P_PRINT=`<div class="lblock"><h3>الطابعة</h3><div id="prsum"></div><button type="button" class="btn ghost sm" data-act="prtab">إعدادات الطابعة والاتصال…</button></div>
+    <div class="lblock"><h3>الطباعة</h3><div class="row"><button type="button" class="btn accent" data-act="lbltest">${ic('print')}<span>طباعة ملصق تجريبي</span></button></div><label class="chip gold" style="display:inline-flex;gap:8px;align-items:center;cursor:pointer;margin-top:10px"><input type="checkbox" data-lb="autoPrint" ${L.autoPrint?'checked':''}>طباعة تلقائية بعد حفظ كل قطعة جديدة</label></div>
+    <div class="lblock"><h3>طريقة الطباعة</h3><div class="grid"><label class="f span2">${so('layout',[['roll','ملصق واحد في كل صفحة (طابعة ملصقات)'],['sheet','شبكة ملصقات على ورقة A4']])}</label>${nf_('cols','الأعمدة (A4)','1')}${nf_('gap','المسافة (مم)')}</div></div>
+    <div class="lblock"><h3>جودة الطباعة المباشرة</h3><label class="f">حساسية الرمادي <output id="thrv">${L.thr}%</output><input type="range" min="10" max="95" step="1" data-lb="thr" value="${L.thr}"></label><div class="row" style="justify-content:space-between"><small class="muted">أبيض</small><small class="muted">أسود</small></div><small class="muted">ارفعها إن خرجت الخطوط باهتة، وخفّضها إن تلطّخ الرمز.</small></div>
+    <div class="lblock"><h3>الموضع</h3><div class="grid">${nf_('offX','يمين/يسار (مم)','0.1')}${nf_('offY','أعلى/أسفل (مم)','0.1')}</div><small class="muted">لضبط إزاحة الملصق على الورق (يؤثر على الطباعة المباشرة وطباعة المتصفح).</small></div>`;
+  return `<section class="panel" id="lblsec"><h2>تصميم الملصق والطباعة</h2><p class="muted">اسحب العناصر على المعاينة لتحريكها، وانقر عنصرًا مرتين لعرض كل حقوله وقيمه وتعديلها في مكانها.${activeD?` التصميم المحمّل: <b>${esc(activeD.name)}</b>.`:''}</p>
     <div class="led">
       <aside class="lside">
-        <div class="lblock"><h3>الحقول (اضغط للإضافة)</h3><div class="flist" id="flist"></div><div class="legend"><small class="muted"><span class="lgd used">✓</span>مضاف للملصق</small><small class="muted"><span class="lgd code">▣</span>مضاف لمحتوى الباركود (اضغط ▣ للتبديل)</small></div></div>
-        <div class="lblock"><h3>عناصر الباركود (QR)</h3><div class="flist" id="codeChips"></div><label class="f" style="margin-top:8px;font-size:13px">إضافة عنصر للباركود<select id="codeAdd"></select></label><small class="muted">تظهر هذه العناصر نفسها في «تنسيق الباركود»، والعكس.</small></div>
-        <div class="lblock"><h3>عناصر الملصق</h3><div id="elist"></div></div>
-        <div class="lblock"><h3>خصائص العنصر</h3><div id="eprops" data-enter></div></div>
-        <div class="lblock"><h3>المحاذاة والتوزيع</h3><div class="tools">${tb('eal','⇤ يسار','data-m="l"')}${tb('eal','↔ وسط','data-m="c"')}${tb('eal','⇥ يمين','data-m="r"')}${tb('eal','⤒ أعلى','data-m="t"')}${tb('eal','↕ منتصف','data-m="m"')}${tb('eal','⤓ أسفل','data-m="b"')}${tb('edist','توزيع أفقي','data-m="h"')}${tb('edist','توزيع رأسي','data-m="v"')}${tb('erot','↻ 90°','data-d="90"')}${tb('erot','↺ 90°','data-d="-90"')}${tb('elz','للأمام','data-d="1"')}${tb('elz','للخلف','data-d="-1"')}${tb('eldup','تكرار')}<button type="button" class="btn danger" data-act="eldel">حذف المحدد</button></div><small class="muted">مع عنصر واحد تكون المحاذاة بالنسبة للملصق، ومع عدة عناصر بالنسبة لبعضها.</small></div>
-        <div class="lblock"><h3>بيانات المعاينة</h3><div id="espv" data-enter></div></div>
-        <div class="lblock"><h3>التصاميم المحفوظة</h3><div class="row" style="flex-wrap:nowrap"><input id="dname" placeholder="اسم التصميم" maxlength="40" aria-label="اسم التصميم"><button type="button" class="btn" data-act="dsave" style="white-space:nowrap">حفظ باسم</button></div><div id="dlist" style="margin-top:8px"></div><small class="muted">يُحفظ التصميم الحالي (المقاس والعناصر ومحتوى الرمز) ويمكن اختياره عند الطباعة.</small></div>
+        <div class="ltabs" role="tablist" aria-label="أقسام المصمم">${tabs.map(([k,l])=>`<button type="button" role="tab" data-act="ltab" data-v="${k}" aria-selected="${tab===k}">${l}</button>`).join('')}</div>
+        ${pane('label',P_LABEL)}${pane('design',P_DESIGN)}${pane('form',P_FORM)}${pane('print',P_PRINT)}
       </aside>
       <div class="lstage">
-        <div class="ltoolbar">${tb('edundo','↶ تراجع')}${tb('ezoom','−','data-d="-"')}<span id="zlab" class="pill"></span>${tb('ezoom','+','data-d="+"')}${tb('ezoom','ملاءمة','data-d="0"')}${tb('eflip','⇄ قلب الذيل')}<label class="row" style="gap:4px"><small>الالتصاق</small><select data-ed="snap"><option value="0" ${ED.snap===0?'selected':''}>بلا</option><option value="0.1" ${ED.snap===0.1?'selected':''}>0.1 مم</option><option value="0.5" ${ED.snap===0.5?'selected':''}>0.5 مم</option><option value="1" ${ED.snap===1?'selected':''}>1 مم</option></select></label></div>
+        <div class="ltoolbar">${tb('edundo','↶','','تراجع')}${tb('edredo','↷','','إعادة')}<span class="sep"></span>${tb('ezoom','−','data-d="-"','تصغير')}<span id="zlab" class="pill"></span>${tb('ezoom','+','data-d="+"','تكبير')}${tb('ezoom','ملاءمة','data-d="0"')}<span class="sep"></span><button type="button" class="btn ghost" data-act="etgl" data-k="ruler" aria-pressed="${ED.ruler!==false}">المسطرة</button><button type="button" class="btn ghost" data-act="etgl" data-k="grid" aria-pressed="${!!ED.grid}">الشبكة</button></div>
+        <div class="ltoolbar al" role="toolbar" aria-label="المحاذاة والتوزيع">${tb('eal','⇤','data-m="l"','محاذاة لليسار')}${tb('eal','↔','data-m="c"','توسيط أفقي')}${tb('eal','⇥','data-m="r"','محاذاة لليمين')}<span class="sep"></span>${tb('eal','⤒','data-m="t"','محاذاة للأعلى')}${tb('eal','↕','data-m="m"','توسيط رأسي')}${tb('eal','⤓','data-m="b"','محاذاة للأسفل')}<span class="sep"></span>${tb('edist','⇹ توزيع أفقي','data-m="h"')}${tb('edist','⇳ توزيع رأسي','data-m="v"')}<span class="sep"></span>${tb('erot','↻ 90°','data-d="90"')}${tb('erot','↺ 90°','data-d="-90"')}<span class="sep"></span>${tb('elz','للأمام','data-d="1"')}${tb('elz','للخلف','data-d="-1"')}${tb('eldup','تكرار')}<button type="button" class="btn danger" data-act="eldel">حذف</button></div>
         <div id="lscroll"><div id="lcanvas" tabindex="0" role="application" aria-label="لوحة تصميم الملصق: أسهم للتحريك وEnter للتحرير وDelete للحذف"></div></div>
         <div id="einline" class="einline" hidden></div>
-        <p class="hint">المنطقة المشطّبة هي الذيل (لا يُطبع فيها)، والخط الأحمر المتقطع منتصف الرأس (موضع الطي). «قلب الذيل» ينقله للجهة الأخرى مع إبقاء العناصر على الرأس. الأسهم تحرّك العنصر المحدد، وEnter يحرّره.</p>
+        <p class="hint">مع عنصر واحد تكون المحاذاة بالنسبة للملصق، ومع عدة عناصر (Shift + نقر) بالنسبة لبعضها. المنطقة المشطّبة هي الذيل، والخط الأحمر المتقطع موضع الطي.</p>
       </div>
-    </div>
-    <div class="grid3">
-      <label class="f">قالب جاهز<select data-lb="tpl"><option value="tag" ${tag?'selected':''}>ملصق مجوهرات بذيل (مثل الصورة)</option><option value="std" ${tag?'':'selected'}>ملصق عادي</option></select></label>
-      <label class="f">&nbsp;<button type="button" class="btn ghost" data-act="eltpl">تطبيق القالب (يستبدل التصميم)</button></label>
-      <label class="f">مقاس جاهز<select data-lbp="preset"><option value="">مخصص</option>${PR.map(([w,h,t])=>`<option value="${w}x${h}x${t}" ${cur_&&cur_[0]===w&&cur_[1]===h&&cur_[2]===t?'selected':''}>${w}×${h} مم${tag?' · ذيل '+t:''}</option>`).join('')}</select></label>
-      ${nf_('w','الطول الكلي مع الذيل (مم)')}${nf_('h','العرض/الارتفاع (مم)')}${nf_('tail','طول الذيل غير المطبوع (مم)')}
-      <label class="f">جهة الذيل${so('tailSide',[['right','يمين'],['left','يسار']])}</label>
-      ${nf_('split','موضع الطي من الرأس (%)','1')}
-      <label class="f">اتجاه الطباعة<select data-lb="printRot"><option value="0" ${L.printRot===180?'':'selected'}>بدون تدوير</option><option value="180" ${L.printRot===180?'selected':''}>تدوير 180° عند الطباعة</option></select></label>
-      <label class="f">طريقة الطباعة${so('layout',[['roll','ملصق في كل صفحة (طابعة ملصقات)'],['sheet','شبكة ملصقات على ورقة A4']])}</label>
-      ${nf_('cols','عدد الأعمدة (للورقة A4)','1')}${nf_('gap','المسافة بين الملصقات (مم)')}
-    </div>
-    <fieldset style="margin-top:14px"><legend>الرمز ومحتواه</legend><div class="grid3">
-      <label class="f">نوع الرمز${so('fmt',[['qr','QR (ثنائي الأبعاد)'],['CODE128','باركود CODE 128'],['EAN13','باركود EAN-13 (13 رقمًا فقط)'],['auto','باركود تلقائي']])}</label>
-      ${qr?`<label class="f">مستوى تصحيح الخطأ${so('ec',[['L','L — الأصغر حجمًا'],['M','M — متوازن'],['Q','Q — أعلى'],['H','H — الأقوى']])}</label>`+nf_('qz','الهامش الأبيض حول QR (وحدات)','1'):''}
-      <label class="f">محتوى الرمز${so('codeMode',[['tpl','قالب مفتاح{قيمة}'],['barcode','نص الباركود المسجّل كما هو']])}</label>
-      <label class="f span2">قالب المحتوى<input data-lb="codeTpl" dir="ltr" maxlength="120" value="${esc(L.codeTpl)}" ${L.codeMode==='tpl'?'':'disabled'}></label>
-    </div>
-    <p class="muted" style="margin-top:8px">تُملأ الأقواس الفارغة بقيمة القطعة حسب المفاتيح المعرّفة في «تنسيق الباركود» (w الوزن، k العيار، t الأجرة، g إجمالي الشراء، s الرقم التسلسلي). مثال: <span class="mono">w{}t{}g{}s{}</span>. إن كان الرقم التسلسلي فارغًا يُستخدم الباركود المسجّل بدلًا منه، ليُعثر على القطعة عند المسح.</p>
-    <div style="margin-top:8px"><small class="muted">المحتوى المرمَّز للقطعة في المعاينة:</small><div class="paypre mono" id="codePrev">—</div></div>
-    <div id="codeWarn"></div>
-    ${L.codeMode==='tpl'?'<small class="muted">لقراءة الوزن والأجرة والتكلفة عند إدخال الملصق، فعّل طريقة التقسيم «مفتاح{قيمة}» في تنسيق الباركود. أما البيع والبحث فيعملان بأي طريقة.</small>':''}
-    </fieldset>
-    <label class="chip gold" style="display:inline-flex;gap:8px;align-items:center;cursor:pointer;margin-top:14px"><input type="checkbox" data-lb="autoPrint" ${L.autoPrint?'checked':''}>طباعة الملصق تلقائيًا بعد حفظ كل قطعة جديدة</label>
-    <div class="row" style="margin-top:12px"><button type="button" class="btn accent" data-act="lbltest">${ic('print')}<span>طباعة ملصق تجريبي</span></button></div>
-    <details style="margin-top:14px"><summary>الطباعة المباشرة على الطابعة</summary><ol class="muted" style="margin:0;padding-inline-start:20px;line-height:1.9"><li>اجعل طابعة الملصقات هي الطابعة الافتراضية في النظام.</li><li>في نافذة الطباعة اختر «الهوامش: بلا» و«المقياس: 100%»، فمقاس الصفحة يُضبط تلقائيًا على مقاس الملصق كاملًا مع الذيل.</li><li>إن خرج الملصق مقلوبًا من الطابعة فاختر «تدوير 180° عند الطباعة» أو «قلب الذيل».</li><li>لإرسال الملصق مباشرة دون ظهور نافذة الطباعة، شغّل متصفح Chrome بالخيار <span class="mono">--kiosk-printing</span>.</li></ol></details></section>`;
+    </div></section>`;
 }
 function setLb(t){
   const L=S.settings.label,k=t.dataset.lb;
@@ -2570,9 +3096,10 @@ function setLb(t){
   }
   if(k==='codeTpl'){L.codeTpl=t.value.slice(0,120)||DEF_LABEL().codeTpl;save();paintCanvas();paintPalette();paintCodeChips();paintKv();return;}
   const v=parseFloat(latin(t.value));if(isNaN(v))return;
-  const lim={w:[10,300],h:[8,300],tail:[0,100],split:[20,80],cols:[1,10],gap:[0,20],qz:[0,8]}[k]||[0,1e6];
+  const lim={w:[10,300],h:[8,300],tail:[0,100],split:[20,80],cols:[1,10],gap:[0,20],qz:[0,8],thr:[10,95],offX:[-20,20],offY:[-20,20]}[k]||[0,1e6];
   L[k]=Math.min(lim[1],Math.max(lim[0],v));
   save();paintCanvas();
+  if(k==='thr'){const o=$('#thrv');if(o)o.textContent=L.thr+'%';}
 }
 
 /* ================= sale ================= */
@@ -2957,8 +3484,8 @@ function vPrefs(m){
 }
 function prefGeneral(body){
   const s=S.settings;
-  body.innerHTML=accountPanelHTML()+`<section class="panel"><h2>المنشأة والضريبة والأسعار</h2>
-    <div class="grid3" style="margin-top:10px"><label class="f span3">اسم المنشأة (يظهر في التقارير المطبوعة)<input id="shopIn" value="${esc(s.shop)}"></label><label class="f">رمز العملة<input id="curIn" value="${esc(cur())}"></label><label class="f">نسبة الضريبة %<input id="vatIn" type="number" step="any" min="0" value="${s.vat}"></label><label class="f">سعر الصرف (${esc(cur())} لكل دولار)<input id="fxIn" type="number" step="any" min="0" value="${s.fx||3.75}"></label><label class="f">علاوة السوق المحلي على السعر العالمي % — للجديد<input id="premIn" type="number" step="any" value="${s.premium||0}"></label><label class="f">علاوة السوق المحلي على السعر العالمي % — للمستعمل<input id="premUsedIn" type="number" step="any" value="${s.premiumUsed||0}"></label></div>
+  body.innerHTML=accountPanelHTML()+`<section class="panel"><h2>المنشأة والضريبة والأسعار</h2><p class="muted" style="margin:0">إصدار المنصة: <b>${esc(APP_VERSION)}</b> <button type="button" class="btn ghost sm" data-act="verinfo">ما الجديد</button></p>
+    <div class="grid3" style="margin-top:10px"><label class="f span3">اسم المنشأة (يظهر في التقارير المطبوعة)<input id="shopIn" value="${esc(s.shop)}"></label><label class="f">رمز العملة<input id="curIn" value="${esc(cur())}"></label><label class="f">نسبة الضريبة %<input id="vatIn" type="number" step="any" min="0" value="${s.vat}"></label><label class="f">سعر الصرف (${esc(cur())} لكل دولار)<input id="fxIn" type="number" step="any" min="0" value="${s.fx||3.75}"></label><label class="f">علاوة السوق المحلي على السعر العالمي % — للجديد<input id="premIn" type="number" step="any" value="${s.premium||0}"></label><label class="f">علاوة السوق المحلي على السعر العالمي % — للمستعمل<input id="premUsedIn" type="number" step="any" value="${s.premiumUsed||0}"></label><label class="f">فرق سعر شراء الجرام عن السوق % <small class="muted">(سالب = أقل من السوق)</small><input id="buyAdjIn" type="number" step="any" value="${s.buyAdj||0}"></label></div>
     <div style="margin-top:14px"><b>أعيرة معفاة من الضريبة</b><div class="row" style="margin-top:6px">${s.karats.map(k=>`<label class="chip gold" style="display:inline-flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" data-vfree="${esc(k)}" ${s.vatFree.includes(k)?'checked':''}>عيار ${esc(k)}</label>`).join('')}</div><small>القطع بهذه الأعيرة تُعبّأ ضريبتها بصفر، وغيرها بنسبة الضريبة الافتراضية. يمكن تعديل النسبة لكل قطعة.</small></div></section>`;
   $('#shopIn').addEventListener('change',e=>{s.shop=e.target.value.trim();save();toast('تم الحفظ');});
   $('#curIn').addEventListener('change',e=>{s.currency=e.target.value.trim()||'ر.س';save();toast('تم الحفظ');});
@@ -2966,6 +3493,7 @@ function prefGeneral(body){
   $('#fxIn').addEventListener('change',e=>{s.fx=num(e.target.value)||3.75;recomputePrices();toast('تم الحفظ');if(s.priceSrc==='auto')refreshPrices(true);});
   $('#premIn').addEventListener('change',e=>{s.premium=num(e.target.value);recomputePrices();toast('تم الحفظ');if(s.priceSrc==='auto')refreshPrices(true);});
   $('#premUsedIn').addEventListener('change',e=>{s.premiumUsed=num(e.target.value);recomputePrices();toast('تم الحفظ');if(s.priceSrc==='auto')refreshPrices(true);});
+  $('#buyAdjIn').addEventListener('change',e=>{s.buyAdj=Math.max(-50,Math.min(50,num(e.target.value)));save();toast('تم الحفظ');});
 }
 function prefCodes(body){
   const s=S.settings;
@@ -3013,7 +3541,7 @@ function openBackup(){
     <label class="f">أو اختر ملفًا<input type="file" id="bkfile" accept=".json,application/json"></label>
     <p class="err" id="bkerr" role="alert"></p>
     <div class="row end"><button class="btn ghost" data-act="closedlg">إغلاق</button><button class="btn ghost" data-act="bkcopy">نسخ النص</button><button class="btn" data-act="bkrestore">استعادة</button></div></div>`);
-  $('#bk').value=JSON.stringify(S);
+  $('#bk').value=JSON.stringify(Object.assign({appVersion:APP_VERSION},S));
   $('#bkfile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('#bk').value=String(r.result);};r.readAsText(f);});
   d.showModal();
 }
@@ -3031,6 +3559,20 @@ document.addEventListener('click',async e=>{
   const a=b.dataset.act,id=b.dataset.id;
   switch(a){
     case 'nav':go(b.dataset.v);break;
+    case 'verinfo':showWhatsNew(true);break;
+    case 'pubhelp':openPublishHelp();break;
+    case 'ltab':{ED.tab=b.dataset.v;document.querySelectorAll('#lblsec .lpane').forEach(p0=>{p0.hidden=p0.dataset.pane!==ED.tab;});document.querySelectorAll('#lblsec .ltabs button').forEach(t0=>t0.setAttribute('aria-selected',String(t0.dataset.v===ED.tab)));break;}
+    case 'edredo':edRedo();break;
+    case 'etgl':{const k=b.dataset.k;ED[k]=k==='ruler'?ED.ruler===false:!ED[k];b.setAttribute('aria-pressed',String(k==='ruler'?ED.ruler!==false:!!ED.grid));const c0=document.querySelector('[data-ed="'+k+'"]');if(c0)c0.checked=k==='ruler'?ED.ruler!==false:!!ED.grid;paintCanvas();break;}
+    case 'lblform':printLabels([sampleForLabel()],($('#lcp')||{}).value||1);break;
+    case 'prtab':prefTab='printer';render();break;
+    case 'dectoggle':{const dc=draft&&draft._dec;if(dc){dc.open=!dc.open;paintDec($('#pf'),draft);}break;}
+    case 'decclr':{const dc=draft&&draft._dec;if(dc){Object.keys(dc.map).forEach(i=>{if(dc.map[i]===b.dataset.f)delete dc.map[i];});if(dc.serialMode==='token'&&!Object.values(dc.map).includes('serial'))dc.serialMode='combo';dc.dirty=true;decRefresh();}break;}
+    case 'deccut':decCut(+b.dataset.i);break;
+    case 'deckind':{const dc=draft&&draft._dec;if(dc){dc.kind='fixed';dc.cuts=defaultCuts(dc.code);dc.seps='';dc.tokens=tokenize(dc.code,{kind:'fixed',cuts:dc.cuts});dc.map=decGuessMap(dc);dc.dirty=true;decRefresh();}break;}
+    case 'decparse':decParseTyped();break;
+    case 'decsave':{const dc=draft&&draft._dec;if(dc){decLearn(dc);save();paintDec($('#pf'),draft);}break;}
+    case 'decreset':{if(draft&&draft._dec){const code=draft._dec.code;draft._dec=decAuto(code);draft._dec.open=true;decRefresh();}break;}
     case 'hookadd':openHookDlg();break;
     case 'hookedit':openHookDlg(id);break;
     case 'hookdel':if(await ask('حذف هذا الربط؟','حذف')){S.settings.integ.hooks=S.settings.integ.hooks.filter(h=>h.id!==id);OB=obLoad().filter(i=>i.hook!==id);obSave();save();render();}break;
@@ -3188,6 +3730,12 @@ main.addEventListener('change',e=>{
   else if(t.id==='einMode'){S.settings.label.codeMode=t.value==='tpl'?'tpl':'barcode';save();paintInline();paintCanvas();const i=$('#einTxt');if(i&&!i.disabled)i.focus();}
   else if(t.id==='per'){period=t.value;render();}
   else if(t.dataset.pr!==undefined){setPr(t);}
+  else if(t.dataset.inc!==undefined){const bf=S.settings.bfmt;bf.genOff=bf.genOff||[];const n=t.dataset.inc,i=bf.genOff.indexOf(n);if(t.checked&&i>=0)bf.genOff.splice(i,1);else if(!t.checked&&i<0)bf.genOff.push(n);save();const f0=$('#pf');if(f0)f0.dispatchEvent(new Event('recalc'));}
+  else if(t.dataset.ed==='ruler'||t.dataset.ed==='grid'){ED[t.dataset.ed]=t.checked;const bt=document.querySelector('[data-act="etgl"][data-k="'+t.dataset.ed+'"]');if(bt)bt.setAttribute('aria-pressed',String(t.checked));paintCanvas();}
+  else if(t.id==='einCodeAdd'){if(t.value)toggleCodeField(t.value);}
+  else if(t.dataset.dti!==undefined){decAssign(+t.dataset.dti,t.value||null);}
+  else if(t.dataset.dser!==undefined){decSetSerial(t.value);}
+  else if(t.dataset.dbm!==undefined){decSetBarcode(t.value);}
   else if(t.dataset.ia!==undefined){S.settings.integ.acct[t.dataset.ia]=t.value.trim().slice(0,60);save();}
   else if(t.dataset.fd!==undefined){const F=S.settings.integ.feed,k=t.dataset.fd;F[k]=t.type==='checkbox'?t.checked:t.value;S.settings.integ=normInteg(S.settings.integ);save();}
   else if(t.dataset.hk!==undefined){const h=S.settings.integ.hooks.find(x=>x.id===t.dataset.hk);if(h){h.on=t.checked;save();}}
@@ -3216,6 +3764,74 @@ main.addEventListener('change',e=>{
 $('#dlg').addEventListener('input',e=>{const t=e.target;if(t.dataset&&t.dataset.rep&&(t.type==='date'))return;});
 $('#dlg').addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.rep){rep[t.dataset.rep]=t.value;if(t.dataset.rep==='from'||t.dataset.rep==='to')rep.pn='';paintReport();}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)stopScanner();});
+
+
+/* ================= version & what's new ================= */
+const APP_VERSION='2.7.0';
+const CHANGELOG=[
+ {v:'2.7.0',date:'2026-11-07',title:'رقم الإصدار وسجل التغييرات',items:[
+  'رقم الإصدار يظهر تحت حالة المزامنة، وبالضغط عليه يُفتح هذا السجل. ويظهر هذا المربع مرة واحدة تلقائيًا بعد كل تحديث.',
+  'رسالة الدخول داخل معاينة claude.ai صارت واضحة: الدخول والمزامنة لا يعملان هناك، مع شرح مختصر للنشر على رابطك الخاص وزر «المتابعة بدون حساب».',
+  'رقم الإصدار يُسجَّل في النسخة الاحتياطية وملف JSON وأحداث Webhook.']},
+ {v:'2.6.0',title:'الباركود القديم وسعر الشراء التلقائي',items:[
+  'الباركود القديم الذي يحمل بيانات فقط (مثل الوزن) يبقى حقله فارغًا وتُولِّد المنصة باركودًا جديدًا يجمع كل الحقول، ويُحفظ القديم مرجعًا.',
+  'فهم نص الملصق بصيغة T45/G375/W1.95 وحفظ التنسيق للمرات القادمة، وإمكانية لصق أرقام الملصق المطبوعة وتحليلها.',
+  'سعر غرام الشراء يُملأ تلقائيًا بسعر السوق للعيار مع فرق % قابل للضبط ويمكن تعديله.',
+  'الحقول الرئيسية في سطر واحد والتلميح تحت كل حقل، وخانة «في الكود» لاختيار الحقول التي تدخل في الباركود المُولَّد.']},
+ {v:'2.5.0',title:'مصمم الملصق الجديد',items:[
+  'تبويبات: الملصق، التصميم، النموذج، الطباعة، مع مسطرة وشبكة والمحاذاة والتوزيع فوق المعاينة.',
+  'النقر المزدوج على أي عنصر يعرض كل حقوله وقيمه ويسمح بتعديلها في مكانها (مثل اسم المنشأة).',
+  'عنصر إطار، ونص مائل ومسطّر، وإعادة بعد التراجع، وحساسية الرمادي وإزاحة موضع الطباعة.']},
+ {v:'2.4.0',title:'تفسير الباركود',items:[
+  'لوحة تفسير الباركود بالسحب والإفلات لربط أجزاء الكود الخارجي بحقوله، وحفظ التنسيقات.',
+  'مصدر كل قيمة يظهر تحت حقلها، ومعادلة القيم المحسوبة.']},
+ {v:'2.3.0',title:'التكامل مع البرامج والمتاجر',items:[
+  'Webhook موقَّع مع إعادة المحاولة عند انقطاع الاتصال، وتصدير قيود يومية وفواتير ومصروفات.',
+  'ملفات منتجات لـ Shopify وWooCommerce بكل بيانات القطعة.']},
+ {v:'2.2.0',title:'الطباعة المباشرة',items:[
+  'طباعة مباشرة على الطابعة بلغات TSPL وZPL وESC/POS عبر USB والمنفذ التسلسلي وBLE، وعبر وسيط محلي للشبكة وطابعة النظام.']},
+ {v:'2.1.0',title:'حساب سحابي',items:[
+  'تسجيل الدخول برقم الجوال ورمز تحقق وكلمة مرور، وحفظ البيانات في Supabase لكل رقم، ومزامنة بين الأجهزة مع نسخ تاريخية.']},
+ {v:'2.0.0',title:'الجرد والتقارير',items:[
+  'الجرد بماسح الباركود، وتقارير حسب اليوم والأسبوع والشهر والأرباع والسنة.',
+  'الإعدادات بتبويبات، وإدخال القطع بالتتابع، والإشعارات فوق أي نافذة.']},
+ {v:'1.0.0',title:'الإصدار الأول',items:[
+  'المخزون والبيع والحسابات، وتنسيقات الباركود، والأجرة لكل جرام، والفئات، والطباعة الجماعية.']}
+];
+const lsSeenVer=()=>{try{return localStorage.getItem('jard.seenVer');}catch(e){return null;}};
+function paintVersion(){
+  const b=$('#verBtn');if(!b)return;
+  b.textContent='الإصدار '+APP_VERSION;
+  b.classList.toggle('new',lsSeenVer()!==APP_VERSION);
+}
+function showWhatsNew(force){
+  const dg=$('#dlg');
+  if(!force&&dg.open)return;
+  try{localStorage.setItem('jard.seenVer',APP_VERSION);}catch(e){}
+  const cur_=CHANGELOG[0],old=CHANGELOG.slice(1);
+  const d=dlg(`<div class="modal"><h2>ما الجديد في الإصدار ${esc(APP_VERSION)}</h2><p class="muted">${esc(cur_.title)}${cur_.date?' · '+esc(dfmt(cur_.date)):''}</p>
+    <ul class="clog">${cur_.items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul>
+    ${old.length?`<details style="margin-top:10px"><summary>الإصدارات السابقة</summary>${old.map(v=>`<h3 style="margin:12px 0 4px;font-size:14px">الإصدار ${esc(v.v)} — ${esc(v.title)}</h3><ul class="clog">${v.items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul>`).join('')}</details>`:''}
+    <div class="row end" style="margin-top:12px"><button type="button" class="btn accent" data-act="closedlg">حسنًا</button></div></div>`,'whatsnew');
+  d.showModal();paintVersion();
+}
+function maybeShowWhatsNew(){
+  const au=$('#authScr');
+  if(lsSeenVer()===APP_VERSION||(au&&!au.hidden))return;
+  showWhatsNew(false);
+}
+const inPreview=()=>{try{return /(^|\.)(claude\.ai|claudeusercontent\.com|claude\.site|anthropic\.com)$/i.test(location.hostname||'');}catch(e){return false;}};
+function openPublishHelp(){
+  const d=dlg(`<div class="modal"><h2>كيف يعمل تسجيل الدخول والمزامنة؟</h2>
+    <p>معاينة claude.ai تمنع الاتصال بالخوادم الخارجية، لذلك يعمل الدخول برقم الجوال والمزامنة بعد نشر الملف على رابطك الخاص:</p>
+    <ol class="clog"><li>نزّل الملف <span class="mono">index.html</span> (أو الحزمة <span class="mono">jard-gold-site.zip</span>) من رسالة المحادثة.</li>
+      <li>الأسهل: افتح <span class="mono" dir="ltr">app.netlify.com/drop</span> وأفلت الملف، فتحصل على رابط عام.</li>
+      <li>أو انشره على Vercel بالأمر <span class="mono" dir="ltr">npx vercel --prod</span> داخل مجلد الملف، أو على GitHub Pages.</li>
+      <li>افتح الرابط الجديد وسجّل الدخول. بياناتك المحلية الحالية يمكن رفعها إلى حسابك عند أول دخول.</li></ol>
+    <p class="hint">ليصل رمز التحقق فعّل مزوّد الرسائل من Supabase: Authentication ← Providers ← Phone. وحتى ذلك الحين استخدم «المتابعة بدون حساب».</p>
+    <div class="row end" style="margin-top:12px"><button type="button" class="btn accent" data-act="closedlg">حسنًا</button></div></div>`);
+  d.showModal();
+}
 
 /* ================= cloud: phone login + Supabase sync ================= */
 const CLOUD={url:'https://ttycfyzvqabsspcghkuf.supabase.co',key:'sb_publishable_1-M55q3VKiGKOLDFrrv9aw_v9yuaI9Z'};
@@ -3260,7 +3876,8 @@ async function cloudFresh(){
 }
 function authErr(e){
   const m=String(e&&e.message||''),c=String(e&&e.code||'');
-  if(e&&e.net)return 'تعذّر الاتصال بالخادم. تحقق من الإنترنت. (الدخول لا يعمل داخل معاينة claude.ai، افتح الرابط المنشور.)';
+  auth.netErr=!!(e&&e.net);
+  if(e&&e.net)return inPreview()?'الدخول برقم الجوال لا يعمل داخل معاينة claude.ai لأنها تمنع الاتصال بالخوادم الخارجية. انشر الملف على رابطك الخاص (دقيقة واحدة)، أو تابع الآن بدون حساب.':'تعذّر الاتصال بالخادم. تحقق من الإنترنت. وإن كنت داخل معاينة claude.ai فالدخول لا يعمل هناك، افتح الرابط المنشور.';
   if(e&&(e.status===429||/rate_limit|too many|security purposes/i.test(m+c)))return 'تجاوزت عدد المحاولات المسموح. انتظر دقيقة ثم أعد المحاولة.';
   if(/sms_send_failed|provider|twilio|messagebird|vonage|textlocal|phone_provider/i.test(m+c)||(e&&e.status>=500&&/otp|sms/i.test(m)))return 'خدمة الرسائل النصية غير مفعّلة بعد على الخادم. فعّل مزوّد SMS من إعدادات Supabase ثم أعد المحاولة.';
   if(/otp_expired|expired|invalid.*token|token.*invalid|otp/i.test(m+c))return 'رمز التحقق غير صحيح أو منتهي. اطلب رمزًا جديدًا.';
@@ -3332,7 +3949,7 @@ async function cloudPush(){
         const rows=await cfetch('/rest/v1/jard_state?select=version,data,updated_at,device&user_id=eq.'+uid);
         if(!rows||!rows[0]){cloud.base=0;await cloudInsert();}
         else if(rows[0].version===cloud.base){/* لا تغيير فعلي */ cloud.dirty=cloud.seq!==seq;}
-        else{cloud.pendingRow=rows[0];setStatus('conflict');toast('توجد نسخة أحدث على حسابك. اضغط حالة المزامنة لحل التعارض.','bad');if(!$('#dlg').open)openConflict(rows[0]);}
+        else{cloud.pendingRow=rows[0];setStatus('conflict');toast('توجد نسخة أحدث على حسابك. اضغط حالة المزامنة لحل التعارض.','bad');if(!$('#dlg').open||$('#dlg').classList.contains('whatsnew'))openConflict(rows[0]);}
       }
     }
     if(cloud.status==='saving')setStatus('idle');
@@ -3408,7 +4025,7 @@ async function cloudStart(){
   cloud.lastSync=Date.now();
   clearInterval(cloud.poll);cloud.poll=setInterval(()=>{cloudPoll();},30000);
   paintPill();
-  if(cloud.status==='conflict'&&cloud.pendingRow)setTimeout(()=>{if(!$('#dlg').open)openConflict(cloud.pendingRow);},50);
+  if(cloud.status==='conflict'&&cloud.pendingRow)setTimeout(()=>{if(!$('#dlg').open||$('#dlg').classList.contains('whatsnew'))openConflict(cloud.pendingRow);},50);
 }
 function cloudStartOffline(){
   const uid=cloud.session.user.id;
@@ -3494,13 +4111,13 @@ function accountPanelHTML(){
 }
 
 /* ---- auth screen ---- */
-const auth={step:'phone',phone:'',intent:'login',busy:false,err:'',info:'',cool:0,coolT:null};
+const auth={step:'phone',phone:'',intent:'login',busy:false,err:'',info:'',cool:0,coolT:null,netErr:false};
 function showAuth(step){
   const el=$('#authScr');if(!el||!cloudCfg())return;
   auth.step=step||'phone';auth.err='';auth.info='';auth.busy=false;
   el.hidden=false;paintAuth();
 }
-function hideAuth(){const el=$('#authScr');if(el)el.hidden=true;}
+function hideAuth(){const el=$('#authScr');if(el)el.hidden=true;setTimeout(maybeShowWhatsNew,450);}
 function startCool(){auth.cool=60;clearInterval(auth.coolT);auth.coolT=setInterval(()=>{auth.cool--;if(auth.cool<=0){clearInterval(auth.coolT);auth.cool=0;}const b=$('#authResend');if(b){b.disabled=auth.cool>0;b.textContent=auth.cool>0?'إعادة الإرسال بعد '+auth.cool+' ث':'إعادة إرسال الرمز';}},1000);}
 function paintAuth(){
   const el=$('#authScr');if(!el||el.hidden)return;
@@ -3512,8 +4129,11 @@ function paintAuth(){
   else if(a.step==='pwlogin'){title='الدخول بكلمة المرور';body=`${tabs}${phoneIn}<label class="f">كلمة المرور<input name="password" type="password" autocomplete="current-password"></label><button class="btn accent lg" type="submit" ${a.busy?'disabled':''}>${a.busy?'جارٍ الدخول…':'دخول'}</button><button type="button" class="btn ghost" data-au="forgot">نسيت كلمة المرور؟ (دخول برمز تحقق)</button>`;}
   else if(a.step==='otp'){title='أدخل رمز التحقق';body=`<p class="muted">أُرسل رمز إلى <b dir="ltr">${esc(a.phone)}</b></p><label class="f">الرمز<input name="code" inputmode="numeric" autocomplete="one-time-code" dir="ltr" maxlength="8" placeholder="______" style="letter-spacing:6px;font-size:22px;text-align:center"></label><button class="btn accent lg" type="submit" ${a.busy?'disabled':''}>${a.busy?'جارٍ التحقق…':'تأكيد'}</button><div class="row" style="justify-content:space-between"><button type="button" class="btn ghost sm" id="authResend" data-au="resend" ${a.cool>0?'disabled':''}>${a.cool>0?'إعادة الإرسال بعد '+a.cool+' ث':'إعادة إرسال الرمز'}</button><button type="button" class="btn ghost sm" data-au="change">تغيير الرقم</button></div>`;}
   else{title=a.intent==='reset'?'عيّن كلمة مرور جديدة':'عيّن كلمة مرور لحسابك';body=`<p class="muted">تستخدمها للدخول لاحقًا بدل الرمز.</p><label class="f">كلمة المرور (8 أحرف على الأقل)<input name="p1" type="password" autocomplete="new-password"></label><label class="f">تأكيد كلمة المرور<input name="p2" type="password" autocomplete="new-password"></label><button class="btn accent lg" type="submit" ${a.busy?'disabled':''}>${a.busy?'جارٍ الحفظ…':'حفظ ومتابعة'}</button>`;}
-  const guest=(a.step==='phone'||a.step==='pwlogin')?'<button type="button" class="btn ghost" data-au="guest">المتابعة بدون حساب (على هذا الجهاز فقط)</button>':'';
-  el.innerHTML=`<div class="authcard"><div class="authbrand"><svg viewBox="0 0 34 26" width="34" height="26" aria-hidden="true"><g fill="#C9A227"><rect x="0" width="3" height="26"/><rect x="5" width="1.5" height="26"/><rect x="9" width="4" height="26"/><rect x="15" width="1.5" height="26"/><rect x="19" width="3" height="26"/><rect x="24" width="1.5" height="26"/><rect x="28" width="2.5" height="26"/><rect x="32.5" width="1.5" height="26"/></g></svg>جرد الذهب</div><h2>${title}</h2><form id="authForm" novalidate>${body}${err}${info}</form>${guest}</div>`;
+  const pv=inPreview();
+  const banner=pv?'<div class="warn" role="note"><b>أنت داخل معاينة claude.ai.</b> تسجيل الدخول بالجوال والمزامنة لا يعملان هنا، وسيعملان بعد نشر الملف على رابطك الخاص. يمكنك المتابعة الآن بدون حساب.<br><button type="button" class="btn ghost sm" data-au="help" style="margin-top:6px">كيف أنشر الملف؟</button></div>':'';
+  const helpBtn=(a.netErr&&!pv)?'<button type="button" class="btn ghost sm" data-au="help">كيف أنشر الملف على رابط؟</button>':'';
+  const guest=(a.step==='phone'||a.step==='pwlogin')?`<button type="button" class="btn ${pv?'accent lg':'ghost'}" data-au="guest">المتابعة بدون حساب (على هذا الجهاز فقط)</button>`:'';
+  el.innerHTML=`<div class="authcard"><div class="authbrand"><svg viewBox="0 0 34 26" width="34" height="26" aria-hidden="true"><g fill="#C9A227"><rect x="0" width="3" height="26"/><rect x="5" width="1.5" height="26"/><rect x="9" width="4" height="26"/><rect x="15" width="1.5" height="26"/><rect x="19" width="3" height="26"/><rect x="24" width="1.5" height="26"/><rect x="28" width="2.5" height="26"/><rect x="32.5" width="1.5" height="26"/></g></svg>جرد الذهب</div><h2>${title}</h2>${banner}<form id="authForm" novalidate>${body}${err}${info}</form>${helpBtn}${guest}</div>`;
   const first=el.querySelector('input');if(first&&!a.busy)first.focus();
 }
 function authVal(n){const i=$('#authForm [name="'+n+'"]');return i?i.value:'';}
@@ -3576,13 +4196,15 @@ async function authFinish(){
       case 'resend':if(auth.cool<=0){auth.step='phone';authSend();}break;
       case 'change':auth.step='phone';auth.err='';auth.intent='login';paintAuth();break;
       case 'guest':lsSet(CK.guest,1);hideAuth();render();paintPill();break;
+      case 'help':openPublishHelp();break;
     }
   });
 })();
 
 /* ================= init ================= */
 fromHash();render();
-cloudBoot().then(()=>{fromHash();render();paintPill();prnAutoReconnect();});
+paintVersion();
+cloudBoot().then(()=>{fromHash();render();paintPill();paintVersion();prnAutoReconnect();maybeShowWhatsNew();});
 refreshPrices();
 setInterval(()=>{if(S.settings.priceSrc==='auto')refreshPrices(true);},300000);
 })();
