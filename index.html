@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.8.0">
+<meta name="app-version" content="2.10.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -488,6 +488,13 @@ button.kchip:hover{filter:brightness(1.15)}
 .elrow{align-items:flex-start!important}
 .fchip.used>button:first-child::after{content:none!important}
 .dim .scan,.scan.dim{opacity:.85}
+
+.fchip.only .qrt{padding:3px 12px;font-size:13px;color:var(--ink);border-inline-start:0!important}
+.fchip.only.incode .qrt{background:var(--ink)!important;color:var(--bg)!important}
+table.dect{width:100%}
+table.dect select{min-width:160px;min-height:34px}
+table.dect tr.unm td{background:rgba(230,160,0,.12)}
+.lside select{width:100%;text-overflow:clip}
 </style>
 </head>
 <body>
@@ -529,7 +536,24 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const AR='٠١٢٣٤٥٦٧٨٩';
 const latin=s=>String(s==null?'':s).replace(/[٠-٩]/g,d=>AR.indexOf(d));
 const num=v=>{const n=parseFloat(latin(v).replace(/[٬,]/g,'').replace('٫','.'));return isNaN(n)?0:n;};
-const cleanCode=s=>latin(s).trim().replace(/\s+/g,' ');
+const KBD_AR2EN={'ض':'q','ص':'w','ث':'e','ق':'r','ف':'t','غ':'y','ع':'u','ه':'i','خ':'o','ح':'p','ج':'[','د':']','ش':'a','س':'s','ي':'d','ب':'f','ل':'g','ا':'h','ت':'j','ن':'k','م':'l','ك':';','ط':"'",'ئ':'z','ء':'x','ؤ':'c','ر':'v','ى':'n','ة':'m','و':',','ز':'.','ظ':'/'};
+const KBD_SEQ=[['لا','b'],['لإ','T'],['لأ','G'],['لآ','B']];
+const KBD_SHIFT={'َ':'Q','ً':'W','ُ':'E','ٌ':'R','إ':'Y','ِ':'A','ٍ':'S','أ':'H','ـ':'J','،':'K','ْ':'X','آ':'N'};
+let lastKbdFix=null;
+function fixKbd(raw){
+  const t=String(raw||'');
+  if(!/[\u0600-\u06FF]/.test(t))return t;
+  let m=t;KBD_SEQ.forEach(([a,b])=>{m=m.split(a).join(b);});
+  m=m.replace(/[\u0600-\u06FF]/g,ch=>KBD_AR2EN[ch]||KBD_SHIFT[ch]||ch);
+  const hadBr=/[<>]/.test(t);
+  if(hadBr)m=m.replace(/</g,'{').replace(/>/g,'}');
+  if(/[\u0600-\u06FF]/.test(m))return t;
+  const kv=/[a-zA-Z]+\{[^}]*\}/.test(m);
+  const kvs=m.split(/[\s\/\-*|,;:+]+/).filter(Boolean),kvsOk=kvs.length>0&&kvs.every(x=>/^[A-Za-z]{1,3}\d[\d.]*$/.test(x));
+  const num_=/^\d+([.]\d+)?$/.test(m);
+  return (kv||kvsOk||num_)?m:t;
+}
+const cleanCode=s=>{const a=latin(s).trim().replace(/\s+/g,' '),f=fixKbd(a);if(f!==a){lastKbdFix={from:a,to:f};return f;}return a;};
 const rd=(n,d)=>{const k=Math.pow(10,d);return Math.round((+n||0)*k)/k;};
 const r2=n=>rd(n,2),r3=n=>rd(n,3);
 const nf=new Intl.NumberFormat('en-US',{maximumFractionDigits:2});
@@ -593,13 +617,13 @@ function normLabel(raw){
   nz('w',10,300);nz('h',8,300);nz('tail',0,100);nz('split',20,80);nz('cols',1,10);nz('gap',0,20);nz('qz',0,8);nz('thr',10,95);nz('offX',-20,20);nz('offY',-20,20);
   lb.tpl=lb.tpl==='std'?'std':'tag';lb.tailSide=lb.tailSide==='left'?'left':'right';lb.layout=lb.layout==='sheet'?'sheet':'roll';
   lb.autoPrint=!!lb.autoPrint;lb.fmt=['qr','auto','CODE128','EAN13'].includes(lb.fmt)?lb.fmt:'qr';lb.ec=['L','M','Q','H'].includes(lb.ec)?lb.ec:'M';
-  lb.codeMode=lb.codeMode==='barcode'?'barcode':'tpl';lb.codeTpl=typeof lb.codeTpl==='string'&&lb.codeTpl.trim()?lb.codeTpl.slice(0,120):dl.codeTpl;
+  lb.codeMode=lb.codeMode==='barcode'?'barcode':'tpl';lb.codeTpl=typeof lb.codeTpl==='string'?lb.codeTpl.slice(0,120):dl.codeTpl;
   lb.printRot=Number(lb.printRot)===180?180:0;
   const cl=(v,a,b,d)=>{v=parseFloat(v);return isNaN(v)?d:Math.min(b,Math.max(a,v));};
   lb.els=(Array.isArray(lb.els)?lb.els:[]).filter(e=>e&&['field','text','code','line','rect'].includes(e.t)).map(e=>{
     let t=e.t,text=String(e.text||'');
     if(t==='field'){t='text';text=TPL_DEF[e.k]||(e.k?'{'+e.k+'}':'');}
-    return{id:e.id||uid(),t,text,x:cl(e.x,-500,500,0),y:cl(e.y,-500,500,0),w:cl(e.w,0.3,300,10),h:cl(e.h,0.2,300,3),r:cl(e.r,-360,360,0),fs:cl(e.fs,3,40,6),b:!!e.b,i:!!e.i,u:!!e.u,bw:cl(e.bw,0.1,3,0.3),al:['left','center','right'].includes(e.al)?e.al:'left',wr:!!e.wr};
+    return{id:e.id||uid(),t,text,x:cl(e.x,-500,500,0),y:cl(e.y,-500,500,0),w:cl(e.w,0.3,300,10),h:cl(e.h,0.2,300,3),r:cl(e.r,-360,360,0),fs:cl(e.fs,3,40,6),b:!!e.b,i:!!e.i,u:!!e.u,auto:e.auto!==false,bw:cl(e.bw,0.1,3,0.3),al:['left','center','right'].includes(e.al)?e.al:'left',wr:!!e.wr};
   });
   if(!lb.els.length)lb.els=defaultEls(lb,lb.tpl);
   ['items','pad','al','digits','dfs','bh','bw','qrs','div'].forEach(k=>{delete lb[k];});
@@ -770,6 +794,7 @@ function findPiece(code){
   }
   const r=parseCode(code);
   if(r.vals.serial)p=S.pieces.find(x=>(x.serial&&x.serial===r.vals.serial)||x.barcode===r.vals.serial);
+  if(!p){const c0=S.pieces.filter(x=>x.extCode&&x.extCode===code);p=c0.find(x=>x.status==='in')||c0[0];}
   return p||null;
 }
 
@@ -849,12 +874,13 @@ function codeHasKarat(code){
   if(pv.karat&&S.settings.karats.includes(String(pv.karat)))return true;
   return !!(kvKarat()&&parseCode(code).vals.karat!=null);
 }
-function handleCode(ctx,raw){
+function handleCode(ctx,raw,forceNew){
   const code=cleanCode(raw);if(!code)return;
+  if(lastKbdFix&&lastKbdFix.to===code&&ctx!=='form'){toast('صُحِّح الباركود من لوحة المفاتيح العربية');}
   if(ctx==='form'){const i=$('#pf [name="barcode"]');if(i){i.value=code;applyParsed(code);}return;}
-  const p=findPiece(code);
+  const p0=findPiece(code),p=(forceNew&&p0&&p0.extCode===code&&p0.barcode!==code)?null:p0;
   if(ctx==='intake'){
-    if(p){beep();toast('هذا الباركود موجود مسبقًا','bad');draft=clonePiece(p);editingExisting=true;renderDraft();return;}
+    if(p){beep();const isExt=!!(p.extCode&&p.extCode===code&&p.barcode!==code);toast(isExt?'سبق إدخال هذا الباركود القديم — فتحتُ القطعة المسجّلة بدل تكرار الجلب':'هذا الباركود موجود مسبقًا','bad');draft=clonePiece(p);editingExisting=true;draft._extDup=isExt?code:'';renderDraft();return;}
     if(!selDone()&&!codeHasKarat(code)){beep(false);toast('أكمل اختيار العيار والفئة والصنف والحالة أولًا ثم امسح (أو امسح باركودًا يحمل العيار)','bad');return;}
     draft=draftFromCode(code);if(!draft){beep(false);return;}beep();editingExisting=false;renderDraft();
   }else if(ctx==='stock'){
@@ -895,12 +921,12 @@ $('#scanDlg').addEventListener('close',()=>{clearInterval(scanTimer);if(scanStre
 
 
 /* ================= direct printing (USB / serial / BLE / network bridge) ================= */
-const PR_DEF=()=>({mode:'browser',lang:'tspl',dpi:203,media:'gap',gap:2,density:8,speed:4,invert:false,baud:115200,bridgeUrl:'http://localhost:9101',ip:'',port:9100,queue:'',token:'',usbId:''});
+const PR_DEF=()=>({mode:'browser',lang:'tspl',dpi:203,media:'gap',gap:2,density:8,speed:4,invert:false,baud:115200,bridgeUrl:'http://localhost:9101',ip:'',port:9100,queue:'',token:'',usbId:'',eplDir:''});
 function normPrinter(p){
   const o=Object.assign(PR_DEF(),p&&typeof p==='object'?p:{});
   const cl=(v,a,b,d)=>{v=parseFloat(v);return isNaN(v)?d:Math.min(b,Math.max(a,v));};
   o.mode=['browser','usb','serial','ble','net','queue'].includes(o.mode)?o.mode:'browser';
-  o.lang=['tspl','zpl','escpos'].includes(o.lang)?o.lang:'tspl';
+  o.lang=['tspl','zpl','escpos','epl'].includes(o.lang)?o.lang:'tspl';o.eplDir=['T','B'].includes(o.eplDir)?o.eplDir:'';
   o.dpi=[203,300,600].includes(+o.dpi)?+o.dpi:203;
   o.media=['gap','mark','cont'].includes(o.media)?o.media:'gap';
   o.gap=cl(o.gap,0,20,2);o.density=Math.round(cl(o.density,0,15,8));o.speed=Math.round(cl(o.speed,1,10,4));
@@ -1033,7 +1059,14 @@ function encESC(cv,L,PS,n){
   for(let i=0;i<n;i++){one.forEach(x=>parts.push(x));parts.push(new Uint8Array([0x0A,0x0A]));}
   return catBytes(...parts);
 }
-const encodeJob=(cv,L,PS,n)=>({tspl:encTSPL,zpl:encZPL,escpos:encESC}[PS.lang]||encTSPL)(cv,L,PS,n);
+function encEPL(cv,L,PS,n){
+  const b=canvasBits(cv,PS.invert,L.thr);
+  const gapD=PS.media==='cont'?0:Math.round(PS.gap*PS.dpi/25.4),wDots=b.bpr*8,spd=Math.max(1,Math.min(4,Math.ceil(PS.speed/2.5)));
+  const dir=PS.eplDir==='T'?'ZT\n':PS.eplDir==='B'?'ZB\n':'';
+  const head=_te.encode(`\nN\n${dir}q${wDots}\nQ${b.h},${gapD}\nS${spd}\nD${PS.density}\nR0,0\nGW0,0,${b.bpr},${b.h},`);
+  return catBytes(head,b.bits,_te.encode(`\nP${n}\n`));
+}
+const encodeJob=(cv,L,PS,n)=>({tspl:encTSPL,zpl:encZPL,escpos:encESC,epl:encEPL}[PS.lang]||encTSPL)(cv,L,PS,n);
 
 /* ---- transports ---- */
 async function prnSend(bytes,PS){
@@ -1063,6 +1096,41 @@ async function prnSend(bytes,PS){
   }
 }
 const BLE_SVCS=['0000ff00-0000-1000-8000-00805f9b34fb','0000fff0-0000-1000-8000-00805f9b34fb','0000ffe0-0000-1000-8000-00805f9b34fb','49535343-fe7d-4ae5-8fa9-9fafd205e455','e7810a71-73ae-499d-8c15-faa9aef0c3f2','000018f0-0000-1000-8000-00805f9b34fb','0000ae30-0000-1000-8000-00805f9b34fb'];
+async function usbAttach(dev,PS){
+  await dev.open();if(!dev.configuration)await dev.selectConfiguration(1);
+  let pick=null;
+  for(const itf of dev.configuration.interfaces)for(const alt of itf.alternates){const ep=alt.endpoints.find(e=>e.direction==='out'&&e.type==='bulk');if(ep&&(!pick||alt.interfaceClass===7))pick={itf,alt,ep};}
+  if(!pick)throw new Error('لم يُعثر على قناة إرسال في هذا الجهاز.');
+  try{await dev.claimInterface(pick.itf.interfaceNumber);}catch(e){throw new Error('تعذّر حجز الجهاز. على ويندوز استخدم «طابعة النظام عبر الوسيط» (تدعم EPL أيضًا) أو ثبّت تعريف WinUSB للطابعة، وأغلق أي برنامج آخر يستخدمها.');}
+  if(pick.alt.alternateSetting)await dev.selectAlternateInterface(pick.itf.interfaceNumber,pick.alt.alternateSetting);
+  PRN.usb={dev,ep:pick.ep.endpointNumber};
+  PRN.name=[dev.manufacturerName,dev.productName].filter(Boolean).join(' ')||('USB '+dev.vendorId.toString(16));
+  PRN.id=dev.serialNumber?(String(dev.manufacturerName||'USB').split(' ')[0]+'-USB-'+dev.serialNumber):'';
+  PS.usbId=dev.vendorId+':'+dev.productId;
+  if(dev.vendorId===0x0A5F&&PS.lang==='tspl'){PS.lang=/TLP|LP\s?\d|2844|2742|2443|2824|2348/i.test(dev.productName||'')?'epl':'zpl';}
+  save();
+}
+const prnReady=()=>{const PS=S.settings.printer;if(PS.mode==='usb')return !!PRN.usb;if(PS.mode==='serial')return !!PRN.port;if(PS.mode==='ble')return !!(PRN.ble&&PRN.ble.dev.gatt.connected);return true;};
+async function ensurePrinter(){
+  const PS=S.settings.printer;
+  if(prnReady())return;
+  if(PS.mode==='usb'&&PS.usbId){await prnAutoReconnect();if(prnReady())return;}
+  await prnConnect();
+}
+function prnStatusText(){
+  const PS=S.settings.printer;
+  if(!PS||PS.mode==='browser')return{t:'الطباعة عبر نافذة المتصفح. لربط طابعة مباشرة: الإعدادات ← الطابعة.',ok:false};
+  if(['usb','serial','ble'].includes(PS.mode)){
+    if(prnReady())return{t:'الطابعة: '+(PRN.name||'متصلة')+(PRN.id?' ('+PRN.id+')':'')+' — '+PS.lang.toUpperCase()+'، تُطبع بضغطة واحدة.',ok:true};
+    return{t:'الطابعة غير متصلة. عند الضغط على «طباعة» تختارها مرة واحدة ثم تُطبع مباشرة.',ok:false};
+  }
+  return{t:'الطباعة عبر الوسيط المحلي ('+PS.lang.toUpperCase()+').',ok:true};
+}
+function paintLblPrn(){const el=$('#lprnstat');if(!el)return;const s_=prnStatusText();el.className='hint '+(s_.ok?'pos':'');el.textContent=s_.t;}
+if(typeof navigator!=='undefined'&&navigator.usb&&navigator.usb.addEventListener){
+  navigator.usb.addEventListener('disconnect',e=>{if(PRN.usb&&PRN.usb.dev===e.device){PRN.usb=null;if(view==='prefs')render();paintLblPrn();}});
+  navigator.usb.addEventListener('connect',e=>{const PS=S.settings.printer;if(PS.mode==='usb'&&!PRN.usb&&PS.usbId&&(e.device.vendorId+':'+e.device.productId)===PS.usbId){usbAttach(e.device,PS).then(()=>{if(view==='prefs')render();paintLblPrn();toast('تم الاتصال بالطابعة تلقائيًا');}).catch(()=>{});}});
+}
 async function prnConnect(){
   const PS=S.settings.printer;
   if(PS.mode==='serial'){
@@ -1072,13 +1140,7 @@ async function prnConnect(){
   }else if(PS.mode==='usb'){
     if(!navigator.usb)throw new Error('المتصفح لا يدعم USB (استخدم Chrome أو Edge).');
     const dev=await navigator.usb.requestDevice({filters:[]});
-    await dev.open();if(!dev.configuration)await dev.selectConfiguration(1);
-    let pick=null;
-    for(const itf of dev.configuration.interfaces)for(const alt of itf.alternates){const ep=alt.endpoints.find(e=>e.direction==='out'&&e.type==='bulk');if(ep&&(!pick||alt.interfaceClass===7))pick={itf,alt,ep};}
-    if(!pick)throw new Error('لم يُعثر على قناة إرسال في هذا الجهاز.');
-    try{await dev.claimInterface(pick.itf.interfaceNumber);}catch(e){throw new Error('تعذّر حجز الجهاز. على ويندوز استخدم «طابعة النظام عبر الوسيط»، أو ثبّت تعريف WinUSB للطابعة.');}
-    if(pick.alt.alternateSetting)await dev.selectAlternateInterface(pick.itf.interfaceNumber,pick.alt.alternateSetting);
-    PRN.usb={dev,ep:pick.ep.endpointNumber};PRN.name=dev.productName||('USB '+dev.vendorId.toString(16));
+    await usbAttach(dev,PS);
     PS.usbId=dev.vendorId+':'+dev.productId;save();
   }else if(PS.mode==='ble'){
     if(!navigator.bluetooth)throw new Error('المتصفح لا يدعم البلوتوث (استخدم Chrome على أندرويد أو ويندوز).');
@@ -1102,9 +1164,7 @@ async function prnAutoReconnect(){
     if(PS.mode==='serial'&&navigator.serial){const ps=await navigator.serial.getPorts();if(ps.length===1){await ps[0].open({baudRate:PS.baud});PRN.port=ps[0];PRN.name='منفذ تسلسلي ('+PS.baud+')';}}
     else if(PS.mode==='usb'&&navigator.usb&&PS.usbId){
       const ds=await navigator.usb.getDevices(),dv=ds.find(d=>d.vendorId+':'+d.productId===PS.usbId);
-      if(dv){await dv.open();if(!dv.configuration)await dv.selectConfiguration(1);let pick=null;
-        for(const itf of dv.configuration.interfaces)for(const alt of itf.alternates){const ep=alt.endpoints.find(e=>e.direction==='out'&&e.type==='bulk');if(ep&&(!pick||alt.interfaceClass===7))pick={itf,alt,ep};}
-        if(pick){await dv.claimInterface(pick.itf.interfaceNumber);PRN.usb={dev:dv,ep:pick.ep.endpointNumber};PRN.name=dv.productName||'USB';}}
+      if(dv)await usbAttach(dv,PS);
     }
   }catch(e){}
 }
@@ -1125,7 +1185,9 @@ function printLabels(items,copies,Lp){
   items=items.filter(p=>p&&p.barcode);
   if(!items.length){toast('لا توجد قطع بباركود للطباعة','bad');return;}
   const n=Math.max(1,Math.min(200,parseInt(latin(copies),10)||1));
-  rawPrintLabels(items,n,L).then(()=>{toast('أُرسل إلى الطابعة');}).catch(e=>{
+  const ready=prnReady()?Promise.resolve():ensurePrinter();
+  ready.then(()=>rawPrintLabels(items,n,L)).then(()=>{toast('أُرسل إلى الطابعة');paintLblPrn();}).catch(e=>{
+    if(e&&e.name==='NotFoundError'){toast('لم تختر طابعة، فلم تتم الطباعة.','bad');return;}
     toast('تعذّرت الطباعة المباشرة: '+((e&&e.message)||e)+' — جارٍ الطباعة عبر المتصفح','bad');
     browserPrintLabels(items,copies,Lp);
   });
@@ -1144,13 +1206,13 @@ function prefPrinter(body){
   const M=[['browser','طباعة المتصفح','الأبسط: تظهر نافذة الطباعة (أو تُطبع بصمت مع Chrome بخيار --kiosk-printing). تستخدم تعريف الطابعة المثبّت.',true],
     ['net','شبكة IP / Wi‑Fi (عبر وسيط محلي)','الأسرع والأكثر استقرارًا: كابل LAN أو Wi‑Fi إلى منفذ 9100. يحتاج تشغيل الوسيط الصغير على جهاز الكاشير.',true],
     ['queue','طابعة النظام USB (عبر وسيط محلي)','لطابعة USB مثبّتة بتعريفها (ويندوز: مشاركة الطابعة). طباعة صامتة بلا نافذة.',true],
-    ['usb','USB مباشر (WebUSB)','اتصال مباشر دون وسيط. يعمل على أندرويد وChromeOS ولينكس وماك، وعلى ويندوز يحتاج تعريف WinUSB.',sup.usb],
+    ['usb','USB مباشر (WebUSB)','اتصال مباشر دون وسيط. يعمل على ماك وأندرويد وChromeOS ولينكس، وعلى ويندوز يحتاج تعريف WinUSB (أو استخدم «طابعة النظام عبر الوسيط» وهي تدعم EPL).',sup.usb],
     ['serial','منفذ تسلسلي / بلوتوث Classic','يعمل مع طابعات USB-Serial أو بلوتوث بعد اقترانها بالجهاز (يظهر كمنفذ COM) في Chrome وEdge.',sup.serial],
     ['ble','بلوتوث BLE','لطابعات BLE الصغيرة فقط. الأبطأ والأقل استقرارًا، وبعض الطابعات غير مدعومة.',sup.ble]];
   const stat=()=>{
     if(PS.mode==='browser')return {on:true,t:'طباعة المتصفح (الافتراضية)'};
     if(PS.mode==='serial')return PRN.port?{on:true,t:'متصلة: '+PRN.name}:{on:false,t:'غير متصلة'};
-    if(PS.mode==='usb')return PRN.usb?{on:true,t:'متصلة: '+PRN.name}:{on:false,t:'غير متصلة'};
+    if(PS.mode==='usb')return PRN.usb?{on:true,t:'متصلة: '+PRN.name+(PRN.id?' — '+PRN.id:'')}:{on:false,t:'غير متصلة'};
     if(PS.mode==='ble')return PRN.ble&&PRN.ble.dev.gatt.connected?{on:true,t:'متصلة: '+PRN.name}:{on:false,t:'غير متصلة'};
     return {on:null,t:PS.mode==='net'?('عبر الوسيط ← '+(PS.ip||'عنوان IP غير محدد')+':'+PS.port):('عبر الوسيط ← الطابعة «'+(PS.queue||'غير محددة')+'»')};
   };
@@ -1158,6 +1220,7 @@ function prefPrinter(body){
   const sel=(k,opts)=>`<select data-pr="${k}">${opts.map(([v,l])=>`<option value="${v}" ${String(PS[k])===String(v)?'selected':''}>${l}</option>`).join('')}</select>`;
   body.innerHTML=`<section class="panel"><h2>الطابعة وطريقة الاتصال</h2>
     <p class="muted">اختر كيف تتصل المنصة بالطابعة. التوصية: <b>شبكة IP بكابل LAN</b> أو <b>USB</b> للاستقرار والسرعة، و<b>البلوتوث</b> للمرونة فقط.</p>
+    <div class="hint" style="background:var(--goldbg);border:1px solid var(--accent);border-radius:12px;padding:12px 14px;margin:10px 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:240px"><b>Zebra TLP 2844 (لغة EPL، USB، دقة 203 DPI)</b><br><small>إعداد جاهز بضغطة واحدة: يضبط الاتصال المباشر ولغة EPL والدقة والفاصل، ثم تختار الطابعة من نافذة المتصفح مرة واحدة. بعدها يطبع زر «طباعة» مباشرة.</small></div><button type="button" class="btn accent" data-act="przebra">ربط Zebra TLP 2844 الآن</button></div>
     <div class="prmodes">${M.map(([v,t,d,ok])=>`<button type="button" class="prmode" data-act="prmode" data-v="${v}" aria-pressed="${PS.mode===v}" ${ok?'':'disabled'}><b>${t}</b><small>${d}${ok?'':' (غير مدعوم في هذا المتصفح)'}</small></button>`).join('')}</div>
     <div class="prstat"><span class="dot ${st.on===true?'on':st.on===false?'bad':''}"></span><b>${esc(st.t)}</b>
       ${needConn?`<button class="btn" data-act="prconnect">اختيار الطابعة / اتصال</button><button class="btn ghost" data-act="prdisc">قطع الاتصال</button>`:''}
@@ -1167,7 +1230,8 @@ function prefPrinter(body){
   ${PS.mode==='browser'?`<section class="panel"><h3>طباعة المتصفح الصامتة</h3><p class="muted">لإلغاء نافذة الطباعة في كل مرة: شغّل Chrome بالخيار <span class="mono">--kiosk-printing</span> وعيّن طابعة الملصقات كطابعة افتراضية في النظام وحجم الورق نفسه حجم الملصق.</p></section>`:`
   <section class="panel"><h3>لغة الطابعة وإعدادات الملصق</h3>
     <div class="grid3" style="margin-top:10px">
-      <label class="f">لغة الطابعة${sel('lang',[['tspl','TSPL (TSC / Xprinter / Gprinter / معظم الطابعات الصينية)'],['zpl','ZPL (Zebra)'],['escpos','ESC/POS (طابعات الإيصالات)']])}</label>
+      <label class="f">لغة الطابعة${sel('lang',[['tspl','TSPL (TSC / Xprinter / Gprinter / معظم الطابعات الصينية)'],['zpl','ZPL (Zebra الحديثة)'],['epl','EPL2 (Zebra TLP/LP 2844 وما شابهها)'],['escpos','ESC/POS (طابعات الإيصالات)']])}</label>
+      ${PS.lang==='epl'?`<label class="f">اتجاه الطباعة (EPL)${sel('eplDir',[['','حسب الطابعة (الافتراضي)'],['T','من الأعلى ZT'],['B','من الأسفل ZB']])}<small class="muted">إن خرجت الطباعة مقلوبة غيّر هذا الخيار أو دوّر الملصق 180° من تبويب الطباعة.</small></label>`:''}
       <label class="f">الدقة (DPI)${sel('dpi',[[203,'203 (8 نقطة/مم)'],[300,'300'],[600,'600']])}</label>
       <label class="f">نوع الورق${sel('media',[['gap','ملصقات بفواصل (Gap)'],['mark','علامة سوداء (Black mark)'],['cont','متصل']])}</label>
       <label class="f">الفاصل بين الملصقات (مم)<input data-pr="gap" type="number" step="0.5" min="0" max="20" value="${PS.gap}"></label>
@@ -1904,28 +1968,17 @@ function decSerialRefresh(f,p){
 function decPanelHTML(dec){
   const flds=decFields(),isK=dec.kind==='kv'||dec.kind==='kvs';
   const pill=dec.tpl?`<span class="pill gold">تنسيق محفوظ: ${esc(dec.tplName)}</span>`:dec.ext?'<span class="pill gold">باركود خارجي — راجع التوافق</span>':'<span class="pill">بتنسيق المنصة</span>';
-  let codeRow='';
-  if(dec.kind==='kv'){
-    codeRow=dec.tokens.map((t,i)=>`<span class="tk ${i in dec.map?'ass':''}"><span style="color:var(--accent-text)">${esc(t.key)}</span>{${esc(t.text)}}</span>`).join('');
-  }else if(dec.kind==='fixed'){
-    const c=dec.code,cuts=new Set(dec.cuts);
-    for(let i=0;i<c.length;i++){codeRow+=`<span class="ch">${esc(c[i])}</span>`;if(i<c.length-1)codeRow+=`<button type="button" class="cg ${cuts.has(i+1)?'on':''}" data-act="deccut" data-i="${i+1}" aria-label="قصّ بعد الحرف ${i+1}" title="اضغط لقصّ الباركود هنا"></button>`;}
-  }else{
-    let pos=0;dec.tokens.forEach((t,i)=>{if(t.s>pos)codeRow+=`<span class="sp">${esc(dec.code.slice(pos,t.s))}</span>`;codeRow+=`<span class="tk ${i in dec.map?'ass':''}">${esc(t.raw||t.text)}</span>`;pos=t.e;});
-    if(pos<dec.code.length)codeRow+=`<span class="sp">${esc(dec.code.slice(pos))}</span>`;
-  }
-  const toks=dec.tokens.map((t,i)=>`<div class="dtok ${i in dec.map?'ass':''}" draggable="true" data-ti="${i}" title="اسحبه إلى الحقل المناسب">${isK?`<span class="k">الرمز ${esc(t.key)}</span>`:`<span class="k">الجزء ${i+1}</span>`}<b>${esc(t.text)}</b><select data-dti="${i}" aria-label="حقل ${esc(t.text)}"><option value="">— بلا حقل —</option>${flds.map(([k,l])=>`<option value="${esc(k)}" ${dec.map[i]===k?'selected':''}>${esc(l)}</option>`).join('')}</select></div>`).join('');
-  const slots=flds.map(([k,l])=>{const ti=Object.keys(dec.map).find(i=>dec.map[i]===k),t=ti!=null?dec.tokens[+ti]:null;return `<div class="dslot ${t?'has':''}" data-df="${esc(k)}"><small>${esc(l)}</small><span class="dv">${t?esc(t.text):'<span class="muted" style="font-weight:400;font-family:inherit">اسحب هنا</span>'}</span>${t?`<button type="button" class="btn ghost sm" style="min-height:24px;padding:0 8px" data-act="decclr" data-f="${esc(k)}">إزالة</button>`:''}</div>`;}).join('');
+  const rows=dec.tokens.map((t,i)=>`<tr class="${i in dec.map?'':'unm'}"><td class="mono">${isK?esc(t.key):'الجزء '+(i+1)}</td><td class="mono" dir="ltr">${esc(t.text)}</td><td><select data-dti="${i}" aria-label="حقل ${esc(t.text)}"><option value="">— تجاهل —</option>${flds.map(([k,l])=>`<option value="${esc(k)}" ${dec.map[i]===k?'selected':''}>${esc(l)}</option>`).join('')}</select></td></tr>`).join('');
+  const cuts=dec.kind==='fixed'?`<div class="row" style="margin-top:8px;align-items:center"><span class="muted">نقاط القصّ:</span>${(dec.cuts||[]).map(c=>`<span class="chip">بعد الخانة ${c} <button type="button" class="btn ghost sm" style="min-height:22px;padding:0 6px" data-act="deccut" data-i="${c}" aria-label="حذف نقطة القصّ">✕</button></span>`).join('')||'<small class="muted">لا يوجد</small>'}<input id="cutIn" type="number" min="1" max="${Math.max(1,dec.code.length-1)}" placeholder="رقم الخانة" style="width:110px"><button type="button" class="btn ghost sm" data-act="cutadd">إضافة قصّ</button></div>`:'';
   return `<div class="dh"><h3>تفسير الباركود ${pill}</h3><button type="button" class="btn ghost sm" data-act="dectoggle">${dec.open?'إخفاء':'إظهار'}</button></div>
-  ${dec.open?`<p class="hint">الباركود الممسوح: اسحب كل جزء إلى الحقل المناسب (أو اختر الحقل من القائمة تحت الجزء). تُحدَّث القيم فورًا ويظهر مصدر كل قيمة تحت حقلها.</p>
-  <div class="deccode" dir="ltr" aria-label="الباركود الممسوح">${codeRow}</div>
-  ${dec.kind==='sep'?'<div class="row"><button type="button" class="btn ghost sm" data-act="deckind" data-v="fixed">تقسيم يدوي بدل الفواصل</button></div>':dec.kind==='fixed'?'<small class="muted">اضغط بين الأحرف لقصّ الباركود إلى أجزاء.</small>':''}
-  <div class="dectoks">${toks||'<small class="muted">لا توجد أجزاء.</small>'}</div>
-  <div class="decslots">${slots}</div>
-  <div class="row" style="margin-top:8px;align-items:flex-end"><label class="f" style="flex:1;min-width:230px">نص آخر مطبوع على الملصق القديم <small class="muted">(مثل T45/G375/W1.95 أو 45 375 488)</small><input id="decIn" dir="ltr" placeholder="الصقه أو اكتبه ثم اضغط تحليل"></label><button type="button" class="btn ghost" data-act="decparse">تحليل</button></div>
-  <div class="row" style="margin-top:8px;align-items:center"><label class="f inlf">الباركود المحفوظ<select data-dbm><option value="gen" ${dec.barcodeMode==='gen'?'selected':''}>يُولَّد من المنصة (يبقى فارغًا الآن)</option><option value="keep" ${dec.barcodeMode==='keep'?'selected':''}>كما هو (الباركود الممسوح)</option></select></label><label class="f inlf">الرقم التسلسلي<select data-dser>${Object.keys(SER_LBL).map(k=>`<option value="${k}" ${dec.serialMode===k?'selected':''}>${SER_LBL[k]}</option>`).join('')}${dec.serialMode==='manual'?'<option value="manual" selected>أُدخل يدويًا</option>':''}</select></label></div>
-  <small class="muted">الباركود القديم غالبًا يحمل بيانات فقط (مثل الوزن) فلا يصلح معرّفًا فريدًا؛ لذلك تُولِّد المنصة باركودًا جديدًا يجمع كل الحقول مع رقم تسلسلي، ويُحفظ القديم كمرجع.</small>
-  <div class="row" style="margin-top:8px;align-items:center"><label class="chip gold" style="display:inline-flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" data-dlearn ${dec.ext||dec.dirty?'checked':''}>تذكّر هذا التنسيق للأكواد المشابهة</label><button type="button" class="btn ghost sm" data-act="decsave">حفظ التنسيق الآن</button><button type="button" class="btn ghost sm" data-act="decreset">إعادة التعيين</button></div>`:''}`;
+  ${dec.open?`${dec.kbdFrom?`<p class="hint">صُحِّح الباركود تلقائيًا من تخطيط لوحة المفاتيح العربي. المقروء أصلًا: <span class="mono" dir="ltr">${esc(dec.kbdFrom)}</span>. الأفضل تبديل لغة لوحة المفاتيح إلى الإنجليزية قبل المسح.</p>`:''}
+  <p class="hint">الباركود الممسوح: <span class="mono" dir="ltr" style="font-size:16px">${esc(dec.code)}</span></p>
+  <div class="tablewrap"><table class="dect"><thead><tr><th>الجزء</th><th>القيمة</th><th>يُحفظ في حقل</th></tr></thead><tbody>${rows||'<tr><td colspan="3" class="muted">لا توجد أجزاء.</td></tr>'}</tbody></table></div>
+  <small class="muted">اختر لكل جزء الحقل الذي يخصه، وتُحدَّث القيم أسفل فورًا ويظهر مصدر كل قيمة تحت حقلها. الأجزاء الصفراء بلا حقل.</small>
+  ${cuts}${dec.kind==='sep'?'<div class="row" style="margin-top:6px"><button type="button" class="btn ghost sm" data-act="deckind" data-v="fixed">تقسيم بالخانات بدل الفواصل</button></div>':''}
+  <div class="row" style="margin-top:10px;align-items:flex-end"><label class="f inlf">الباركود المحفوظ<select data-dbm><option value="gen" ${dec.barcodeMode==='gen'?'selected':''}>يُولَّد من المنصة (يبقى فارغًا الآن)</option><option value="keep" ${dec.barcodeMode==='keep'?'selected':''}>كما هو (الباركود الممسوح)</option></select></label><label class="f inlf">الرقم التسلسلي<select data-dser>${Object.keys(SER_LBL).map(k=>`<option value="${k}" ${dec.serialMode===k?'selected':''}>${SER_LBL[k]}</option>`).join('')}${dec.serialMode==='manual'?'<option value="manual" selected>أُدخل يدويًا</option>':''}</select></label></div>
+  <div class="row" style="margin-top:8px;align-items:center"><label class="chip gold" style="display:inline-flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" data-dlearn ${dec.ext||dec.dirty?'checked':''}>تذكّر هذا التنسيق، فلا يُسأل عنه عند مسح كود مشابه</label><button type="button" class="btn ghost sm" data-act="decreset">إعادة التعيين</button></div>
+  <details style="margin-top:8px"><summary>لصق نص آخر مطبوع على الملصق القديم</summary><div class="row" style="margin-top:8px;align-items:flex-end"><label class="f" style="flex:1;min-width:230px">النص <small class="muted">(مثل T45/G375/W1.95 أو 45 375 488)</small><input id="decIn" dir="ltr" placeholder="الصقه أو اكتبه ثم اضغط تحليل"></label><button type="button" class="btn ghost" data-act="decparse">تحليل</button></div></details>`:''}`;
 }
 function paintDec(f,p){
   const box=f.querySelector('#decBox');if(!box||!p._dec)return;
@@ -2010,6 +2063,8 @@ document.addEventListener('drop',e=>{const s0=e.target.closest&&e.target.closest
 function draftFromCode(code){
   const r=parseCode(code),v=r.vals;let k=sel.karat,note=r.note||'',ctxEdit=false,kcode=false;
   const pv0=decVals(decBuildFor(code));let usedC=!!sel.used,nodeC=selNode();
+  const kbdFrom=(lastKbdFix&&lastKbdFix.to===code)?lastKbdFix.from:'';
+  if(kbdFrom)note=(note?note+' ':'')+'صُحِّح الباركود تلقائيًا من تخطيط لوحة المفاتيح العربي. الأفضل تبديل لغة لوحة المفاتيح إلى الإنجليزية قبل المسح.';
   if(!kvKarat()&&pv0.karat&&S.settings.karats.includes(String(pv0.karat))){if(sel.karat&&sel.karat!==String(pv0.karat))note=(note?note+' ':'')+'اعتُمد العيار '+pv0.karat+' من الباركود بدل المختار ('+sel.karat+').';k=String(pv0.karat);kcode=true;}
   if(pv0.cond!=null)usedC=!!pv0.cond;
   if(pv0.cat){const nd0=S.settings.nodes.find(n=>isLeaf(n.id)&&pathOf(n.id)===pv0.cat);if(nd0)nodeC=nd0.id;}
@@ -2029,7 +2084,7 @@ function draftFromCode(code){
   const d={barcode:code,serial:v.serial||'',karat:k,aud,nodeId,used:usedC,name:v.name||'',weight:v.weight||0,size:v.size||'',wage:v.wage||0,buyPpg:v.buyPpg||0,cost:v.cost!=null?v.cost:0,sellPpg:pr,sellAmt:0,vatRate:defVat(k),notes:'',extra:Object.assign({},v.extra||{}),status:'in',_note:note,_kcode:kcode,_ctxEdit:ctxEdit,_st:{lastSell:'ppg',touchedSell:false,touchedVat:false}};
   if(!d.cost&&d.weight>0&&d.buyPpg>0)d.cost=r2(d.weight*(d.buyPpg+d.wage));
   {
-    const dec=decBuildFor(code);d._dec=dec;
+    const dec=decBuildFor(code);d._dec=dec;dec.kbdFrom=kbdFrom;
     if(dec.tpl||dec.ext){
       const dv=decVals(dec);
       d.weight=dv.weight||0;d.size=dv.size||'';d.wage=dv.wage||0;d.buyPpg=dv.buyPpg||0;d.cost=dv.cost!=null?dv.cost:0;d.name=dv.name||'';
@@ -2146,7 +2201,7 @@ function pieceFormHTML(p,mode){
   return `<form id="pf" class="pform" autocomplete="off" novalidate>
     <div class="livepv noprint" id="livepv" aria-label="معاينة الملصق بالبيانات الحالية"></div>
     ${p.status==='sold'?`<p class="warn">هذه القطعة مباعة${p.soldAt?' بتاريخ '+dfmt(p.soldAt):''}${p.invNo?' · الفاتورة '+esc(p.invNo):''}. تعديل بياناتها لا يغيّر الفاتورة المسجّلة.</p>`:''}
-    ${mode==='intake'&&editingExisting&&p.status!=='sold'?'<p class="warn">هذا الباركود موجود مسبقًا. تعدّل الآن بيانات القطعة نفسها.</p>':''}
+    ${mode==='intake'&&editingExisting&&p.status!=='sold'?`<p class="warn">هذا الباركود موجود مسبقًا. تعدّل الآن بيانات القطعة نفسها.${p._extDup?' <button type="button" class="btn ghost sm" data-act="extnew">إدخال قطعة جديدة بنفس الباركود القديم</button>':''}</p>`:''}
     ${p._note?`<p class="warn" id="pnote">${esc(p._note)}</p>`:''}
     ${ctx}
     ${p._dec?'<div id="decBox"></div>':''}
@@ -2496,7 +2551,8 @@ function renderList(){
 /* labels */
 function codePayload(p,L){
   L=L||S.settings.label;
-  if(L.codeMode!=='tpl'||!L.codeTpl)return p.barcode||'';
+  if(L.codeMode!=='tpl')return p.barcode||'';
+  if(!L.codeTpl)return '';
   const kvf=S.settings.bfmt.kv.fields;
   const val=f=>{if(String(f).startsWith('x:'))return String((p.extra||{})[f.slice(2)]||'');switch(f){
     case 'weight':return String(rd(p.weight,3));
@@ -2641,10 +2697,11 @@ function openLabel(id){
     <label class="f">التصميم<select id="ldes"><option value="">التصميم الحالي${S.settings.labelActive&&ds.some(x=>x.id===S.settings.labelActive)?' ('+esc(ds.find(x=>x.id===S.settings.labelActive).name)+')':''}</option>${ds.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select></label>
     <div class="lpv" id="lpv"></div>
     <label class="f">عدد النسخ<input id="lcopies" type="number" min="1" max="200" value="1" inputmode="numeric" style="max-width:140px"></label>
-    <div class="row end"><button type="button" class="btn ghost" data-act="closedlg">إغلاق</button><button type="button" class="btn ghost" data-act="lbldesign">تصميم الملصق</button><button type="button" class="btn accent" data-act="lblprint" data-id="${p.id}">${ic('print')}<span>طباعة</span></button></div></div>`);
+    <p class="hint" id="lprnstat"></p>
+    <div class="row end"><button type="button" class="btn ghost" data-act="closedlg">إغلاق</button><button type="button" class="btn ghost" data-act="lblprinter">إعداد الطابعة</button><button type="button" class="btn ghost" data-act="lbldesign">تصميم الملصق</button><button type="button" class="btn accent" data-act="lblprint" data-id="${p.id}">${ic('print')}<span>طباعة</span></button></div></div>`);
   const draw=()=>{const L=designOf($('#ldes').value);const el=$('#lpv');el.innerHTML=labelHTML(p,L);drawLabelBarcodes(el,L);};
-  $('#ldes').addEventListener('change',draw);draw();
-  d.showModal();
+  $('#ldes').addEventListener('change',draw);draw();paintLblPrn();
+  d.showModal();draw();
 }
 /* ----- label editor ----- */
 const MMPX=96/25.4;
@@ -2676,6 +2733,35 @@ function aabb(e){
   const hw=(e.w*c+e.h*s)/2,hh=(e.w*s+e.h*c)/2,cx=e.x+e.w/2,cy=e.y+e.h/2;
   return{l:cx-hw,r:cx+hw,t:cy-hh,b:cy+hh,cx,cy};
 }
+
+let _mctx=null;
+function measureMM(text,fsPt,bold,italic){
+  try{
+    if(!_mctx){const c=document.createElement('canvas');_mctx=c.getContext('2d');}
+    if(_mctx){_mctx.font=(italic?'italic ':'')+(bold?'700':'500')+' '+(fsPt*96/72)+"px 'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif";return _mctx.measureText(text).width/MMPX;}
+  }catch(e){}
+  return String(text).length*fsPt*0.3528*0.55;
+}
+function autoSizeEl(e,p,L){
+  if(e.t!=='text'||e.auto===false)return false;
+  let t=renderTpl(e.text,p,L);if(!t)t=String(e.text||'').replace(/[{}]/g,'')||' ';
+  const lineH=e.fs*0.3528*1.12;let nw,nh;
+  if(e.wr){
+    nw=e.w;let lines=1,cur='';
+    t.split(/\s+/).forEach(wd=>{const tr=cur?cur+' '+wd:wd;if(measureMM(tr,e.fs,e.b,e.i)<=nw-0.6)cur=tr;else{if(cur)lines++;cur=wd;}});
+    nh=lineH*lines+0.4;
+  }else{nw=measureMM(t,e.fs,e.b,e.i)+0.8;nh=lineH+0.4;}
+  nw=Math.max(1.5,rd(nw,2));nh=Math.max(1,rd(nh,2));
+  if(Math.abs(nw-e.w)<0.05&&Math.abs(nh-e.h)<0.05)return false;
+  const th=(e.r||0)*Math.PI/180,ca=Math.cos(th),sa=Math.sin(th),cx=e.x+e.w/2,cy=e.y+e.h/2;
+  let ncx=cx,ncy=cy;
+  if(e.al==='left'){const ax=cx-(e.w/2)*ca,ay=cy-(e.w/2)*sa;ncx=ax+(nw/2)*ca;ncy=ay+(nw/2)*sa;}
+  else if(e.al==='right'){const ax=cx+(e.w/2)*ca,ay=cy+(e.w/2)*sa;ncx=ax-(nw/2)*ca;ncy=ay-(nw/2)*sa;}
+  e.w=nw;e.h=nh;e.x=rd(ncx-nw/2,2);e.y=rd(ncy-nh/2,2);
+  return true;
+}
+function autoSizeAll(){const L=S.settings.label,p=sampleForLabel();let ch=false;L.els.forEach(e=>{if(autoSizeEl(e,p,L))ch=true;});return ch;}
+function autoFit(){if(autoSizeAll())save();}
 function toksOf(t){return [...new Set((String(t).match(/\{([A-Za-z0-9_:]+)\}/g)||[]).map(m=>m.slice(1,-1)))];}
 function elsForField(k){
   const def=TPL_DEF[k]||'{'+k+'}',dt=toksOf(def);
@@ -2744,7 +2830,12 @@ async function edTpl(){
 }
 /* named designs */
 function designSnapshot(){return pickDesign(S.settings.label);}
+function tplOptionsHTML(){
+  const L=S.settings.label,tag=L.tpl==='tag',ds=S.settings.labelDesigns,activeD=ds.find(d=>d.id===S.settings.labelActive);
+  return `<optgroup label="قوالب جاهزة"><option value="tag" ${(tag&&!activeD)?'selected':''}>ملصق مجوهرات بذيل</option><option value="std" ${(!tag&&!activeD)?'selected':''}>ملصق عادي</option></optgroup>${ds.length?`<optgroup label="تصاميمي المحفوظة">${ds.map(d=>`<option value="d:${d.id}" ${S.settings.labelActive===d.id?'selected':''}>${esc(d.name)}</option>`).join('')}</optgroup>`:''}`;
+}
 function paintDesigns(){
+  const ts=$('#tplSel');if(ts)ts.innerHTML=tplOptionsHTML();
   const box=$('#dlist');if(!box)return;
   const ds=S.settings.labelDesigns;
   box.innerHTML=ds.length?ds.map(d=>`<div class="elrow${S.settings.labelActive===d.id?' sel':''}"><span>${esc(d.name)}</span><button type="button" data-act="dload" data-id="${d.id}" title="تحميل التصميم">تحميل</button><button type="button" data-act="dupd" data-id="${d.id}" title="استبدال المحفوظ بالتصميم الحالي">تحديث</button><button type="button" data-act="ddel" data-id="${d.id}" aria-label="حذف">✕</button></div>`).join(''):'<small class="muted">لا توجد تصاميم محفوظة بعد.</small>';
@@ -2785,7 +2876,7 @@ function paintCanvas(){
     for(let m=0;m<=W;m++){const lg=m%10===0,md=m%5===0;rh+=`<i style="left:${rd(m*u,1)}px;height:${lg?9:md?6:3}px"></i>`;if(lg)rh+=`<b style="left:${rd(m*u+2,1)}px">${m}</b>`;}
     for(let m=0;m<=H;m++){const lg=m%10===0,md=m%5===0;rv+=`<i style="top:${rd(m*u,1)}px;width:${lg?9:md?6:3}px"></i>`;if(lg)rv+=`<b style="top:${rd(m*u+1,1)}px">${m}</b>`;}
   }
-  cv.innerHTML=`<div class="lrw${ru?' ru':''}">${ru?`<div class="rul h" style="width:${rd(W*u,1)}px">${rh}</div><div class="rul v" style="height:${rd(H*u,1)}px">${rv}</div>`:''}<div class="lwrap" style="width:${rd(W*MMPX*z,2)}px;height:${rd(H*MMPX*z,2)}px"><div class="lscale" style="--z:${z};transform:scale(${z});width:${W}mm;height:${H}mm">${labelHTML(p,L)}${ED.grid?'<div class="lgrid"></div>':''}${L.tail>0?`<div class="lguide tail" style="left:${tailL}mm;width:${L.tail}mm"></div>`:''}<div class="lguide fold" style="left:${rd(fold,2)}mm"></div><div class="lov">${L.els.map(e=>`<div class="ebox${ED.sel.includes(e.id)?' sel':''}" data-id="${e.id}" title="${esc(elTitle(e))} — انقر مرتين للتحرير" style="left:${e.x}mm;top:${e.y}mm;width:${e.w}mm;height:${e.h}mm;transform:rotate(${e.r||0}deg)">${e.t==='text'&&!renderTpl(e.text,p,L)?`<span class="eph">${esc(e.text)}</span>`:''}${single&&ED.sel[0]===e.id?'<i class="rtl"></i><i class="hnd rt" data-h="rt"></i><i class="hnd rs" data-h="rs"></i>':''}</div>`).join('')}</div></div></div></div>`;
+  cv.innerHTML=`<div class="lrw${ru?' ru':''}">${ru?`<div class="rul h" style="width:${rd(W*u,1)}px">${rh}</div><div class="rul v" style="height:${rd(H*u,1)}px">${rv}</div>`:''}<div class="lwrap" style="width:${rd(W*MMPX*z,2)}px;height:${rd(H*MMPX*z,2)}px"><div class="lscale" style="--z:${z};transform:scale(${z});width:${W}mm;height:${H}mm">${labelHTML(p,L)}${ED.grid?'<div class="lgrid"></div>':''}${L.tail>0?`<div class="lguide tail" style="left:${tailL}mm;width:${L.tail}mm"></div>`:''}<div class="lguide fold" style="left:${rd(fold,2)}mm"></div><div class="lov">${L.els.map(e=>`<div class="ebox${ED.sel.includes(e.id)?' sel':''}" data-id="${e.id}" title="${esc(elTitle(e))} — انقر مرتين للتحرير" style="left:${e.x}mm;top:${e.y}mm;width:${e.w}mm;height:${e.h}mm;transform:rotate(${e.r||0}deg)">${e.t==='text'&&!renderTpl(e.text,p,L)?`<span class="eph">${esc(e.text)}</span>`:''}${e.t==='code'&&!codePayload(p,L)?'<span class="eph">الباركود فارغ</span>':''}${single&&ED.sel[0]===e.id?'<i class="rtl"></i><i class="hnd rt" data-h="rt"></i><i class="hnd rs" data-h="rs"></i>':''}</div>`).join('')}</div></div></div></div>`;
   drawLabelBarcodes(cv,L);
   const zl=$('#zlab');if(zl)zl.textContent=Math.round(z*100)+'%';
   const cp=$('#codePrev');if(cp)cp.textContent=codePayload(p,L)||'—';
@@ -2810,7 +2901,7 @@ function paintProps(){
   const n=(k,l,step)=>`<label>${l}<input type="number" step="${step||0.1}" data-ep="${k}" value="${rd(e[k],2)}"></label>`;
   const txt=e.t==='text';
   box.innerHTML=`<div class="pgrid">${n('x','اليسار (مم)')}${n('y','الأعلى (مم)')}${n('w',e.t==='line'?'الطول (مم)':'العرض (مم)')}${n('h',e.t==='line'?'السماكة (مم)':'الارتفاع (مم)')}${n('r','الدوران (°)',1)}${e.t==='rect'?n('bw','سماكة الإطار (مم)',0.1):''}
-    ${txt?n('fs','حجم الخط (pt)',0.5)+`<label>المحاذاة<select data-ep="al"><option value="left" ${e.al==='left'?'selected':''}>يسار</option><option value="center" ${e.al==='center'?'selected':''}>وسط</option><option value="right" ${e.al==='right'?'selected':''}>يمين</option></select></label><label class="chk"><input type="checkbox" data-ep="b" ${e.b?'checked':''}>غامق</label><label class="chk"><input type="checkbox" data-ep="i" ${e.i?'checked':''}>مائل</label><label class="chk"><input type="checkbox" data-ep="u" ${e.u?'checked':''}>تسطير</label><label class="chk"><input type="checkbox" data-ep="wr" ${e.wr?'checked':''}>التفاف النص</label>`:''}
+    ${txt?n('fs','حجم الخط (pt)',0.5)+`<label>المحاذاة<select data-ep="al"><option value="left" ${e.al==='left'?'selected':''}>يسار</option><option value="center" ${e.al==='center'?'selected':''}>وسط</option><option value="right" ${e.al==='right'?'selected':''}>يمين</option></select></label><label class="chk"><input type="checkbox" data-ep="b" ${e.b?'checked':''}>غامق</label><label class="chk"><input type="checkbox" data-ep="i" ${e.i?'checked':''}>مائل</label><label class="chk"><input type="checkbox" data-ep="u" ${e.u?'checked':''}>تسطير</label><label class="chk"><input type="checkbox" data-ep="wr" ${e.wr?'checked':''}>التفاف النص</label><label class="chk"><input type="checkbox" data-ep="auto" ${e.auto===false?'':'checked'}>حجم الإطار تلقائي حسب النص</label>`:''}
     ${txt?`<label class="span">النص — يقبل المتغيرات<input data-ep="text" value="${esc(e.text)}" dir="auto"></label>${tokenSelect('epTok')}<small class="span muted" id="tplPrev">${esc(tplPrevText(e))}</small>`:''}
     ${e.t==='code'?'<small class="span muted">انقر الرمز مرتين لتعديل ما يظهر فيه (محتوى الرمز).</small>':''}</div>`;
 }
@@ -2842,6 +2933,7 @@ function setSp(t){
   else if(['size','serial','name','barcode'].includes(k))p[k]=t.value;
   else p[k]=num(t.value);
   paintCanvas();
+  autoFit();paintCanvas();paintElList();
   const e=selEls()[0],tp=$('#tplPrev');if(tp&&e&&e.t==='text')tp.textContent=tplPrevText(e);
   const ip=$('#einPrev');if(ip&&e&&e.t==='text')ip.textContent=tplPrevText(e);
 }
@@ -2895,12 +2987,12 @@ function paintInline(){
       <div class="irow"><label class="f" style="flex:1;min-width:200px">نص العنصر <small>(يقبل المتغيرات مثل {weight} و{price})</small><input id="einTxt" value="${esc(e.text)}" dir="auto"></label>${tokenSelect('einTok')}</div>
       <small class="muted" id="einPrev">${esc(tplPrevText(e))}</small>
       ${toks.length?`<div class="isec"><b style="font-size:13px">القيم المستخدمة في هذا العنصر</b><div class="pgrid" data-enter>${toks.map(spControl).join('')}</div></div>`:''}
-      <div class="isec"><b style="font-size:13px">الشكل</b><div class="irow"><label class="iv">الحجم (pt)<input type="number" step="0.5" data-ep="fs" value="${rd(e.fs,1)}" style="width:90px"></label><label class="chk"><input type="checkbox" data-ep="b" ${e.b?'checked':''}>غامق</label><label class="chk"><input type="checkbox" data-ep="i" ${e.i?'checked':''}>مائل</label><label class="chk"><input type="checkbox" data-ep="u" ${e.u?'checked':''}>تسطير</label><label class="iv">المحاذاة<select data-ep="al"><option value="left" ${e.al==='left'?'selected':''}>يسار</option><option value="center" ${e.al==='center'?'selected':''}>وسط</option><option value="right" ${e.al==='right'?'selected':''}>يمين</option></select></label><label class="chk"><input type="checkbox" data-ep="wr" ${e.wr?'checked':''}>التفاف</label></div></div>`;
+      <div class="isec"><b style="font-size:13px">الشكل</b><div class="irow"><label class="iv">الحجم (pt)<input type="number" step="0.5" data-ep="fs" value="${rd(e.fs,1)}" style="width:90px"></label><label class="chk"><input type="checkbox" data-ep="b" ${e.b?'checked':''}>غامق</label><label class="chk"><input type="checkbox" data-ep="i" ${e.i?'checked':''}>مائل</label><label class="chk"><input type="checkbox" data-ep="u" ${e.u?'checked':''}>تسطير</label><label class="iv">المحاذاة<select data-ep="al"><option value="left" ${e.al==='left'?'selected':''}>يسار</option><option value="center" ${e.al==='center'?'selected':''}>وسط</option><option value="right" ${e.al==='right'?'selected':''}>يمين</option></select></label><label class="chk"><input type="checkbox" data-ep="wr" ${e.wr?'checked':''}>التفاف</label><label class="chk"><input type="checkbox" data-ep="auto" ${e.auto===false?'':'checked'}>حجم الإطار تلقائي حسب النص</label></div></div>`;
   }else{
     const qr=L.fmt==='qr';
     bar.innerHTML=`<div class="ihead"><b>${esc(elTitle(e))}</b><button type="button" class="btn sm" data-act="einok">تم</button></div>
       <div class="irow"><label class="iv">نوع الرمز<select data-lb="fmt">${[['qr','QR'],['CODE128','CODE 128'],['EAN13','EAN-13'],['auto','تلقائي']].map(([v,l])=>`<option value="${v}" ${L.fmt===v?'selected':''}>${l}</option>`).join('')}</select></label>${qr?`<label class="iv">تصحيح الخطأ<select data-lb="ec">${['L','M','Q','H'].map(v=>`<option ${L.ec===v?'selected':''}>${v}</option>`).join('')}</select></label>`:''}<label class="iv">محتوى الرمز<select id="einMode"><option value="tpl" ${L.codeMode==='tpl'?'selected':''}>قالب مفتاح{قيمة}</option><option value="barcode" ${L.codeMode==='tpl'?'':'selected'}>نص الباركود المسجّل</option></select></label><label class="f" style="flex:1;min-width:180px">قالب المحتوى <small>مثل w{}t{}g{}s{}</small><input id="einTxt" dir="ltr" value="${esc(L.codeTpl)}" ${L.codeMode==='tpl'?'':'disabled'}></label></div>
-      <div class="isec"><b style="font-size:13px">عناصر الباركود (QR)</b><div class="flist" id="einChips">${codeChipsHTML()}</div><label class="iv" style="max-width:260px">إضافة عنصر للباركود<select id="einCodeAdd">${codeAddHTML()}</select></label></div>
+      <div class="isec"><small class="muted">يُحدَّد ما يدخل في الباركود من أزرار ▣ بجانب الحقول في تبويب «التصميم». عند إلغاء الكل يصبح الباركود فارغًا.</small></div>
       <small class="muted mono" id="einPrev" style="direction:ltr;text-align:left">${esc(codePayload(sampleForLabel(),L)||'—')}</small>`;
   }
 }
@@ -2914,11 +3006,11 @@ function applyInline(val){
   const L=S.settings.label,now=Date.now();
   if(e.t==='text'){
     if(now-ED.lastPush>900){edPush();ED.lastPush=now;}
-    e.text=val;save();paintCanvas();paintElList();
+    e.text=val;autoFit();save();paintCanvas();paintElList();
     const ip=$('#einPrev');if(ip)ip.textContent=tplPrevText(e);
     const pp=$('#eprops [data-ep="text"]');if(pp)pp.value=val;
   }else{
-    L.codeTpl=String(val).slice(0,120)||DEF_LABEL().codeTpl;save();paintCanvas();paintPalette();paintCodeChips();paintKv();syncCodeInputs();
+    L.codeTpl=String(val).slice(0,120);save();paintCanvas();paintPalette();paintCodeChips();paintKv();syncCodeInputs();
     const ip=$('#einPrev');if(ip)ip.textContent=codePayload(sampleForLabel(),L)||'—';
   }
 }
@@ -2936,7 +3028,6 @@ function toggleCodeField(field){
   const L=S.settings.label,kv=S.settings.bfmt.kv;
   const have=L.codeMode==='tpl'?tplKeys().filter(k=>{const c=kvCfg(k);return c&&c.field===field;}):[];
   if(have.length){
-    if(tplKeys().length-have.length<1){toast('يجب أن يحتوي الرمز على عنصر واحد على الأقل','bad');return;}
     have.forEach(k=>{L.codeTpl=L.codeTpl.replace(new RegExp(k+'\\{\\}','g'),'');});
   }else{
     let c=kv.fields.find(f=>f.field===field);
@@ -2954,11 +3045,12 @@ function toggleCodeKey(key,on){
   const L=S.settings.label,has=L.codeMode==='tpl'&&tplKeys().includes(key);
   if(on&&!has){if(L.codeMode!=='tpl')L.codeTpl='';L.codeMode='tpl';L.codeTpl=(L.codeTpl+key+'{}').slice(0,120);}
   else if(!on&&has){
-    if(tplKeys().length<2){toast('يجب أن يحتوي الرمز على عنصر واحد على الأقل','bad');refreshLinks();return;}
     L.codeTpl=L.codeTpl.replace(new RegExp(key+'\\{\\}','g'),'');
   }
   save();refreshLinks();
 }
+const PAL_ORDER=['price','weight','karat','size','wage','serial','cat','name','aud','shop','karatN','wageTotal','codeText'];
+function orderedFields(){return fieldOptions().map((x,i)=>[x,i]).sort((a,b)=>{const ia=PAL_ORDER.indexOf(a[0][0]),ib=PAL_ORDER.indexOf(b[0][0]);return ((ia<0?50:ia)-(ib<0?50:ib))||(a[1]-b[1]);}).map(x=>x[0]);}
 function paletteHTML(){
   const L=S.settings.label,tokens=new Set();
   L.els.forEach(e=>{if(e.t==='text')(String(e.text).match(/\{([A-Za-z0-9_:]+)\}/g)||[]).forEach(m=>tokens.add(m.slice(1,-1)));});
@@ -2968,7 +3060,9 @@ function paletteHTML(){
     const inc=!!(kf&&cf.has(kf));
     return `<span class="fchip${used?' used':''}${inc?' incode':''}"><button type="button" data-act="eladd" data-kind="field" data-k="${esc(k)}" title="${exact?'مضاف للملصق — اضغط لإزالته منه':used?'مستخدم داخل نص أكبر — اضغط لإضافته كعنصر مستقل':'إضافة إلى الملصق'}">${exact?'✓':'+'} ${esc(l)}</button>${kf?`<button type="button" class="qrt" data-act="codetoggle" data-f="${esc(kf)}" aria-pressed="${inc}" title="${inc?'إزالة من محتوى الباركود':'إضافة إلى محتوى الباركود'}">▣</button>`:''}</span>`;
   };
-  return fieldOptions().map(([k,l])=>chip(k,l)).join('')+`<button type="button" data-act="eladd" data-kind="text">+ نص ثابت</button><button type="button" class="${hasCode?'usedb':''}" data-act="eladd" data-kind="code">+ رمز QR/باركود${hasCode?' ✓':''}</button><button type="button" data-act="eladd" data-kind="line">+ خط</button>`;
+  const only=(f,l)=>{const inc=cf.has(f);return `<span class="fchip only${inc?' incode':''}"><button type="button" class="qrt" data-act="codetoggle" data-f="${f}" aria-pressed="${inc}" title="${inc?'إزالة من الباركود':'إضافة إلى الباركود'}">▣ ${esc(l)}</button></span>`;};
+  const extras=`<span class="muted" style="flex-basis:100%;font-size:12px;margin-top:4px">للباركود فقط (لا تظهر نصًا على الملصق):</span>`+only('purchasePrice','إجمالي الشراء')+only('buyPpg','سعر غرام الشراء')+only('cond','الحالة (جديد/مستعمل)');
+  return orderedFields().map(([k,l])=>chip(k,l)).join('')+extras+`<button type="button" data-act="eladd" data-kind="text">+ نص ثابت</button><button type="button" class="${hasCode?'usedb':''}" data-act="eladd" data-kind="code">+ رمز QR/باركود${hasCode?' ✓':''}</button><button type="button" data-act="eladd" data-kind="line">+ خط</button>`;
 }
 function paintPalette(){const b=$('#flist');if(b)b.innerHTML=paletteHTML();}
 function codeChipsHTML(){
@@ -2992,6 +3086,7 @@ function paintKv(){const w=$('#kvwrap');if(w)w.innerHTML=kvTableHTML(S.settings.
 function syncCodeInputs(){const L=S.settings.label,ti=$('[data-lb="codeTpl"]');if(ti){ti.value=L.codeTpl;ti.disabled=L.codeMode!=='tpl';}const cm=$('[data-lb="codeMode"]');if(cm)cm.value=L.codeMode;}
 function refreshLinks(){paintEditor();paintKv();syncCodeInputs();if(ED.inl)paintInline();}
 function paintEditor(){
+  autoFit();
   if(ED.inl&&!elById(ED.inl))closeInline();
   paintCanvas();paintElList();paintProps();paintDesigns();paintPalette();paintCodeChips();paintPrintSum();
   {const ae0=document.activeElement;if(ED.inl&&!(ae0&&ae0.closest&&ae0.closest('#einline')))paintInline();if(!(ae0&&ae0.closest&&ae0.closest('#eform')))paintForm();}
@@ -3003,6 +3098,7 @@ function setEp(t){
   const e=selEls()[0];if(!e||ED.sel.length!==1)return;
   const k=t.dataset.ep,now=Date.now();
   if(now-ED.lastPush>900){edPush();ED.lastPush=now;}
+  if((k==='w'||k==='h')&&e.t==='text')e.auto=false;
   if(t.type==='checkbox')e[k]=t.checked;
   else if(k==='al')e.al=t.value;
   else if(k==='text'){e.text=t.value;const tp=$('#tplPrev');if(tp)tp.textContent=tplPrevText(e);}
@@ -3012,6 +3108,7 @@ function setEp(t){
     e[k]=Math.min(lim[1],Math.max(lim[0],v));
     if(e.t==='code'&&S.settings.label.fmt==='qr'&&(k==='w'||k==='h')){e.w=e.h=e[k];syncProps();}
   }
+  if(e.t==='text')autoFit();
   save();paintCanvas();paintElList();
 }
 function dragMove(ev){
@@ -3055,6 +3152,7 @@ document.addEventListener('pointerdown',ev=>{
     const e=elById(ED.sel[0]),sb=cv.querySelector('.ebox.sel');if(!e||!sb)return;
     const rc=sb.getBoundingClientRect();
     ED.drag={mode:h.dataset.h==='rs'?'resize':'rotate',x0:ev.clientX,y0:ev.clientY,k,id:e.id,x:e.x,y:e.y,w:e.w,h:e.h,r:e.r||0,cx:rc.left+rc.width/2,cy:rc.top+rc.height/2,before:JSON.stringify(L.els),moved:false};
+    if(h.dataset.h==='rs'&&e.t==='text')e.auto=false;
   }else if(bx){
     const id=bx.dataset.id,now=Date.now();
     if(ev.shiftKey||ev.ctrlKey||ev.metaKey){ED.sel=ED.sel.includes(id)?ED.sel.filter(x=>x!==id):[...ED.sel,id];paintEditor();return;}
@@ -3107,21 +3205,21 @@ function labelSectionHTML(){
   const nf_=(k,lab,step)=>`<label class="f">${lab}<input type="number" step="${step||'any'}" data-lb="${k}" value="${L[k]}"></label>`;
   const so=(k,opts)=>`<select data-lb="${k}">${opts.map(([v,l])=>`<option value="${v}" ${L[k]===v?'selected':''}>${l}</option>`).join('')}</select>`;
   const tb=(act,l,extra,title)=>`<button type="button" class="btn ghost" data-act="${act}" ${extra||''} ${title?`title="${title}" aria-label="${title}"`:''}>${l}</button>`;
-  const activeD=S.settings.labelDesigns.find(d=>d.id===S.settings.labelActive);
+  const activeD=S.settings.labelDesigns.find(d=>d.id===S.settings.labelActive),ds=S.settings.labelDesigns;
   const tab=ED.tab||'design';
   const tabs=[['label','الملصق'],['design','التصميم'],['form','النموذج'],['print','الطباعة']];
   const pane=(id,html)=>`<div class="lpane" data-pane="${id}" ${tab===id?'':'hidden'}>${html}</div>`;
   const P_LABEL=`<div class="lblock"><h3>القالب والمقاس</h3><div class="grid">
-      <label class="f">قالب جاهز<select data-lb="tpl"><option value="tag" ${tag?'selected':''}>ملصق مجوهرات بذيل</option><option value="std" ${tag?'':'selected'}>ملصق عادي</option></select></label>
-      <label class="f">&nbsp;<button type="button" class="btn ghost" data-act="eltpl">تطبيق القالب</button></label>
+      <label class="f span2">القالب <small>(قوالب جاهزة وتصاميمك المحفوظة)</small><select id="tplSel">${tplOptionsHTML()}</select></label>
+      <div class="span2"><button type="button" class="btn" data-act="tplapply" style="width:100%">تطبيق</button></div>
       <label class="f span2">مقاس جاهز<select data-lbp="preset"><option value="">مخصص</option>${PR.map(([w,h,t])=>`<option value="${w}x${h}x${t}" ${cur_&&cur_[0]===w&&cur_[1]===h&&cur_[2]===t?'selected':''}>${w}×${h} مم${tag?' · ذيل '+t:''}</option>`).join('')}</select></label>
       ${nf_('w','الطول الكلي (مم)')}${nf_('h','الارتفاع (مم)')}${nf_('tail','طول الذيل (مم)')}
       <label class="f">جهة الذيل${so('tailSide',[['right','يمين'],['left','يسار']])}</label>${nf_('split','موضع الطي (%)','1')}</div><small class="muted">يُطبع الملصق كاملًا بطول الذيل، والمنطقة المشطّبة لا يُطبع فيها شيء.</small></div>
     <div class="lblock"><h3>الاتجاه</h3><div class="row"><label class="f" style="flex:1">اتجاه الطباعة<select data-lb="printRot"><option value="0" ${L.printRot===180?'':'selected'}>بدون تدوير</option><option value="180" ${L.printRot===180?'selected':''}>تدوير 180°</option></select></label>${tb('eflip','⇄ قلب الذيل')}</div></div>
     <div class="lblock"><h3>مساعدة</h3><div class="row"><label class="chk"><input type="checkbox" data-ed="ruler" ${ED.ruler!==false?'checked':''}>المسطرة</label><label class="chk"><input type="checkbox" data-ed="grid" ${ED.grid?'checked':''}>إظهار الشبكة</label><label class="iv">الالتصاق<select data-ed="snap"><option value="0" ${ED.snap===0?'selected':''}>بلا</option><option value="0.1" ${ED.snap===0.1?'selected':''}>0.1 مم</option><option value="0.5" ${ED.snap===0.5?'selected':''}>0.5 مم</option><option value="1" ${ED.snap===1?'selected':''}>1 مم (الشبكة)</option></select></label></div></div>`;
   const P_DESIGN=`<div class="lblock"><div class="row">${tb('eladd','+ نص','data-kind="text"')}${tb('eladd','+ خط','data-kind="line"')}${tb('eladd','+ إطار','data-kind="rect"')}${tb('eladd','+ رمز QR/باركود','data-kind="code"')}</div></div>
-    <div class="lblock"><h3>الحقول والباركود (QR)</h3><div class="flist" id="flist"></div><div class="legend"><small class="muted"><span class="lgd used">✓</span>مضاف للملصق (اضغط الاسم لإزالته)</small><small class="muted"><span class="lgd code">▣</span>مضاف للباركود (اضغط ▣ للتبديل)</small></div>
-      <h4 style="margin:12px 0 6px;font-size:13px">عناصر الباركود (QR)</h4><div class="flist" id="codeChips"></div><label class="f" style="margin-top:8px;font-size:13px">إضافة عنصر للباركود<select id="codeAdd"></select></label><small class="muted">تظهر هذه العناصر نفسها في «تنسيق الباركود»، والعكس.</small>
+    <div class="lblock"><h3>الحقول والباركود (QR)</h3><div class="flist" id="flist"></div><div class="legend"><small class="muted"><span class="lgd used">✓</span>مضاف للملصق (اضغط الاسم لإزالته)</small><small class="muted"><span class="lgd code">▣</span>يدخل في الباركود (اضغط ▣ للتبديل)</small></div>
+      <small class="muted" style="display:block;margin-top:8px">اضغط ▣ بجانب أي حقل ليدخل في الباركود (QR). عند إلغاء الكل يصبح الباركود فارغًا.</small>
       <details style="margin-top:10px"><summary>إعدادات الرمز</summary><div class="grid" style="margin-top:8px">
         <label class="f">نوع الرمز${so('fmt',[['qr','QR (ثنائي الأبعاد)'],['CODE128','CODE 128'],['EAN13','EAN-13 (13 رقمًا)'],['auto','تلقائي']])}</label>
         ${qr?`<label class="f">تصحيح الخطأ${so('ec',[['L','L'],['M','M'],['Q','Q'],['H','H']])}</label>`+nf_('qz','الهامش الأبيض (وحدات)','1'):''}
@@ -3164,7 +3262,7 @@ function setLb(t){
     if(k==='fmt'||k==='codeMode'){render();return;}
     paintCanvas();return;
   }
-  if(k==='codeTpl'){L.codeTpl=t.value.slice(0,120)||DEF_LABEL().codeTpl;save();paintCanvas();paintPalette();paintCodeChips();paintKv();return;}
+  if(k==='codeTpl'){L.codeTpl=t.value.slice(0,120);save();paintCanvas();paintPalette();paintCodeChips();paintKv();return;}
   const v=parseFloat(latin(t.value));if(isNaN(v))return;
   const lim={w:[10,300],h:[8,300],tail:[0,100],split:[20,80],cols:[1,10],gap:[0,20],qz:[0,8],thr:[10,95],offX:[-20,20],offY:[-20,20]}[k]||[0,1e6];
   L[k]=Math.min(lim[1],Math.max(lim[0],v));
@@ -3630,6 +3728,7 @@ document.addEventListener('click',async e=>{
   const a=b.dataset.act,id=b.dataset.id;
   switch(a){
     case 'nav':go(b.dataset.v);break;
+    case 'extnew':{const c0=draft&&draft._extDup;if(c0){draft=null;editingExisting=false;handleCode('intake',c0,true);}break;}
     case 'verinfo':showWhatsNew(true);break;
     case 'pubhelp':openPublishHelp();break;
     case 'ltab':{ED.tab=b.dataset.v;document.querySelectorAll('#lblsec .lpane').forEach(p0=>{p0.hidden=p0.dataset.pane!==ED.tab;});document.querySelectorAll('#lblsec .ltabs button').forEach(t0=>t0.setAttribute('aria-selected',String(t0.dataset.v===ED.tab)));break;}
@@ -3642,6 +3741,7 @@ document.addEventListener('click',async e=>{
     case 'deccut':decCut(+b.dataset.i);break;
     case 'deckind':{const dc=draft&&draft._dec;if(dc){dc.kind='fixed';dc.cuts=defaultCuts(dc.code);dc.seps='';dc.tokens=tokenize(dc.code,{kind:'fixed',cuts:dc.cuts});dc.map=decGuessMap(dc);dc.dirty=true;decRefresh();}break;}
     case 'decparse':decParseTyped();break;
+    case 'cutadd':{const n=parseInt(($('#cutIn')||{}).value,10);if(n>0)decCut(n);break;}
     case 'decsave':{const dc=draft&&draft._dec;if(dc){decLearn(dc);save();paintDec($('#pf'),draft);}break;}
     case 'decreset':{if(draft&&draft._dec){const code=draft._dec.code;draft._dec=decAuto(code);draft._dec.open=true;decRefresh();}break;}
     case 'hookadd':openHookDlg();break;
@@ -3655,6 +3755,11 @@ document.addEventListener('click',async e=>{
     case 'feedexp':exportFeed();break;
     case 'prmode':{S.settings.printer.mode=b.dataset.v;S.settings.printer=normPrinter(S.settings.printer);save();render();break;}
     case 'prconnect':{const m=$('#prmsg');try{await prnConnect();toast('تم الاتصال بالطابعة');render();}catch(er){if(m)m.textContent=(er&&er.name==='NotFoundError')?'لم تختر أي جهاز.':((er&&er.message)||String(er));}break;}
+    case 'przebra':{
+      const PS=S.settings.printer;Object.assign(PS,{mode:'usb',lang:'epl',dpi:203,media:'gap',gap:3,density:8,speed:4,invert:false});S.settings.printer=normPrinter(PS);save();
+      const m=$('#prmsg');
+      try{await prnConnect();toast('تم ربط الطابعة وضبطها');}catch(er){render();const m2=$('#prmsg');if(m2)m2.textContent=(er&&er.name==='NotFoundError')?'لم تختر أي جهاز. أُعدّ الإعداد فقط، اضغط «اختيار الطابعة / اتصال» عند جاهزيتك.':((er&&er.message)||String(er));break;}
+      render();break;}
     case 'prdisc':await prnDisconnect();render();break;
     case 'prtest':{const m=$('#prmsg');if(m)m.textContent='';printLabels([sampleForLabel()],1);break;}
     case 'prping':{const m=$('#prmsg'),PS=S.settings.printer;try{const r=await fetch(PS.bridgeUrl.replace(/\/$/,'')+'/ping');const j=await r.json();if(m){m.className='hint';m.textContent='الوسيط يعمل (إصدار '+j.bridge+' على '+j.os+').';}}catch(er){if(m){m.className='err';m.textContent='لا يمكن الوصول للوسيط على '+PS.bridgeUrl+'. شغّله ثم أعد الفحص.';}}break;}
@@ -3725,6 +3830,7 @@ document.addEventListener('click',async e=>{
     case 'refreshPrices':refreshPrices(true);break;
     case 'applyPrices':applyPrices();break;
     case 'lblprint':printLabels([piece(id)],($('#lcopies')||{}).value||1,designOf(($('#ldes')||{}).value||''));break;
+    case 'lblprinter':{closeDlg();prefTab='printer';go('prefs');break;}
     case 'lbldesign':{closeDlg();prefTab='label';go('prefs');setTimeout(()=>{const e=$('#lblsec');if(e)e.scrollIntoView({block:'start'});},60);break;}
     case 'lbltest':printLabels([sampleForLabel()],1);break;
     case 'lblall':{const a=filtered().filter(p=>p.barcode);if(!a.length){toast('لا توجد قطع للطباعة','bad');break;}if(await ask('طباعة ملصق لكل قطعة من القطع المعروضة ('+a.length+' قطعة)؟','طباعة'))printLabels(a,1);break;}
@@ -3744,10 +3850,11 @@ document.addEventListener('click',async e=>{
     case 'edist':edDist(b.dataset.m);break;
     case 'erot':edRot(+b.dataset.d);break;
     case 'eltpl':edTpl();break;
+    case 'tplapply':{const v=($('#tplSel')||{}).value||'';if(v.startsWith('d:'))edLoad(v.slice(2));else if(v==='tag'||v==='std'){S.settings.label.tpl=v;S.settings.labelActive='';edTpl();}break;}
     case 'edundo':edUndo();break;
     case 'ezoom':{const d=b.dataset.d,cur=edZoom();ED.z=d==='0'?0:Math.max(0.5,Math.min(8,cur*(d==='+'?1.25:0.8)));paintCanvas();break;}
     case 'kvadd':openKvAdd();break;
-    case 'kvdel':{const kf=S.settings.bfmt.kv.fields[+b.dataset.i];if(kf){const L=S.settings.label;L.codeTpl=L.codeTpl.replace(new RegExp(kf.key+'\\{\\}','g'),'');if(!L.codeTpl){L.codeMode='barcode';L.codeTpl=DEF_LABEL().codeTpl;}}S.settings.bfmt.kv.fields.splice(+b.dataset.i,1);save();render();break;}
+    case 'kvdel':{const kf=S.settings.bfmt.kv.fields[+b.dataset.i];if(kf){const L=S.settings.label;L.codeTpl=L.codeTpl.replace(new RegExp(kf.key+'\\{\\}','g'),'');}S.settings.bfmt.kv.fields.splice(+b.dataset.i,1);save();render();break;}
     case 'codetoggle':toggleCodeField(b.dataset.f);break;
     case 'codedel':toggleCodeKey(b.dataset.k,false);break;
     case 'codekey':toggleCodeKey(b.dataset.k,!(S.settings.label.codeMode==='tpl'&&tplKeys().includes(b.dataset.k)));break;
@@ -3823,7 +3930,7 @@ main.addEventListener('change',e=>{
   else if(t.dataset.vfree!==undefined){const a=S.settings.vatFree=(S.settings.vatFree||[]).filter(k=>k!==t.dataset.vfree);if(t.checked)a.push(t.dataset.vfree);save();toast('تم الحفظ');}
   else if(t.id==='bfMode'){S.settings.bfmt.mode=['sep','kv'].includes(t.value)?t.value:'pos';save();render();}
   else if(t.dataset.kvcode!==undefined){const f=S.settings.bfmt.kv.fields[+t.dataset.kvcode];if(f)toggleCodeKey(f.key,t.checked);}
-  else if(t.dataset.kvk!==undefined){const f=S.settings.bfmt.kv.fields[+t.dataset.kvk],oldK=f.key;f.key=t.value.replace(/[^a-zA-Z]/g,'');t.value=f.key;if(oldK!==f.key){const L=S.settings.label;L.codeTpl=(L.codeTpl.replace(new RegExp(oldK+'\\{\\}','g'),f.key?f.key+'{}':'')||DEF_LABEL().codeTpl);}save();toast('تم الحفظ');bfOut();refreshLinks();}
+  else if(t.dataset.kvk!==undefined){const f=S.settings.bfmt.kv.fields[+t.dataset.kvk],oldK=f.key;f.key=t.value.replace(/[^a-zA-Z]/g,'');t.value=f.key;if(oldK!==f.key){const L=S.settings.label;L.codeTpl=L.codeTpl.replace(new RegExp(oldK+'\\{\\}','g'),f.key?f.key+'{}':'');}save();toast('تم الحفظ');bfOut();refreshLinks();}
   else if(t.dataset.kvf!==undefined){const f=S.settings.bfmt.kv.fields[+t.dataset.kvf];f.field=t.value;f.type=(KVSTR[t.value]||String(t.value).startsWith('x:'))?'string':'number';save();toast('تم الحفظ');render();}
   else if(t.dataset.kvt!==undefined){S.settings.bfmt.kv.fields[+t.dataset.kvt].type=t.value==='string'?'string':'number';save();toast('تم الحفظ');bfOut();}
   else if(t.dataset.kvon!==undefined){S.settings.bfmt.kv.fields[+t.dataset.kvon].on=t.checked;save();toast('تم الحفظ');bfOut();}
@@ -3839,8 +3946,22 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.8.0';
+const APP_VERSION='2.10.0';
 const CHANGELOG=[
+ {v:'2.10.0',date:'2026-11-09',title:'ربط طابعة Zebra TLP 2844 والطباعة بضغطة واحدة',items:[
+  'دعم لغة EPL2 لطابعات Zebra TLP/LP 2844 وما شابهها، مع اتجاه الطباعة (ZT/ZB) وسرعة وكثافة وفاصل الملصقات.',
+  'زر «ربط Zebra TLP 2844 الآن» في الإعدادات ← الطابعة يضبط USB المباشر وEPL و203 DPI ثم تختار الطابعة مرة واحدة.',
+  'زر «طباعة» في نافذة الملصق يطبع مباشرة على الطابعة دون نافذة المتصفح. وإن لم تكن متصلة يطلب اختيارها مرة واحدة ثم يطبع.',
+  'تعرّف تلقائي على الطابعة وإعادة اتصال بها عند فتح المنصة أو إعادة توصيل الكابل، مع عرض رقمها (مثل Zebra-USB-41J113002798).',
+  'نافذة الملصق تعرض حالة الطابعة، وفيها زر مختصر لإعدادها.']},
+ {v:'2.9.0',date:'2026-11-09',title:'ملصق أذكى وتفسير أبسط للباركود',items:[
+  'إطار النص على الملصق (الحدود الزرقاء) صار يلتصق بالنص ويكبر ويصغر معه تلقائيًا، مع خيار لإيقافه لكل عنصر.',
+  'أُلغي قسم «عناصر الباركود (QR)» المربك. يُحدَّد ما يدخل في الباركود من أزرار ▣ بجانب الحقول، ورُتّبت الحقول حسب أهميتها، وأُضيفت حقول للباركود فقط (إجمالي الشراء، سعر غرام الشراء، الحالة).',
+  'عند إلغاء كل العناصر يصبح الباركود فارغًا فعلًا دون أي قيمة سابقة.',
+  'قائمة القالب تعرض القوالب الجاهزة وتصاميمك المحفوظة معًا، وزر «تطبيق» يحمّل المختار، وتظهر النصوص كاملة.',
+  'لوحة تفسير الباركود صارت جدولًا بسيطًا: لكل جزء قائمة بالحقل المناسب، بدل السحب والإفلات.',
+  'تصحيح تلقائي لباركود يصل بلوحة المفاتيح العربية (مثل ل<0>ص<0> بدل g{0}w{0}) هو سبب نقص البيانات عند الماسح.',
+  'مسح الباركود القديم نفسه مرة ثانية لا يكرر الجلب: تُفتح القطعة المسجّلة، وزر لإدخال قطعة جديدة عند الحاجة. وتعمل الملصقات القديمة في البيع والجرد والمخزون.']},
  {v:'2.8.0',date:'2026-11-09',title:'الدخول بالبريد وتحسينات الإدخال والملصق',items:[
   'تسجيل الدخول بالبريد الإلكتروني وكلمة المرور صار الأساس (مع تأكيد البريد واستعادة كلمة المرور)، والدخول بالجوال خيار اختياري.',
   'الصفحة تمتد بعرض الشاشة كاملًا في كل الأقسام والتبويبات.',
