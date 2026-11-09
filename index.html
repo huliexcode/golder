@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.10.0">
+<meta name="app-version" content="2.11.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -495,6 +495,16 @@ table.dect{width:100%}
 table.dect select{min-width:160px;min-height:34px}
 table.dect tr.unm td{background:rgba(230,160,0,.12)}
 .lside select{width:100%;text-overflow:clip}
+
+.imode{margin-bottom:12px}
+.scanres{margin-top:10px;padding:10px 14px;border-radius:12px;font-weight:600;border-inline-start:5px solid transparent;display:none;line-height:1.7}
+.scanres.show{display:block}
+.scanres.ok{background:rgba(46,160,67,.14);border-color:#2ea043}
+.scanres.bad{background:rgba(214,60,60,.14);border-color:#d63c3c}
+.scanres.warn{background:rgba(230,160,0,.16);border-color:#e6a000}
+.sess .sum{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 10px}
+.sess td .btn{min-height:30px;padding:0 10px;font-size:12.5px}
+.sess tr.k-dup td:first-child,.sess tr.k-need td:first-child{font-weight:700}
 </style>
 </head>
 <body>
@@ -856,17 +866,18 @@ window.addEventListener('hashchange',()=>{fromHash();render(true);});
 function render(top){if(view!=='intake')genBulk=false;renderNav();const m=$('#main');({dashboard:vDash,intake:vIntake,stock:vStock,count:vCount,sale:vSale,ledger:vLedger,prefs:vPrefs}[view])(m);if(top)window.scrollTo(0,0);}
 
 /* ================= scan ================= */
-function scanBar(ctx,ph){
+function scanBar(ctx,ph,hint){
   return `<form class="scan" data-ctx="${ctx}" autocomplete="off" role="search">
     <span class="scan-ico">${ic('scan')}</span>
     <input id="scanIn" type="text" enterkeyhint="go" placeholder="${ph}" aria-label="${ph}" value="${ctx==='stock'?esc(stF.q):''}">
     <button type="button" class="btn accent" data-act="cam">${ic('camera')}<span>كاميرا</span></button>
-  </form><p class="hint">الماسح الخارجي (USB أو بلوتوث) يعمل مباشرة: اضغط داخل الحقل ثم امسح.</p>`;
+  </form><p class="hint">${hint||'الماسح الخارجي (USB أو بلوتوث) يعمل مباشرة: اضغط داخل الحقل ثم امسح.'}</p>`;
 }
 function bindScan(ctx){
   const f=$('.scan'),inp=$('#scanIn');
-  if(fine()&&ctx!=='intake')inp.focus();
-  f.addEventListener('submit',e=>{e.preventDefault();const raw=inp.value.trim();if(!raw)return;handleCode(ctx,raw);inp.value='';if(ctx==='stock'){stF.q='';renderList();}});
+  if(fine()&&(ctx!=='intake'||imodeGet()==='scan'))inp.focus();
+  f.addEventListener('submit',e=>{e.preventDefault();const raw=inp.value.trim();if(!raw)return;handleCode(ctx,raw);inp.value='';if(ctx==='stock'){stF.q='';renderList();}if(ctx==='intake')keepScanFocus();});
+  if(ctx==='intake')inp.addEventListener('blur',()=>setTimeout(()=>{const a=document.activeElement;if(view==='intake'&&imodeGet()==='scan'&&!draft&&!$('#dlg').open&&!$('#scanDlg').open&&(!a||a===document.body)&&document.contains(inp)&&fine())inp.focus();},120));
   if(ctx==='stock')inp.addEventListener('input',()=>{stF.q=inp.value;renderList();});
 }
 function codeHasKarat(code){
@@ -874,15 +885,123 @@ function codeHasKarat(code){
   if(pv.karat&&S.settings.karats.includes(String(pv.karat)))return true;
   return !!(kvKarat()&&parseCode(code).vals.karat!=null);
 }
+
+/* ================= intake: scan-and-add or manual ================= */
+const imodeGet=()=>{try{return localStorage.getItem('jard.imode')==='manual'?'manual':'scan';}catch(e){return 'scan';}};
+const imodeSet=m=>{try{localStorage.setItem('jard.imode',m);}catch(e){}};
+const iautoGet=()=>{try{return localStorage.getItem('jard.iauto')!=='0';}catch(e){return true;}};
+const iautoSet=v=>{try{localStorage.setItem('jard.iauto',v?'1':'0');}catch(e){}};
+let sess=[];
+function keepScanFocus(){const i=$('#scanIn');if(i&&fine()&&imodeGet()==='scan'&&!draft)setTimeout(()=>{if(!draft)i.focus();},0);}
+function applyIntakeMode(){
+  const m=imodeGet(),sc=$('#scanCard'),mc=$('#manualCard');
+  if(sc)sc.hidden=m!=='scan';if(mc)mc.hidden=m!=='manual';
+  document.querySelectorAll('.imode button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===m)));
+}
+function setIntakeMode(m){
+  imodeSet(m);applyIntakeMode();
+  if(m==='manual'){if(selDone()&&sel.karat&&!draft){draft=genDraft();editingExisting=false;renderDraft();}else if(!selDone())toast('أكمل اختيار العيار والفئة والصنف والحالة ثم أدخل بياناتك','bad');}
+  else{
+    const f=$('#pf');
+    if(draft&&draft._gen&&!editingExisting&&!(f&&num(f.elements.weight.value)>0)){draft=null;renderDraft();}
+    keepScanFocus();
+  }
+}
+function scanResult(kind,msg){const el=$('#scanMsg');if(!el)return;el.className='scanres show '+kind;el.textContent=msg;}
+function sessAdd(kind,o){sess.unshift(Object.assign({id:uid(),t:Date.now(),kind},o||{}));if(sess.length>60)sess.length=60;renderSess();}
+function renderSess(){
+  const box=$('#sessBox');if(!box)return;
+  if(!sess.length){box.innerHTML='';return;}
+  const added=sess.filter(x=>x.kind==='added'&&piece(x.pid));
+  const tw=sum(added,x=>piece(x.pid).weight),tc=sum(added,x=>piece(x.pid).cost);
+  const tm=t=>{try{return new Date(t).toLocaleTimeString('ar-EG-u-nu-latn',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}catch(e){return '';}};
+  const row=x=>{
+    if(x.kind==='added'){const p=piece(x.pid);if(!p)return `<tr class="k-added"><td data-l="الوقت">${tm(x.t)}</td><td data-l="النتيجة" colspan="6"><span class="muted">قطعة حُذفت</span></td></tr>`;
+      return `<tr class="k-added"><td data-l="الوقت">${tm(x.t)}</td><td data-l="النتيجة"><span class="chip">✓ أُضيفت</span></td><td data-l="الصنف">${esc(pathOf(p.nodeId))}</td><td data-l="العيار">${esc(p.karat)}</td><td data-l="الوزن">${fmtW(p.weight)}</td><td data-l="التكلفة">${money(p.cost)}</td><td data-l="الرقم"><span class="mono">${esc(p.serial||p.barcode)}</span></td><td><button type="button" class="btn ghost" data-act="sessopen" data-id="${p.id}">تعديل</button> <button type="button" class="btn ghost" data-act="undoadd" data-id="${p.id}">تراجع</button></td></tr>`;}
+    if(x.kind==='dup')return `<tr class="k-dup"><td data-l="الوقت">${tm(x.t)}</td><td data-l="النتيجة"><span class="chip used">⚠ مكررة</span></td><td colspan="4" data-l="التفاصيل">${esc(x.msg||'')}</td><td></td><td><button type="button" class="btn ghost" data-act="sessopen" data-id="${x.pid}">فتح</button>${x.ext?` <button type="button" class="btn ghost" data-act="extnew2" data-code="${esc(x.ext)}">إدخال كقطعة جديدة</button>`:''}</td></tr>`;
+    if(x.kind==='need')return `<tr class="k-need"><td data-l="الوقت">${tm(x.t)}</td><td data-l="النتيجة"><span class="chip gold">✎ للاستكمال</span></td><td colspan="4" data-l="التفاصيل">${esc(x.msg||'')}</td><td><span class="mono">${esc(x.code||'')}</span></td><td></td></tr>`;
+    return `<tr class="k-fail"><td data-l="الوقت">${tm(x.t)}</td><td data-l="النتيجة"><span class="chip used">✕ تعذّر</span></td><td colspan="4" data-l="التفاصيل">${esc(x.msg||'')}</td><td><span class="mono">${esc(x.code||'')}</span></td><td></td></tr>`;
+  };
+  box.innerHTML=`<div class="panel sess"><div class="row" style="justify-content:space-between;align-items:center"><h3>القطع المُضافة في هذه الجلسة</h3><div class="row"><button type="button" class="btn ghost" data-act="sessprint">${ic('print')}<span>طباعة ملصقات الجلسة</span></button><button type="button" class="btn" data-act="sessgo">عرض في المخزون</button><button type="button" class="btn ghost" data-act="sessclear">مسح القائمة</button></div></div>
+    <div class="sum"><span class="chip">${added.length} قطعة</span><span class="chip">${fmtW(tw)} جم</span><span class="chip gold">${money(tc)}</span></div>
+    <div class="tablewrap"><table class="rt"><thead><tr><th>الوقت</th><th>النتيجة</th><th>الصنف</th><th>العيار</th><th>الوزن</th><th>التكلفة</th><th>الرقم</th><th></th></tr></thead><tbody>${sess.map(row).join('')}</tbody></table></div></div>`;
+}
+function autoBlock(d,code){
+  const dec=d._dec;
+  if(!d.karat)return 'العيار غير محدد.';
+  if(!d.nodeId||!leavesFor(d.karat).some(n=>n.id===d.nodeId))return 'الصنف غير محدد.';
+  if(needAud(d.karat)&&!d.aud)return 'الفئة غير محددة.';
+  if(!(num(d.weight)>0))return 'الباركود لا يحمل وزنًا.';
+  if(dec&&dec.ext&&!dec.tpl)return 'باركود خارجي غير معروف: راجع «تفسير الباركود» واحفظ التنسيق لتُضاف أمثاله تلقائيًا.';
+  const pv=parseCode(code).vals||{},dv=dec?decVals(dec):{};
+  if(!(pv.wage>0||pv.buyPpg>0||pv.cost>0||dv.wage>0||dv.buyPpg>0||dv.cost>0))return 'الباركود يحمل الوزن فقط. أكمل الأجرة وسعر الغرام والمقاس.';
+  return '';
+}
+function quickSave(d){
+  const karat=String(d.karat||''),aud=karat==='24'?'':String(d.aud||'');
+  const weight=num(d.weight);
+  let serial=String(d.serial||'').trim(),bc=cleanCode(d.barcode||'');
+  const v={weight,size:d.size||'',wage:num(d.wage),buyPpg:num(d.buyPpg),cost:num(d.cost),serial,karat,aud,name:d.name||'',used:!!d.used,cat:pathOf(d.nodeId),extra:Object.assign({},d.extra||{})};
+  if(d._gen){
+    if(!serial){serial=peekSerial();v.serial=serial;}
+    const r=buildCode(v);if(!r.code)return{err:(r.issues&&r.issues[0])||'تعذّر توليد الباركود.'};bc=r.code;
+  }
+  if(!bc)return{err:'لا يوجد باركود.'};
+  if(S.pieces.some(x=>x.barcode===bc))return{err:'الباركود الناتج موجود مسبقًا.'};
+  if(serial&&S.pieces.some(x=>x.serial===serial))return{err:'الرقم التسلسلي «'+serial+'» مستخدم لقطعة أخرى.'};
+  let cost=r2(v.cost);if(!(cost>0)&&weight>0&&v.buyPpg>0)cost=r2(weight*(v.buyPpg+v.wage));
+  let sellPpg=r2(num(d.sellPpg)),sellAmt=sellPpg>0?r2(sellPpg*weight):0;
+  const dm=S.settings.defMargin||0;if(dm>0&&dm<100&&cost>0){sellAmt=r2(cost/(1-dm/100));sellPpg=r2(sellAmt/weight);}
+  const o={barcode:bc,serial,karat,aud,nodeId:d.nodeId,used:!!d.used,name:String(d.name||'').trim(),weight:r3(weight),size:latin(String(d.size||'').trim()),wage:r2(v.wage),buyPpg:r2(v.buyPpg),cost,sellPpg,sellAmt,vatRate:Math.max(0,num(d.vatRate)),notes:String(d.notes||'').trim(),extra:Object.assign({},d.extra||{})};
+  o.src={};SRC_FIELDS.forEach(n=>{const t=(d._src||{})[n];if(t)o.src[n]=t;});
+  if(d._extCode)o.extCode=String(d._extCode).slice(0,120);
+  const saved=Object.assign({id:uid(),created:new Date().toISOString(),status:'in'},o);
+  S.pieces.push(saved);bumpSerial(saved.serial);
+  S.txs.push({id:uid(),date:saved.created,type:'purchase',items:[{pid:saved.id,name:dname(saved),barcode:saved.barcode,serial:saved.serial,karat:saved.karat,nodeId:saved.nodeId,cat:pathOf(saved.nodeId),aud:saved.aud||'',used:saved.used,weight:saved.weight,size:saved.size,wage:saved.wage,buyPpg:saved.buyPpg,amount:saved.cost}],total:saved.cost});
+  save();emitEvent('piece.created',pieceOut(saved));
+  if(S.settings.label.autoPrint)setTimeout(()=>printLabels([saved],1),50);
+  return{ok:true,piece:saved};
+}
+function undoAdd(pid){
+  const p=piece(pid);if(!p)return;const snap=pieceOut(p);
+  S.txs=S.txs.filter(t=>!(t.type==='purchase'&&t.items[0]&&t.items[0].pid===pid));
+  S.pieces=S.pieces.filter(x=>x.id!==pid);save();emitEvent('piece.deleted',snap);
+  sess=sess.filter(x=>x.pid!==pid);renderSess();renderRecent();toast('تم التراجع عن إضافة القطعة');keepScanFocus();
+}
+function intakeScan(code,p){
+  if(p){
+    beep(false);
+    const isExt=!!(p.extCode&&p.extCode===code&&p.barcode!==code);
+    const msg='موجودة مسبقًا: '+dname(p)+' · '+fmtW(p.weight)+' جم'+(p.serial?' · '+p.serial:'');
+    scanResult('warn',(isExt?'سبق إدخال هذا الباركود القديم. ':'')+msg);
+    sessAdd('dup',{pid:p.id,code,ext:isExt?code:'',msg});return;
+  }
+  if(!selDone()&&!codeHasKarat(code)){beep(false);scanResult('bad','أكمل اختيار العيار والفئة والصنف والحالة أولًا (أو امسح باركودًا يحمل العيار).');return;}
+  const d=draftFromCode(code);
+  if(!d){beep(false);scanResult('bad','تعذّر تفسير الباركود: '+code);sessAdd('fail',{code,msg:'تعذّر تفسير الباركود'});return;}
+  d._fromScan=true;
+  let why='';
+  if(iautoGet()){
+    why=autoBlock(d,code);
+    if(!why){
+      const r=quickSave(d);
+      if(r.ok){beep();scanResult('ok','✓ أُضيفت: '+dname(r.piece)+' · '+fmtW(r.piece.weight)+' جم · '+money(r.piece.cost));sessAdd('added',{pid:r.piece.id,code});renderRecent();return;}
+      why=r.err;
+    }
+  }else why='الإضافة التلقائية متوقفة.';
+  d._note=(d._note?d._note+' ':'')+why;
+  beep(false);
+  draft=d;editingExisting=false;renderDraft();
+  scanResult('warn','يحتاج استكمالًا: '+why);
+  sessAdd('need',{code,msg:why});
+}
 function handleCode(ctx,raw,forceNew){
   const code=cleanCode(raw);if(!code)return;
   if(lastKbdFix&&lastKbdFix.to===code&&ctx!=='form'){toast('صُحِّح الباركود من لوحة المفاتيح العربية');}
   if(ctx==='form'){const i=$('#pf [name="barcode"]');if(i){i.value=code;applyParsed(code);}return;}
   const p0=findPiece(code),p=(forceNew&&p0&&p0.extCode===code&&p0.barcode!==code)?null:p0;
   if(ctx==='intake'){
-    if(p){beep();const isExt=!!(p.extCode&&p.extCode===code&&p.barcode!==code);toast(isExt?'سبق إدخال هذا الباركود القديم — فتحتُ القطعة المسجّلة بدل تكرار الجلب':'هذا الباركود موجود مسبقًا','bad');draft=clonePiece(p);editingExisting=true;draft._extDup=isExt?code:'';renderDraft();return;}
-    if(!selDone()&&!codeHasKarat(code)){beep(false);toast('أكمل اختيار العيار والفئة والصنف والحالة أولًا ثم امسح (أو امسح باركودًا يحمل العيار)','bad');return;}
-    draft=draftFromCode(code);if(!draft){beep(false);return;}beep();editingExisting=false;renderDraft();
+    intakeScan(code,p);
   }else if(ctx==='stock'){
     if(p){beep();openPiece(p);}else{beep(false);toast('لا توجد قطعة بهذا الباركود','bad');}
   }else if(ctx==='sale'){
@@ -2401,8 +2520,13 @@ function submitPiece(f,p,mode){
   emitEvent(newSaved?'piece.created':'piece.updated',pieceOut(newSaved||piece(p.id)));
   const bulk=!!(mode==='intake'&&newSaved&&p._gen&&genBulk);
   if(mode==='intake'&&newSaved&&(S.settings.label.autoPrint||pr_||bulk))setTimeout(()=>printLabels([newSaved],1),bulk?30:50);
-  if(bulk){draft=nextBulkDraft(newSaved);editingExisting=false;renderDraft();renderRecent();toast('تم الحفظ والطباعة · '+(newSaved.serial||newSaved.barcode));}
-  else if(mode==='intake'){draft=null;editingExisting=false;renderDraft();renderRecent();toast('تم حفظ القطعة');const i=$('#scanIn');if(i&&fine())i.focus();}
+  if(bulk){if(newSaved)sessAdd('added',{pid:newSaved.id,code:newSaved.barcode});draft=nextBulkDraft(newSaved);editingExisting=false;renderDraft();renderRecent();toast('تم الحفظ والطباعة · '+(newSaved.serial||newSaved.barcode));}
+  else if(mode==='intake'){
+    if(newSaved){sessAdd('added',{pid:newSaved.id,code:newSaved.extCode||newSaved.barcode});scanResult('ok','✓ حُفظت: '+dname(newSaved)+' · '+fmtW(newSaved.weight)+' جم · '+money(newSaved.cost));}
+    draft=null;editingExisting=false;
+    if(imodeGet()==='manual'&&selDone()&&sel.karat)draft=genDraft();
+    renderDraft();renderRecent();toast('تم حفظ القطعة');keepScanFocus();
+  }
   else{closeDlg();toast('تم حفظ التغييرات');render();}
 }
 function openPiece(p){const d=dlg(`<div class="modal"><h2>تعديل القطعة</h2>${pieceFormHTML(p,'modal')}</div>`);bindPieceForm($('#pf'),p,'modal');if(!d.open)d.showModal();}
@@ -2419,7 +2543,8 @@ const selNode=()=>sel.path.length?sel.path[sel.path.length-1]:'';
 const needAud=k=>!!(k&&String(k)!=='24'&&S.settings.audiences.length);
 const selDone=()=>!!((sel.karat||(kvKarat()&&sel.skipK))&&selNode()&&isLeaf(selNode())&&(!needAud(sel.karat)||sel.aud)&&sel.condSet);
 function vIntake(m){
-  m.innerHTML=`<header class="head"><div><h1>إدخال قطع</h1><p class="muted">اختر بالتتابع: العيار ← الفئة ← الصنف ← الحالة. بعد اكتمال الاختيار امسح الباركود أو أنشئ باركودًا جديدًا من البيانات.</p></div></header>
+  const md=imodeGet();
+  m.innerHTML=`<header class="head"><div><h1>إدخال قطع</h1><p class="muted">اختر العيار ← الفئة ← الصنف ← الحالة، ثم أدخل القطع بإحدى طريقتين: <b>مسح الباركود</b> (تُضاف القطعة تلقائيًا ويبقى المؤشر في حقل المسح) أو <b>إدخال يدوي</b>.</p></div></header>
   <div class="intake">
     <section class="panel wiz" aria-label="اختيار العيار والصنف">
       <ol class="stepper" id="stepper"></ol>
@@ -2427,11 +2552,19 @@ function vIntake(m){
       <div id="wizBody"></div>
     </section>
     <div>
-      <section class="panel" id="scanCard"><h3>مسح الباركود</h3><p class="muted" id="scanHint" style="margin-bottom:10px"></p>${scanBar('intake','امسح باركود القطعة أو اكتبه ثم Enter')}<div class="row" style="margin-top:4px"><span class="muted">أو</span><button type="button" id="genBtn" class="btn" data-act="gennew" disabled>${ic('plus')}<span>إنشاء باركود جديد من البيانات</span></button></div><small class="muted" id="genHint">بعد اكتمال الاختيار اضغط «إنشاء باركود جديد من البيانات» لإدخال الوزن والمقاس والأجرة وسعر الغرام وتوليد باركود جديد من المنصة.</small></section>
-      <section id="draftBox" style="margin-top:14px"></section><section id="recent" style="margin-top:14px"></section>
+      <div class="segb imode" role="tablist" aria-label="طريقة الإدخال"><button type="button" data-act="imode" data-v="scan" aria-pressed="${md==='scan'}">مسح باركود</button><button type="button" data-act="imode" data-v="manual" aria-pressed="${md==='manual'}">إدخال يدوي</button></div>
+      <section class="panel" id="scanCard" ${md==='scan'?'':'hidden'}><h3>مسح الباركود</h3><p class="muted" id="scanHint" style="margin-bottom:10px"></p>${scanBar('intake','امسح باركود القطعة أو اكتبه ثم Enter','يبقى المؤشر في هذا الحقل: امسح القطع واحدة تلو الأخرى، وتُضاف كل قطعة تلقائيًا إن كانت بياناتها كاملة.')}
+        <label class="chk" style="display:inline-flex;gap:8px;align-items:center;cursor:pointer;margin-top:6px"><input type="checkbox" id="autoAdd" ${iautoGet()?'checked':''}>إضافة القطعة تلقائيًا عند مسح باركود مكتمل البيانات (وإلا تُفتح لاستكمالها)</label>
+        <div id="scanMsg" class="scanres" role="status" aria-live="polite"></div>
+        <div class="row" style="margin-top:8px"><span class="muted">أو</span><button type="button" class="btn" data-act="imode" data-v="manual">${ic('plus')}<span>إدخال يدوي</span></button></div></section>
+      <section class="panel" id="manualCard" ${md==='manual'?'':'hidden'}><h3>إدخال يدوي</h3><p class="muted">أدخل الوزن والمقاس والأجرة وسعر الغرام، ويُولَّد الباركود من المنصة عند الحفظ.</p><div class="row"><button type="button" id="genBtn" class="btn accent" data-act="gennew" disabled>${ic('plus')}<span>قطعة جديدة</span></button><button type="button" class="btn ghost" data-act="imode" data-v="scan">العودة إلى المسح</button></div></section>
+      <section id="draftBox" style="margin-top:14px"></section><section id="sessBox" style="margin-top:14px"></section><section id="recent" style="margin-top:14px"></section>
     </div>
   </div>`;
-  bindScan('intake');renderWizard();renderDraft();renderRecent();
+  bindScan('intake');renderWizard();renderDraft();renderSess();renderRecent();
+  const aa=$('#autoAdd');if(aa)aa.addEventListener('change',e=>iautoSet(e.target.checked));
+  applyIntakeMode();
+  if(md==='manual'&&selDone()&&sel.karat&&!draft){draft=genDraft();editingExisting=false;renderDraft();}
 }
 function renderWizard(){
   const bd=$('#wizBody');if(!bd)return;
@@ -2485,12 +2618,13 @@ function syncDraft(){
 }
 function afterSel(){
   renderWizard();syncDraft();
-  if(selDone()&&!draft&&fine()){const i=$('#scanIn');if(i)i.focus();}
+  if(imodeGet()==='manual'){if(selDone()&&sel.karat&&!draft){draft=genDraft();editingExisting=false;renderDraft();}}
+  else if(selDone()&&!draft&&fine()){const i=$('#scanIn');if(i)i.focus();}
 }
 function renderDraft(){
   const box=$('#draftBox');if(!box)return;
   if(!draft){box.innerHTML='';return;}
-  box.innerHTML=`<div class="panel"><h2 style="margin-bottom:12px">${editingExisting?'تعديل قطعة مسجّلة':(draft&&draft._gen?'قطعة جديدة — يُولَّد الباركود من البيانات':'بيانات القطعة الجديدة')}</h2>${pieceFormHTML(draft,'intake')}</div>`;
+  box.innerHTML=`<div class="panel"><h2 style="margin-bottom:12px">${editingExisting?'تعديل قطعة مسجّلة':(draft._fromScan?'استكمال بيانات القطعة الممسوحة':(draft._gen?'إدخال يدوي':'بيانات القطعة'))}</h2>${pieceFormHTML(draft,'intake')}</div>`;
   bindPieceForm($('#pf'),draft,'intake');
   const w=$('#pf [name="weight"]');if(w){w.focus();try{w.select();}catch(er){}box.scrollIntoView({block:'nearest'});}
 }
@@ -3785,8 +3919,16 @@ document.addEventListener('click',async e=>{
     case 'wzcond':{sel.condSet=false;afterSel();break;}
     case 'wzpath':{sel.path=sel.path.slice(0,+b.dataset.i);sel.condSet=false;afterSel();break;}
     case 'selused':{sel.used=b.dataset.v==='1';afterSel();break;}
+    case 'imode':setIntakeMode(b.dataset.v);break;
+    case 'undoadd':undoAdd(id);break;
+    case 'sessopen':{const p=piece(id);if(p)openPiece(p);break;}
+    case 'sessprint':{const a=sess.filter(x=>x.kind==='added'&&piece(x.pid)).map(x=>piece(x.pid));if(!a.length){toast('لا توجد قطع مُضافة في الجلسة','bad');break;}printLabels(a,1);break;}
+    case 'sessgo':go('stock');break;
+    case 'sessclear':sess=[];renderSess();keepScanFocus();break;
+    case 'extnew2':handleCode('intake',b.dataset.code,true);break;
     case 'gennew':{
       if(!selDone()||!sel.karat){beep(false);toast('أكمل اختيار العيار والفئة والصنف والحالة أولًا ثم أنشئ الباركود','bad');break;}
+      imodeSet('manual');applyIntakeMode();
       if(draft)toast('تم استبدال القطعة المفتوحة');
       draft=genDraft();editingExisting=false;renderDraft();break;
     }
@@ -3797,7 +3939,7 @@ document.addEventListener('click',async e=>{
       else{closeDlg();openPiece(p);}
       break;
     }
-    case 'cancelDraft':draft=null;editingExisting=false;renderDraft();break;
+    case 'cancelDraft':draft=null;editingExisting=false;renderDraft();keepScanFocus();break;
     case 'stf':stF[b.dataset.g]=b.dataset.k;renderStFilters();renderList();break;
     case 'cam':{const ctx=b.closest('form').dataset.ctx;openScanner(c=>handleCode(ctx,c));break;}
     case 'editp':{const p=piece(id);if(p)openPiece(p);break;}
@@ -3946,8 +4088,14 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.10.0';
+const APP_VERSION='2.11.0';
 const CHANGELOG=[
+ {v:'2.11.0',date:'2026-11-09',title:'قسم الإدخال بطريقتين: مسح أو يدوي',items:[
+  'قسم «إدخال» صار بطريقتين تتبدلان من أعلاه: مسح الباركود أو الإدخال اليدوي.',
+  'عند المسح تُضاف القطعة تلقائيًا إن كانت بياناتها كاملة، ويبقى المؤشر في حقل المسح لتمسح القطع التالية واحدة بعد أخرى بلا لمس الشاشة.',
+  'قائمة «القطع المُضافة في هذه الجلسة» بإجماليات العدد والوزن والتكلفة، مع تعديل أو تراجع لكل قطعة، وطباعة ملصقات الجلسة، وانتقال سريع للمخزون.',
+  'الباركود المكرر لا يُضاف ويظهر تنبيه في القائمة. والباركود غير المكتمل (وزن فقط أو تنسيق خارجي جديد) يُفتح للاستكمال فقط.',
+  'أُزيل نموذج الإدخال الذي كان يظهر بعنوان «قطعة جديدة» تلقائيًا؛ يظهر نموذج الإدخال اليدوي عند اختيار هذه الطريقة فقط، ويظهر نموذج الاستكمال عند الحاجة.']},
  {v:'2.10.0',date:'2026-11-09',title:'ربط طابعة Zebra TLP 2844 والطباعة بضغطة واحدة',items:[
   'دعم لغة EPL2 لطابعات Zebra TLP/LP 2844 وما شابهها، مع اتجاه الطباعة (ZT/ZB) وسرعة وكثافة وفاصل الملصقات.',
   'زر «ربط Zebra TLP 2844 الآن» في الإعدادات ← الطابعة يضبط USB المباشر وEPL و203 DPI ثم تختار الطابعة مرة واحدة.',
