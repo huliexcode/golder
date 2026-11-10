@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.15.0">
+<meta name="app-version" content="2.16.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -508,6 +508,37 @@ table.dect tr.unm td{background:rgba(230,160,0,.12)}
 
 input[type=number]{-moz-appearance:textfield;appearance:textfield}
 input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+
+.pboard .phead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.pboard .phead h3{display:flex;align-items:center;gap:8px;margin:0}
+.pboard .pmeta{color:var(--muted);font-size:12.5px}
+.pgrid{display:grid;gap:12px;grid-template-columns:repeat(4,minmax(0,1fr))}
+.pgrid.big{grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:12px}
+.pcard{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 18px;display:flex;flex-direction:column;gap:6px;min-width:0;box-shadow:0 1px 0 rgba(0,0,0,.02)}
+.pcard .pl{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-weight:600}
+.pcard .pl small{color:var(--muted);font-weight:500}
+.pcard .pv{font-variant-numeric:tabular-nums;font-feature-settings:"tnum";font-weight:800;font-size:28px;letter-spacing:.2px;line-height:1.15;color:var(--ink)}
+.pgrid.big .pcard .pv{font-size:36px}
+.pcard .pf{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12.5px}
+.pd{display:inline-flex;align-items:center;gap:4px;font-weight:700;font-size:12.5px;direction:ltr}
+.pd.up{color:#1f9d55}.pd.dn{color:#d63c3c}.pd.flat{color:var(--muted)}
+.pd i{font-style:normal}
+.pcard.gold{border-color:rgba(201,162,39,.45);background:linear-gradient(180deg,rgba(201,162,39,.10),transparent)}
+.pbadge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700;background:rgba(201,162,39,.16);color:var(--accent-text,#8a6d00)}
+.pbadge.live::before{content:'';width:7px;height:7px;border-radius:50%;background:#1f9d55;box-shadow:0 0 0 3px rgba(31,157,85,.2)}
+.pbadge.warn::before{content:'';width:7px;height:7px;border-radius:50%;background:#e6a000}
+.pmini{display:flex;gap:14px;flex-wrap:wrap;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 14px;margin-bottom:12px;font-size:13px}
+.pmini b{font-variant-numeric:tabular-nums}
+.pmini .pk{display:inline-flex;gap:6px;align-items:baseline}
+.pmini .pk small{color:var(--muted)}
+@media (max-width:760px){.pgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.pcard .pv{font-size:22px}.pgrid.big .pcard .pv{font-size:26px}}
+.tw{position:relative}
+.tw{display:flex}.tiles .tw .tile{width:100%}
+.tact{position:absolute;inset-inline-end:6px;top:6px;display:flex;gap:4px;z-index:2}
+.tact button{width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-size:14px;line-height:1;padding:0;color:var(--ink)}
+.tact button:hover{border-color:var(--accent)}
+.tile.add{border-style:dashed;color:var(--muted);background:transparent}
+.catbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:2px 0 8px}
 </style>
 </head>
 <body>
@@ -789,7 +820,7 @@ let view='dashboard',sel={karat:'',path:[],used:false,aud:'',condSet:false,skipK
 let stF={status:'in',cond:'all',karat:'all',aud:'all',node:'all',q:''},period='month',txType='all',txQ='';
 const lp={p:'month',y:new Date().getFullYear(),m:new Date().getMonth(),d:todayStr()};
 let cart=[];const inv={no:'',date:todayStr(),party:'',note:''};
-const pstate={st:'idle'};
+const pstate={st:'idle',last:0,fb:false,err:''};
 
 /* ---------- category tree ---------- */
 const node=id=>S.settings.nodes.find(n=>n.id===id);
@@ -904,6 +935,8 @@ function recomputePrices(){if(S.settings.usd>0){setPricesFromOunce(S.settings.us
 
 /* ================= ui bits ================= */
 const ICON={
+  trend:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+  refresh:'<path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/>',
   home:'<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>',
   box:'<path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/>',
   sale:'<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
@@ -1983,14 +2016,86 @@ function txAmount(x){
 const txDate=x=>x.type==='sale'?dfmt(x.date):dtf(x.date);
 
 /* ================= dashboard ================= */
-function priceStripHTML(){
-  const s=S.settings,pn=s.prices,pu=s.pricesUsed||{};
-  const st=pstate.st==='loading'?'جارٍ تحديث الأسعار…':pstate.st==='fail'?'تعذّر التحديث التلقائي'+(s.pricesAt?'، وتُعرض آخر أسعار محفوظة':''):'';
-  const src=s.priceSrc==='auto'?`السعر العالمي للأونصة ${fmt(s.usd)} دولار، سعر الصرف ${s.fx}، علاوة السوق: جديد ${num(s.premium)||0}% ومستعمل ${num(s.premiumUsed)||0}%`:s.priceSrc==='manual'?'أسعار أُدخلت يدويًا'+(s.usd>0?` من أونصة ${fmt(s.usd)} دولار`:''):'لم تُحدَّد أسعار بعد';
-  const cell=v=>v>0?fmt(v):'—';
-  return `<h3>سعر بيع الجرام اليوم</h3><div class="tablewrap" style="margin-top:10px"><table class="mini"><thead><tr><th></th>${s.karats.map(k=>`<th>عيار ${esc(k)}</th>`).join('')}</tr></thead><tbody><tr><td><b>جديد</b></td>${s.karats.map(k=>`<td>${cell(pn[k])}</td>`).join('')}</tr><tr><td><b>مستعمل</b></td>${s.karats.map(k=>`<td>${cell(pu[k])}</td>`).join('')}</tr></tbody></table></div><small>${src}${s.pricesAt?' · آخر تحديث: '+dtf(s.pricesAt):''}${st?' · '+st:''}</small><div class="row" style="margin-top:10px"><button class="btn ghost sm" data-act="refreshPrices">تحديث الآن</button><button class="btn ghost sm" data-act="prices">إدخال يدوي</button><button class="btn ghost sm" data-act="applyPrices">تطبيق على القطع المتوفرة</button></div>`;
+const phideGet=()=>{try{return localStorage.getItem('jard.phide')==='1';}catch(e){return false;}};
+function feedCfg(){
+  const d={url:'',proxy:'',every:5,map:null,fallback:true};
+  const f=S.settings.feed&&typeof S.settings.feed==='object'?S.settings.feed:{};
+  S.settings.feed=Object.assign(d,f);
+  S.settings.feed.every=[1,2,5,10,15,30].includes(+S.settings.feed.every)?+S.settings.feed.every:5;
+  return S.settings.feed;
 }
-function paintPrices(){const e=$('#pstrip');if(e)e.innerHTML=priceStripHTML();}
+function trackPrices(){
+  const s=S.settings,d=todayStr(),snap={xau:+s.usd||0,xag:+s.xag||0};
+  s.karats.forEach(k=>{snap['g'+k]=+((s.prices||{})[k])||0;});
+  let pd=(s.pday&&typeof s.pday==='object')?s.pday:null;
+  if(!pd||pd.d!==d){pd={d,open:Object.assign({},pd&&pd.last?pd.last:snap),lo:snap.xau||null,hi:snap.xau||null,last:snap};}
+  pd.last=snap;
+  if(snap.xau>0){pd.lo=pd.lo==null?snap.xau:Math.min(pd.lo,snap.xau);pd.hi=pd.hi==null?snap.xau:Math.max(pd.hi,snap.xau);}
+  s.pday=pd;
+}
+function pdelta(cur,open){
+  if(!(cur>0)||!(open>0))return '<span class="pd flat">—</span>';
+  const d=cur-open,cls=d>0.004?'up':d<-0.004?'dn':'flat';
+  return `<span class="pd ${cls}"><i>${d>0.004?'↗':d<-0.004?'↘':'•'}</i>${d>0.004?'+':''}${fmt(d)}</span>`;
+}
+function priceSrcBadge(){
+  const s=S.settings;
+  if(pstate.st==='loading')return '<span class="pbadge warn">جارٍ التحديث…</span>';
+  if(s.priceSrc==='manual')return '<span class="pbadge">يدوي</span>';
+  if(pstate.st==='fail')return '<span class="pbadge warn">تعذّر التحديث</span>';
+  if(s.priceSrc==='feed'&&pstate.fb)return '<span class="pbadge warn">الرابط تعذّر — سوق عالمي</span>';
+  return '<span class="pbadge live">'+(s.priceSrc==='feed'?'مباشر من الرابط':'مباشر')+'</span>';
+}
+function priceBoardHTML(){
+  const s=S.settings,pd=s.pday||{},op=pd.open||{},pn=s.prices||{},pu=s.pricesUsed||{},hide=phideGet();
+  const ks=s.karats.slice().sort((a,b)=>num(b)-num(a));
+  const cell=v=>v>0?fmt(v):'—';
+  const head=`<div class="phead"><h3>${ic('trend')}<span>أسعار الذهب والفضة</span> ${priceSrcBadge()}</h3><div class="pmeta">${pd.lo>0&&pd.hi>0?'نطاق اليوم: <b dir="ltr">'+fmt(pd.lo)+' – '+fmt(pd.hi)+'</b> · ':''}${s.pricesAt?'آخر تحديث: '+dtf(s.pricesAt):'لم تُحدَّد أسعار بعد'}</div></div>`;
+  const msg=pstate.st==='fail'?`<p class="hint warn" style="margin:0 0 10px">تعذّر التحديث التلقائي${s.pricesAt?'، وتُعرض آخر أسعار محفوظة':''}.${pstate.err?' '+esc(pstate.err):''}</p>`:'';
+  const big=`<div class="pgrid big"><div class="pcard gold"><div class="pl"><span>أونصة الذهب</span><small>USD</small></div><div class="pv">${cell(s.usd)}</div><div class="pf"><span>سعر عالمي</span>${pdelta(s.usd,op.xau)}</div></div><div class="pcard"><div class="pl"><span>أونصة الفضة</span><small>USD</small></div><div class="pv">${cell(s.xag)}</div><div class="pf"><span>سعر عالمي</span>${pdelta(s.xag,op.xag)}</div></div></div>`;
+  const grid=`<div class="pgrid">${ks.map(k=>`<div class="pcard ${k==='24'?'gold':''}"><div class="pl"><span>ذهب عيار ${esc(k)}</span><small>${esc(cur())}</small></div><div class="pv">${cell(pn[k])}</div><div class="pf"><span>للجرام</span>${pdelta(pn[k],op['g'+k])}</div></div>`).join('')}</div>`;
+  const used=`<details style="margin-top:12px"><summary>الجديد والمستعمل</summary><div class="tablewrap" style="margin-top:8px"><table class="mini"><thead><tr><th></th>${ks.map(k=>`<th>عيار ${esc(k)}</th>`).join('')}</tr></thead><tbody><tr><td><b>جديد</b></td>${ks.map(k=>`<td>${cell(pn[k])}</td>`).join('')}</tr><tr><td><b>مستعمل</b></td>${ks.map(k=>`<td>${cell(pu[k])}</td>`).join('')}</tr></tbody></table></div><small class="muted">${s.priceSrc==='auto'?'سعر الصرف '+s.fx+' · علاوة السوق: جديد '+(num(s.premium)||0)+'% ومستعمل '+(num(s.premiumUsed)||0)+'%':s.priceSrc==='feed'?'أسعار الجرام مأخوذة من الرابط المخصص':'أسعار أُدخلت يدويًا'}</small></details>`;
+  const acts=`<div class="row" style="margin-top:12px"><button class="btn ghost sm" data-act="refreshPrices">${ic('refresh')||''}<span>تحديث الآن</span></button><button class="btn ghost sm" data-act="prices">إدخال يدوي</button><button class="btn ghost sm" data-act="pgosrc">مصدر الأسعار</button><button class="btn ghost sm" data-act="applyPrices">تطبيق على القطع المتوفرة</button><button class="btn ghost sm" data-act="phide">${hide?'إظهار الأسعار':'إخفاء الأسعار'}</button></div>`;
+  return `<div class="pboard">${head}${hide?'':msg+big+grid+used}${acts}</div>`;
+}
+function priceStripHTML(){return priceBoardHTML();}
+function priceMiniHTML(){
+  const s=S.settings,ks=s.karats.slice().sort((a,b)=>num(b)-num(a)),pd=s.pday||{},op=pd.open||{};
+  if(!ks.some(k=>(s.prices||{})[k]>0))return `<span class="muted">لم تُحدَّد أسعار الذهب بعد.</span> <button type="button" class="btn ghost sm" data-act="refreshPrices">تحديث</button>`;
+  return `<span class="pbadge ${pstate.st==='fail'?'warn':'live'}">أسعار اليوم</span>${ks.map(k=>`<span class="pk"><small>عيار ${esc(k)}</small><b>${fmt(s.prices[k])}</b>${pdelta(s.prices[k],op['g'+k])}</span>`).join('')}<small class="muted">${s.pricesAt?'تحديث '+dtf(s.pricesAt):''}</small>`;
+}
+
+function priceSourcePanelHTML(){
+  const s=S.settings,f=feedCfg(),src=s.priceSrc==='feed'?'feed':s.priceSrc==='manual'?'manual':'auto';
+  const sel=(k,v,opts)=>`<select data-ps="${k}">${opts.map(([a,b])=>`<option value="${a}" ${String(v)===String(a)?'selected':''}>${b}</option>`).join('')}</select>`;
+  const prem=num(s.premium)||0;
+  const px=['','https://api.allorigins.win/raw?url=','https://corsproxy.io/?url='].includes(f.proxy)?f.proxy:'__c';
+  return `<section class="panel" id="psrc"><h2>مصدر أسعار الذهب</h2><p class="muted">اختر من أين تأتي أسعار اليوم، وتُحدَّث تلقائيًا بالمدة التي تحددها.</p>
+    <div class="grid" style="max-width:640px"><label class="f">المصدر${sel('src',src,[['auto','السوق العالمي المباشر (مع علاوة تضبطها)'],['feed','رابط مخصص (بيانات موقع الجنيه العربي أو غيره)'],['manual','يدوي']])}</label><label class="f">التحديث كل${sel('every',f.every,[[1,'دقيقة'],[2,'دقيقتين'],[5,'5 دقائق'],[10,'10 دقائق'],[15,'15 دقيقة'],[30,'30 دقيقة']])}</label></div>
+    <div style="margin-top:14px"><h3 style="margin:0 0 6px">مطابقة أسعار شركة الجنية العربي</h3><p class="muted" style="margin:0 0 8px">اكتب سعر <b>عيار 24</b> الظاهر الآن في موقع الشركة، فتضبط المنصة علاوة السوق تلقائيًا لتطابق أسعارها عند كل تحديث. العلاوة الحالية: <b>${prem}%</b>.</p>
+      <div class="inl" style="max-width:420px"><input type="number" step="any" min="0" inputmode="decimal" data-ps="cal" placeholder="مثال: 491.85" aria-label="سعر عيار 24 في موقع الشركة"><button type="button" class="btn" data-act="pcal">ضبط العلاوة</button></div></div>
+    <details style="margin-top:14px" ${src==='feed'?'open':''}><summary><b>رابط بيانات مخصص</b></summary>
+      <label class="f" style="margin-top:10px">رابط البيانات (JSON أو صفحة)<input data-ps="url" dir="ltr" value="${esc(f.url)}" placeholder="https://…"><small class="muted">يجب أن يرد الرابط بالأسعار (أونصة الذهب والفضة وأسعار الجرام للأعيرة). الأسعار في موقع الجنية تُحمَّل بجافاسكربت، فالمطلوب رابط البيانات الذي يطلبه الموقع: في Chrome اضغط F12 ← Network ← Fetch/XHR ثم أعد تحميل الصفحة وانسخ رابط الطلب الذي يعيد الأسعار.</small></label>
+      <div class="grid" style="max-width:640px;margin-top:8px"><label class="f">وسيط CORS (اختياري)${sel('proxy',px,[['','بدون'],['https://api.allorigins.win/raw?url=','allorigins'],['https://corsproxy.io/?url=','corsproxy'],['__c','مخصص…']])}<small class="muted">إن منع الموقع القراءة من المتصفح (CORS). الوسيط جهة خارجية.</small></label><label class="f" ${px==='__c'?'':'hidden'} id="pxc">عنوان الوسيط المخصص<input data-ps="proxyc" dir="ltr" value="${esc(px==='__c'?f.proxy:'')}" placeholder="https://proxy.example/?url="></label></div>
+      <label class="chk" style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="checkbox" data-ps="fb" ${f.fallback!==false?'checked':''}>إن تعذّر الرابط استخدم السوق العالمي مؤقتًا</label>
+      <div class="row" style="margin-top:10px"><button type="button" class="btn" data-act="pfeedtest">فحص الرابط</button><button type="button" class="btn accent" data-act="pfeeduse" id="pfeeduse" disabled>حفظ واستخدام الرابط</button></div>
+      <div id="pfeedres" style="margin-top:10px"></div></details></section>`;
+}
+let pfeedLast=null;
+async function pfeedTest(){
+  const res=$('#pfeedres');if(!res)return;
+  const url=($('[data-ps="url"]')||{}).value||'';if(!/^https?:\/\//i.test(url.trim())){res.innerHTML='<p class="err">اكتب رابطًا صحيحًا يبدأ بـ https://</p>';return;}
+  const f=feedCfg();res.innerHTML='<p class="hint">جارٍ الفحص…</p>';
+  try{
+    const raw=await fetchFeedRaw(url.trim(),f.proxy),r=feedParse(raw,null);
+    if(!r||!(r.vals.g24>0))throw Object.assign(new Error('nodata'),{code:'nodata'});
+    pfeedLast={url:url.trim(),proxy:f.proxy,map:r.paths,vals:r.vals};
+    const v=r.vals,rows=[['xau','أونصة الذهب (USD)'],['xag','أونصة الفضة (USD)'],['g24','عيار 24'],['g22','عيار 22'],['g21','عيار 21'],['g18','عيار 18']];
+    res.innerHTML=`<p class="scanres show ok">✓ تم العثور على الأسعار. راجعها ثم اضغط «حفظ واستخدام الرابط».</p><div class="tablewrap"><table class="mini"><thead><tr><th>البند</th><th>القيمة</th><th>الموضع</th></tr></thead><tbody>${rows.map(([k,l])=>`<tr><td>${l}</td><td><b>${v[k]>0?fmt(v[k]):'—'}</b></td><td class="mono" dir="ltr">${esc((r.paths&&r.paths[k])||(r.paths?'':'نص الصفحة'))}</td></tr>`).join('')}</tbody></table></div>`;
+    const u=$('#pfeeduse');if(u)u.disabled=false;
+  }catch(e){pfeedLast=null;res.innerHTML='<p class="scanres show bad">'+esc(feedErrMsg(e))+'</p>';const u=$('#pfeeduse');if(u)u.disabled=true;}
+}
+function paintPrices(){const e=$('#pstrip');if(e)e.innerHTML=priceStripHTML();const m=$('#pmini');if(m)m.innerHTML=priceMiniHTML();}
 function vDash(m){
   const inS=S.pieces.filter(p=>p.status==='in');
   const strip=`<section class="panel" id="pstrip">${priceStripHTML()}</section>`;
@@ -2772,6 +2877,7 @@ const selDone=()=>!!((sel.karat||(kvKarat()&&sel.skipK))&&selNode()&&isLeaf(selN
 function vIntake(m){
   const md=imodeGet();
   m.innerHTML=`<header class="head"><div><h1>إدخال قطع</h1><p class="muted">اختر العيار ← الفئة ← الصنف ← الحالة، ثم أدخل القطع بإحدى طريقتين: <b>مسح الباركود</b> (تُضاف القطعة تلقائيًا ويبقى المؤشر في حقل المسح) أو <b>إدخال يدوي</b>.</p></div></header>
+  <div id="pmini" class="pmini"></div>
   <div class="intake">
     <section class="panel wiz" aria-label="اختيار العيار والصنف">
       <ol class="stepper" id="stepper"></ol>
@@ -2788,10 +2894,49 @@ function vIntake(m){
       <section id="draftBox" style="margin-top:14px"></section><section id="sessBox" style="margin-top:14px"></section><section id="recent" style="margin-top:14px"></section>
     </div>
   </div>`;
-  bindScan('intake');renderWizard();renderDraft();renderSess();renderRecent();
+  bindScan('intake');renderWizard();renderDraft();renderSess();renderRecent();paintPrices();
   const aa=$('#autoAdd');if(aa)aa.addEventListener('change',e=>iautoSet(e.target.checked));
   applyIntakeMode();
   if(md==='manual'&&selDone()&&sel.karat&&!draft){draft=genDraft();editingExisting=false;renderDraft();}
+}
+
+let catEdit=false;
+function openCatAdd(parent){
+  const p=parent?node(parent):null;
+  if(p&&S.pieces.some(x=>x.nodeId===parent)){toast('انقل قطع «'+p.name+'» إلى فرع أولًا، ثم أضف داخله','bad');return;}
+  const d=dlg(`<form id="catf" class="modal" autocomplete="off"><h2>${p?'إضافة أنواع داخل «'+esc(p.name)+'»':'إضافة صنف رئيسي'}</h2>
+    <label class="f">الاسم<textarea name="n" rows="3" placeholder="اكتب اسمًا، أو عدة أسماء كل واحد في سطر"></textarea><small class="muted">مثال: سادة ⏎ فصوص ⏎ هندي</small></label>
+    <div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-act="closedlg">إلغاء</button><button class="btn accent" type="submit">إضافة</button></div></form>`);
+  d.showModal();setTimeout(()=>{const t=$('#catf [name="n"]');if(t)t.focus();},30);
+  $('#catf').addEventListener('submit',e=>{
+    e.preventDefault();
+    const lines=String(new FormData(e.target).get('n')||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);
+    if(!lines.length)return;
+    const add=[],dup=[];
+    lines.forEach(nm=>{
+      if(S.settings.nodes.some(x=>(x.parent||null)===(parent||null)&&x.name===nm)||add.includes(nm))dup.push(nm);else add.push(nm);
+    });
+    add.forEach(nm=>S.settings.nodes.push({id:uid(),name:nm,parent:parent||null,bullion:p?false:(String(sel.karat)==='24'||/سبائك|سبيكة/.test(nm))}));
+    save();closeDlg();renderWizard();
+    toast(add.length?('أُضيف '+add.length+(add.length>1?' أصناف':' صنف')+(dup.length?' · تجاهلتُ المكرر: '+dup.join('، '):'')):'الاسم موجود مسبقًا','');
+  });
+}
+function openCatRename(id){
+  const n=node(id);if(!n)return;
+  const d=dlg(`<form id="catr" class="modal" autocomplete="off"><h2>تعديل اسم الصنف</h2><label class="f">الاسم<input name="n" value="${esc(n.name)}"></label><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-act="closedlg">إلغاء</button><button class="btn accent" type="submit">حفظ</button></div></form>`);
+  d.showModal();setTimeout(()=>{const t=$('#catr [name="n"]');if(t){t.focus();t.select();}},30);
+  $('#catr').addEventListener('submit',e=>{
+    e.preventDefault();const v=String(new FormData(e.target).get('n')||'').trim();
+    closeDlg();renameNode(id,v);renderWizard();
+  });
+}
+async function catDelete(id){
+  const n=node(id);if(!n)return;
+  if(kids(id).length){toast('احذف الفروع داخل «'+n.name+'» أولًا','bad');return;}
+  const used=S.pieces.filter(p=>p.nodeId===id).length;
+  if(used){toast('يوجد '+used+' قطعة بهذا الصنف. انقلها إلى صنف آخر أولًا','bad');return;}
+  if(!await ask('حذف الصنف «'+n.name+'»؟','حذف'))return;
+  S.settings.nodes=S.settings.nodes.filter(x=>x.id!==id);sel.path=sel.path.filter(x=>x!==id);save();renderWizard();toast('تم حذف الصنف');
 }
 function renderWizard(){
   const bd=$('#wizBody');if(!bd)return;
@@ -2817,10 +2962,14 @@ function renderWizard(){
   }else if(phase==='a'){
     h=`<h3>٢. اختر الفئة</h3><div class="tiles">${S.settings.audiences.map(a=>`<button type="button" class="tile" data-act="sela" data-k="${esc(a)}"><span>${esc(a)}</span></button>`).join('')}</div>`;
   }else if(phase==='c'){
-    const o=sel.path.length?kids(selNode()):rootsFor(sel.karat);
+    const o=sel.path.length?kids(selNode()):rootsFor(sel.karat),edit=catEdit;
     const n0=na?'٣':'٢';
     const title=sel.path.length?`${n0}. اختر النوع داخل «${esc(node(selNode()).name)}»`:`${n0}. اختر الصنف`;
-    h=`<h3>${title}</h3>${o.length?`<div class="tiles">${o.map(n=>{const c=kids(n.id).length;return `<button type="button" class="tile" data-act="selc" data-k="${n.id}"><span>${esc(n.name)}</span>${c?`<small>${c} أنواع ›</small>`:''}</button>`;}).join('')}</div>`:`<p class="muted" style="margin-top:8px">لا توجد أصناف لهذا العيار. أضفها من الإعدادات ← الأصناف.</p>`}`;
+    const tile=n=>{
+      const c=kids(n.id).length,b=`<button type="button" class="tile" data-act="selc" data-k="${n.id}"><span>${esc(n.name)}</span>${c?`<small>${c} أنواع ›</small>`:''}</button>`;
+      return edit?`<div class="tw">${b}<span class="tact"><button type="button" data-act="catren" data-id="${n.id}" title="تعديل الاسم" aria-label="تعديل اسم ${esc(n.name)}">✎</button><button type="button" data-act="cataddc" data-id="${n.id}" title="إضافة فرع داخله" aria-label="إضافة فرع داخل ${esc(n.name)}">＋</button><button type="button" data-act="catdel" data-id="${n.id}" title="حذف" aria-label="حذف ${esc(n.name)}">✕</button></span></div>`:b;
+    };
+    h=`<h3>${title}</h3><div class="catbar"><small class="muted">${edit?'وضع الإدارة: ✎ تعديل الاسم · ＋ إضافة فرع داخل الصنف · ✕ حذف':'يمكنك إضافة أصناف وفروع جديدة من هنا'}</small><button type="button" class="btn ghost sm" data-act="catedit" aria-pressed="${edit}">${edit?'إنهاء الإدارة':'إدارة الأصناف'}</button></div><div class="tiles">${o.map(tile).join('')}<button type="button" class="tile add" data-act="cataddhere"><span>＋ ${sel.path.length?'نوع جديد':'صنف جديد'}</span></button></div>`;
   }else if(phase==='s'){
     h=`<h3>${na?'٤':'٣'}. اختر الحالة</h3><div class="tiles two"><button type="button" class="tile" data-act="selcond" data-v="">جديد</button><button type="button" class="tile" data-act="selcond" data-v="1">مستعمل</button></div>`;
   }else{
@@ -3885,16 +4034,105 @@ async function exportCSV(){
 }
 
 /* ================= prices ================= */
-async function refreshPrices(force){
-  if(S.settings.priceSrc==='manual'&&!force)return;
-  pstate.st='loading';paintPrices();
+function feedWalk(o,path,out,depth,lab){
+  if(depth>7||out.length>500)return;
+  const hint=(path+' '+(lab||'')).toLowerCase();
+  if(typeof o==='number'&&isFinite(o))out.push({path,val:o,hint});
+  else if(typeof o==='string'&&/^\s*-?\d[\d,]*(\.\d+)?\s*$/.test(o))out.push({path,val:parseFloat(o.replace(/,/g,'')),hint});
+  else if(Array.isArray(o))o.slice(0,80).forEach((x,i)=>feedWalk(x,path+'['+i+']',out,depth+1,lab));
+  else if(o&&typeof o==='object'){
+    const l2=['name','title','label','type','symbol','karat','key','id','الاسم','اسم','العيار'].map(k=>typeof o[k]==='string'?o[k]:'').join(' ').trim()||lab||'';
+    Object.keys(o).slice(0,100).forEach(k=>feedWalk(o[k],path?path+'.'+k:k,out,depth+1,l2));
+  }
+}
+function feedGet(o,path){try{return path.replace(/\[(\d+)\]/g,'.$1').split('.').filter(Boolean).reduce((a,k)=>a[k],o);}catch(e){return undefined;}}
+function feedDetect(j){
+  const nums=[];feedWalk(j,'',nums,0,'');
+  const fx=S.settings.fx||3.75,R={g22:22/24,g21:21/24,g18:18/24},near=(v,t,tol)=>Math.abs(v-t)<=t*tol;
+  const out={},paths={};
+  const gold=nums.filter(n=>n.val>=30&&n.val<=3000&&!/(oz|ounce|usd|silver|xag|فض|xau|أونص)/i.test(n.hint));
+  let quad=null;
+  for(const a of gold.slice().sort((x,y)=>y.val-x.val)){
+    const b=gold.find(n=>n!==a&&near(n.val,a.val*R.g22,0.008)),c=gold.find(n=>n!==a&&n!==b&&near(n.val,a.val*R.g21,0.008)),d=gold.find(n=>n!==a&&n!==b&&n!==c&&near(n.val,a.val*R.g18,0.008));
+    if(a&&b&&c&&d){quad={g24:a,g22:b,g21:c,g18:d};break;}
+  }
+  if(!quad)return null;
+  Object.keys(quad).forEach(k=>{out[k]=quad[k].val;paths[k]=quad[k].path;});
+  const target=quad.g24.val*31.1035/fx,rest=nums.filter(n=>!Object.values(quad).includes(n));
+  const xs=rest.filter(n=>n.val>=target*0.9&&n.val<=target*1.1).sort((x,y)=>Math.abs(x.val-target)-Math.abs(y.val-target));
+  const xp=xs.find(n=>/(xau|ounce|oz|أونص|gold|ذهب)/i.test(n.hint))||xs[0];
+  if(xp){out.xau=xp.val;paths.xau=xp.path;}
+  const sp=rest.find(n=>/(silver|xag|فض)/i.test(n.hint)&&n.val>=2&&n.val<=500);
+  if(sp){out.xag=sp.val;paths.xag=sp.path;}
+  return{vals:out,paths};
+}
+function feedFromText(raw){
+  const t=String(raw).replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi,' ').replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ');
+  const v={},val=m=>m?parseFloat(m[1].replace(/,/g,'')):0;
+  [24,22,21,18].forEach(k=>{const x=val(new RegExp('عيار\\s*'+k+'[^\\d]{0,40}?(\\d[\\d,]*(?:\\.\\d+)?)').exec(t));if(x>0)v['g'+k]=x;});
+  const xa=val(/أونصة\s*الذهب[^\d]{0,40}?(\d[\d,]*(?:\.\d+)?)/.exec(t)),xs=val(/أونصة\s*الفضة[^\d]{0,40}?(\d[\d,]*(?:\.\d+)?)/.exec(t));
+  if(xa>0)v.xau=xa;if(xs>0)v.xag=xs;
+  return v.g24>0?{vals:v,paths:null}:null;
+}
+async function fetchFeedRaw(url,proxy){
+  const u=proxy?(proxy+encodeURIComponent(url)):url;
+  const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),10000);
   try{
-    const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),8000);
-    const r=await fetch('https://api.gold-api.com/price/XAU',{signal:ctl.signal});clearTimeout(to);
-    if(!r.ok)throw new Error('http');
-    const j=await r.json(),usd=num(j.price);
+    const r=await fetch(u,{signal:ctl.signal,cache:'no-store'});
+    if(!r.ok)throw Object.assign(new Error(String(r.status)),{code:'http'});
+    return await r.text();
+  }finally{clearTimeout(to);}
+}
+function feedParse(raw,map){
+  let j=null;try{j=JSON.parse(raw);}catch(e){}
+  if(j!==null){
+    if(map&&map.g24){
+      const v={};Object.keys(map).forEach(k=>{const x=feedGet(j,map[k]),n=typeof x==='number'?x:parseFloat(String(x).replace(/,/g,''));if(n>0)v[k]=n;});
+      if(v.g24>0)return{vals:v,paths:map};
+    }
+    return feedDetect(j);
+  }
+  return feedFromText(raw);
+}
+function feedErrMsg(e){
+  if(e&&e.code==='nodata')return 'تم الاتصال بالرابط لكن لم أجد فيه أسعارًا. إن كان رابط موقع (HTML) فالأسعار تُحمَّل عادةً بجافاسكربت ولا تظهر في نصه، فاستخدم رابط البيانات الذي يطلبه الموقع (F12 ← Network ← Fetch/XHR).';
+  if(e&&e.code==='http')return 'ردّ الخادم برمز '+e.message+'.';
+  return 'تعذّرت قراءة الرابط: غالبًا يمنع الموقع القراءة من متصفحك (CORS)، أو لا يوجد اتصال. جرّب «وسيط CORS» أو رابط بيانات يسمح بالقراءة.';
+}
+function applyFeedVals(v){
+  const s=S.settings,pn=num(s.premium)||0,pu=num(s.premiumUsed)||0;
+  s.karats.forEach(k=>{
+    let p=v['g'+k];if(!(p>0)&&v.g24>0)p=v.g24*num(k)/24;
+    if(p>0){s.prices[k]=r2(p);s.pricesUsed[k]=r2(p*(1+pu/100)/(1+pn/100));}
+  });
+  if(v.xau>0)s.usd=v.xau;if(v.xag>0)s.xag=v.xag;
+  s.priceSrc='feed';s.pricesAt=new Date().toISOString();
+  trackPrices();save();
+}
+async function refreshFeed(){
+  const f=feedCfg(),raw=await fetchFeedRaw(f.url,f.proxy),r=feedParse(raw,f.map);
+  if(!r||!(r.vals.g24>0))throw Object.assign(new Error('nodata'),{code:'nodata'});
+  applyFeedVals(r.vals);
+}
+async function fetchJSON(url){
+  const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),8000);
+  try{const r=await fetch(url,{signal:ctl.signal});if(!r.ok)throw new Error('http');return await r.json();}finally{clearTimeout(to);}
+}
+async function refreshPrices(force){
+  const s=S.settings;
+  if(s.priceSrc==='manual'&&!force)return;
+  pstate.st='loading';pstate.last=Date.now();paintPrices();
+  try{
+    if(s.priceSrc==='feed'&&feedCfg().url){
+      try{await refreshFeed();pstate.st='ok';pstate.fb=false;pstate.err='';paintPrices();return;}
+      catch(e){pstate.fb=true;pstate.err=feedErrMsg(e);if(feedCfg().fallback===false)throw e;}
+    }
+    const [x,g]=await Promise.all([fetchJSON('https://api.gold-api.com/price/XAU'),fetchJSON('https://api.gold-api.com/price/XAG').catch(()=>null)]);
+    const usd=num(x.price);
     if(!(usd>0))throw new Error('bad');
-    setPricesFromOunce(usd,'auto');save();pstate.st='ok';
+    setPricesFromOunce(usd,S.settings.priceSrc==='feed'?'feed':'auto');
+    if(g&&num(g.price)>0)S.settings.xag=num(g.price);
+    trackPrices();save();pstate.st='ok';
   }catch(e){pstate.st='fail';}
   paintPrices();
 }
@@ -4032,7 +4270,7 @@ function vPrefs(m){
 }
 function prefGeneral(body){
   const s=S.settings;
-  body.innerHTML=accountPanelHTML()+`<section class="panel"><h2>المنشأة والضريبة والأسعار</h2><p class="muted" style="margin:0">إصدار المنصة: <b>${esc(APP_VERSION)}</b> <button type="button" class="btn ghost sm" data-act="verinfo">ما الجديد</button></p>
+  body.innerHTML=accountPanelHTML()+priceSourcePanelHTML()+`<section class="panel"><h2>المنشأة والضريبة والأسعار</h2><p class="muted" style="margin:0">إصدار المنصة: <b>${esc(APP_VERSION)}</b> <button type="button" class="btn ghost sm" data-act="verinfo">ما الجديد</button></p>
     <div class="grid3" style="margin-top:10px"><label class="f span3">اسم المنشأة (يظهر في التقارير المطبوعة)<input id="shopIn" value="${esc(s.shop)}"></label><label class="f">رمز العملة<input id="curIn" value="${esc(cur())}"></label><label class="f">نسبة الضريبة %<input id="vatIn" type="number" step="any" min="0" value="${s.vat}"></label><label class="f">سعر الصرف (${esc(cur())} لكل دولار)<input id="fxIn" type="number" step="any" min="0" value="${s.fx||3.75}"></label><label class="f">علاوة السوق المحلي على السعر العالمي % — للجديد<input id="premIn" type="number" step="any" value="${s.premium||0}"></label><label class="f">علاوة السوق المحلي على السعر العالمي % — للمستعمل<input id="premUsedIn" type="number" step="any" value="${s.premiumUsed||0}"></label><label class="f">فرق سعر شراء الجرام عن السوق % <small class="muted">(سالب = أقل من السوق)</small><input id="buyAdjIn" type="number" step="any" value="${s.buyAdj||0}"></label><label class="f">هامش الربح الافتراضي % <small class="muted">(0 = سعر البيع من سعر السوق)</small><input id="defMarginIn" type="number" step="any" min="0" max="95" value="${s.defMargin||0}"></label></div>
     <div style="margin-top:14px"><b>أعيرة معفاة من الضريبة</b><div class="row" style="margin-top:6px">${s.karats.map(k=>`<label class="chip gold" style="display:inline-flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" data-vfree="${esc(k)}" ${s.vatFree.includes(k)?'checked':''}>عيار ${esc(k)}</label>`).join('')}</div><small>القطع بهذه الأعيرة تُعبّأ ضريبتها بصفر، وغيرها بنسبة الضريبة الافتراضية. يمكن تعديل النسبة لكل قطعة.</small></div></section>`;
   $('#shopIn').addEventListener('change',e=>{s.shop=e.target.value.trim();save();toast('تم الحفظ');});
@@ -4166,6 +4404,24 @@ document.addEventListener('click',async e=>{
     case 'wzpath':{sel.path=sel.path.slice(0,+b.dataset.i);sel.condSet=false;afterSel();break;}
     case 'selused':{sel.used=b.dataset.v==='1';afterSel();break;}
     case 'imode':setIntakeMode(b.dataset.v);break;
+    case 'catedit':catEdit=!catEdit;renderWizard();break;
+    case 'cataddhere':openCatAdd(sel.path.length?selNode():null);break;
+    case 'cataddc':openCatAdd(id);break;
+    case 'catren':openCatRename(id);break;
+    case 'catdel':catDelete(id);break;
+    case 'phide':{try{localStorage.setItem('jard.phide',phideGet()?'0':'1');}catch(e){}paintPrices();break;}
+    case 'pgosrc':{prefTab='general';go('prefs');setTimeout(()=>{const e=$('#psrc');if(e)e.scrollIntoView({block:'start'});},80);break;}
+    case 'pcal':{
+      const v=num(($('[data-ps="cal"]')||{}).value),s=S.settings;
+      if(!(v>0)){toast('اكتب سعر عيار 24 الظاهر في موقع الشركة','bad');break;}
+      if(!(s.usd>0)){toast('جارٍ جلب سعر الأونصة… أعد المحاولة بعد لحظات','bad');refreshPrices(true);break;}
+      const base=s.usd/31.1035*(s.fx||3.75),prem=rd((v/base-1)*100,3);
+      s.premium=prem;s.premiumUsed=prem;if(s.priceSrc==='manual')s.priceSrc='auto';recomputePrices();save();render();toast('ضُبطت علاوة السوق على '+prem+'% لتطابق أسعار الشركة');break;}
+    case 'pfeedtest':pfeedTest();break;
+    case 'pfeeduse':{
+      if(!pfeedLast)break;const f=feedCfg();
+      Object.assign(f,{url:pfeedLast.url,proxy:pfeedLast.proxy,map:pfeedLast.map});
+      applyFeedVals(pfeedLast.vals);pstate.st='ok';pstate.fb=false;save();render();toast('تم اعتماد الرابط، وستتحدث الأسعار تلقائيًا');break;}
     case 'kbdcal':openKbdCal();break;
     case 'numon':{S.settings.bfmt.mode='num';S.settings.label.codeMode='barcode';save();render();toast('فُعّل الباركود الرقمي: الأجرة + سعر الغرام + الرقم التسلسلي');break;}
     case 'numconv':{
@@ -4332,6 +4588,15 @@ main.addEventListener('change',e=>{
   else if(t.dataset.kvon!==undefined){S.settings.bfmt.kv.fields[+t.dataset.kvon].on=t.checked;save();toast('تم الحفظ');bfOut();}
   else if(t.dataset.kvkarat!==undefined){S.settings.bfmt.kv.karatFromCode=t.checked;save();toast('تم الحفظ');render();}
   else if(t.dataset.lbp!==undefined){const v=t.value;if(v){const [w,h,tl]=v.split('x').map(Number);const L=S.settings.label;L.w=w;L.h=h;if(L.tpl==='tag')L.tail=tl||0;save();render();}}
+  else if(t.dataset.ps!==undefined){
+    const k=t.dataset.ps,f=feedCfg();
+    if(k==='src'){S.settings.priceSrc=t.value;save();if(t.value!=='manual')refreshPrices(true);render();}
+    else if(k==='every'){f.every=+t.value;save();toast('تم الحفظ');}
+    else if(k==='proxy'){if(t.value==='__c'){const c=$('#pxc');if(c)c.hidden=false;}else{f.proxy=t.value;save();const c=$('#pxc');if(c)c.hidden=true;}}
+    else if(k==='proxyc'){f.proxy=t.value.trim();save();}
+    else if(k==='fb'){f.fallback=t.checked;save();}
+    else if(k==='url'){f.url=t.value.trim();f.map=null;save();}
+  }
   else if(t.dataset.num!==undefined){const k=t.dataset.num,lim={wi:[1,6],wd:[0,4],wg:[1,6],bp:[1,6]}[k]||[1,6];S.settings.bfmt.num[k]=Math.min(lim[1],Math.max(lim[0],parseInt(latin(t.value),10)||lim[0]));save();toast('تم الحفظ');render();}
   else if(t.dataset.numw!==undefined){S.settings.bfmt.num.weight=t.checked;save();toast('تم الحفظ');render();}
   else if(t.dataset.pos!==undefined){S.settings.bfmt.pos[t.dataset.pos]=Math.min(8,Math.max(1,parseInt(latin(t.value),10)||1));save();toast('تم الحفظ');render();}
@@ -4344,8 +4609,13 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.15.0';
+const APP_VERSION='2.16.0';
 const CHANGELOG=[
+ {v:'2.16.0',date:'2026-11-10',title:'لوحة أسعار احترافية وإدارة الأصناف من الإدخال',items:[
+  'لوحة «أسعار الذهب والفضة» بتصميم أنيق: أونصة الذهب والفضة بالدولار وسعر الجرام لكل عيار مع التغير ونطاق اليوم، وإخفاء وإظهار، وشريط مختصر للأسعار في صفحة الإدخال.',
+  'تحديث تلقائي كل 1 إلى 30 دقيقة من السوق العالمي المباشر، أو من رابط بيانات مخصص يكتشف فيه المنصة الأسعار تلقائيًا، مع بديل تلقائي عند تعذر الرابط.',
+  'مطابقة أسعار شركة الجنية العربي: اكتب سعر عيار 24 الظاهر في موقعها فتُضبط علاوة السوق تلقائيًا لتتطابق أسعارك معه.',
+  'إدارة الأصناف من صفحة الإدخال: إضافة صنف رئيسي وفروعه، تعديل الأسماء، حذف، وإضافة عدة أنواع دفعة واحدة (سطر لكل نوع).']},
  {v:'2.15.0',date:'2026-11-09',title:'الباركود الرقمي من حقول القطعة',items:[
   'تنسيق جديد «أرقام فقط»: الباركود يتكوّن من الأجرة + سعر غرام الشراء + الرقم التسلسلي مأخوذة من الحقول (مثل 04537500511)، بلا حروف ولا رموز، فلا يتأثر بلغة لوحة مفاتيح الماسح.',
   'تفعيله بضغطة واحدة من الإعدادات ← الطابعة ← «الباركود الرقمي»، ويصبح محتوى QR على الملصق هو الباركود نفسه. وخيار لإضافة الوزن وضبط عدد خانات كل رقم.',
@@ -4943,7 +5213,7 @@ fromHash();render();
 paintVersion();
 cloudBoot().then(()=>{fromHash();render();paintPill();paintVersion();prnAutoReconnect();maybeShowWhatsNew();});
 refreshPrices();
-setInterval(()=>{if(S.settings.priceSrc==='auto')refreshPrices(true);},300000);
+setInterval(()=>{const s=S.settings;if(s.priceSrc==='manual')return;const m=(s.priceSrc==='feed'?feedCfg().every:5)*60000;if(Date.now()-(pstate.last||0)>=m-2000)refreshPrices(true);},30000);
 })();
 </script>
 </body>
