@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.14.0">
+<meta name="app-version" content="2.15.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -722,7 +722,8 @@ function normalize(o){
   s.nodes.forEach(n=>{if(n.bullion==null)n.bullion=!n.parent&&n.name===ROOT_BULLION;n.parent=n.parent||null;});
   let bf=s.bfmt&&typeof s.bfmt==='object'?s.bfmt:{};
   bf.sep=typeof bf.sep==='string'&&bf.sep!==''?bf.sep:'auto';
-  bf.mode=['sep','kv'].includes(bf.mode)?bf.mode:'pos';
+  bf.mode=['sep','kv','num'].includes(bf.mode)?bf.mode:'pos';
+  {const dn={weight:false,wi:3,wd:2,wg:3,bp:3},lim={wi:[1,6],wd:[0,4],wg:[1,6],bp:[1,6]};bf.num=Object.assign({},dn,bf.num||{});bf.num.weight=bf.num.weight===true;Object.keys(lim).forEach(k=>{const v=parseInt(bf.num[k],10);bf.num[k]=Math.min(lim[k][1],Math.max(lim[k][0],isNaN(v)?dn[k]:v));});}
   const dp={wd:2,wg:2,bp:3};bf.pos=Object.assign({},dp,bf.pos||{});
   Object.keys(dp).forEach(k=>{bf.pos[k]=Math.min(8,Math.max(1,parseInt(bf.pos[k],10)||dp[k]));});
   const have=Array.isArray(bf.fields)?bf.fields.filter(f=>ORDER.includes(f.k)):[];
@@ -843,7 +844,22 @@ function parseKV(code){
   else if(vals.buyPpg!=null&&vals.weight>0&&vals.cost==null)vals.cost=r2(vals.weight*(vals.buyPpg+(vals.wage||0)));
   return{vals,note:unknown.length?'مفاتيح غير معرّفة أو معطّلة: '+unknown.join('، '):'',parts:[]};
 }
+function parseNum(code){
+  const N=S.settings.bfmt.num,c=latin(code);
+  if(!/^\d+$/.test(c))return{vals:{serial:code},note:'الباركود ليس أرقامًا فقط، فوُضع كاملًا كرقم تسلسلي.',parts:[code]};
+  let pos=0;const take=n=>{const t=c.slice(pos,pos+n);pos+=t.length;return t;};
+  const vals={},parts=[];
+  if(N.weight){const w=take(N.wi+N.wd);parts.push(w);if(w.length===N.wi+N.wd)vals.weight=r3(parseInt(w,10)/Math.pow(10,N.wd));}
+  const wg=take(N.wg),bp=take(N.bp),serial=c.slice(pos);
+  parts.push(wg,bp,serial);
+  if(wg.length===N.wg)vals.wage=parseInt(wg,10);
+  if(bp.length===N.bp)vals.buyPpg=parseInt(bp,10);
+  if(serial)vals.serial=serial;
+  const note=(wg.length<N.wg||bp.length<N.bp||!serial)?'الباركود أقصر من التنسيق الرقمي ('+N.wg+' خانات أجرة، '+N.bp+' سعر غرام، ثم الرقم التسلسلي). راجع الحقول.':'';
+  return{vals,note,parts};
+}
 function parseCode(code){
+  if(S.settings.bfmt.mode==='num')return /[a-zA-Z]+\{[^}]+\}/.test(code)?parseKV(code):parseNum(code);
   if(S.settings.bfmt.mode==='kv')return parseKV(code);
   if(S.settings.bfmt.mode!=='sep')return parsePos(code);
   const f=S.settings.bfmt.fields.filter(x=>x.on),parts=splitCode(code),vals={};let note='';
@@ -1113,9 +1129,25 @@ function chooseCandidate(list,ctx){
   d.showModal();
 }
 
+function convertToNum(){
+  let ok=0,skip=0;const used=new Set(S.pieces.map(p=>p.barcode));
+  S.pieces.forEach(p=>{
+    if(!(p.weight>0)){skip++;return;}
+    const r=buildCode({weight:p.weight,size:p.size,wage:p.wage,buyPpg:p.buyPpg,cost:p.cost,serial:p.serial,karat:p.karat,aud:p.aud,name:p.name,used:p.used,cat:pathOf(p.nodeId),extra:p.extra||{}});
+    if(!r.code){skip++;return;}
+    if(r.code===p.barcode)return;
+    if(used.has(r.code)){skip++;return;}
+    if(!p.extCode)p.extCode=p.barcode;
+    used.delete(p.barcode);used.add(r.code);p.barcode=r.code;ok++;
+  });
+  save();render();
+  toast('حُوّلت '+ok+' قطعة إلى الباركود الرقمي'+(skip?' · تعذّر تحويل '+skip+' (بلا وزن أو الرقم مكرر)':'')+'. أعد طباعة الملصقات عند الحاجة.');
+}
 function scanPanelHTML(){
   const k=S.settings.kbd,n=(k&&k.map)?Object.keys(k.map).length:0;
-  return `<section class="panel"><h2>ماسح الباركود (USB / بلوتوث)</h2><p class="muted">إن كان ماسحك يكتب بلوحة مفاتيح عربية تظهر الأكواد مقلوبة (مثل ص{2.15}). تصحّح المنصة الحالات الشائعة تلقائيًا، ويمكنك معايرتها على ماسحك بمسح رمز واحد لتتعلم تخطيطه تمامًا.</p><div class="row" style="align-items:center"><span class="chip ${n?'gold':''}">${n?'معايرة محفوظة: '+n+' حرفًا':'بلا معايرة (التصحيح العام التلقائي)'}</span><button type="button" class="btn" data-act="kbdcal">معايرة الماسح</button>${n?'<button type="button" class="btn ghost" data-act="kbdreset">مسح المعايرة</button>':''}</div></section>`;
+  return `<section class="panel"><h2>ماسح الباركود (USB / بلوتوث)</h2><p class="muted">إن كان ماسحك يكتب بلوحة مفاتيح عربية تظهر الأكواد مقلوبة (مثل ص{2.15}). تصحّح المنصة الحالات الشائعة تلقائيًا، ويمكنك معايرتها على ماسحك بمسح رمز واحد لتتعلم تخطيطه تمامًا.</p><div class="row" style="align-items:center"><span class="chip ${n?'gold':''}">${n?'معايرة محفوظة: '+n+' حرفًا':'بلا معايرة (التصحيح العام التلقائي)'}</span><button type="button" class="btn" data-act="kbdcal">معايرة الماسح</button>${n?'<button type="button" class="btn ghost" data-act="kbdreset">مسح المعايرة</button>':''}</div>
+    <h3 style="margin-top:16px">الباركود الرقمي (الأضمن)</h3><p class="muted">باركود من أرقام فقط تؤخذ من حقول القطعة: <b>الأجرة + سعر غرام الشراء + الرقم التسلسلي</b> (مثل <span class="mono">04537500511</span>). لا يحتوي حروفًا ولا رموزًا، فيُقرأ صحيحًا مهما كانت لغة لوحة مفاتيح الماسح.</p>
+    <div class="row" style="align-items:center"><span class="chip ${S.settings.bfmt.mode==='num'?'gold':''}">${S.settings.bfmt.mode==='num'?'مفعّل':'غير مفعّل'}</span>${S.settings.bfmt.mode==='num'?'':'<button type="button" class="btn accent" data-act="numon">تفعيل الباركود الرقمي</button>'}<button type="button" class="btn ghost" data-act="numconv" ${S.settings.bfmt.mode==='num'?'':'disabled'}>تحويل باركودات القطع الحالية</button></div></section>`;
 }
 function kbdProcess(raw){
   const el=$('#kcres'),rawEl=$('#kcraw');if(!el)return;
@@ -2064,6 +2096,16 @@ function kvsTokens(code,seps){
 function decBarcodeMode(dec){const v=Object.values(dec.map);return(v.includes('weight')&&!v.includes('serial'))?'gen':'keep';}
 function decAuto(code){
   const bf=S.settings.bfmt;
+  if(bf.mode==='num'&&/^\d+$/.test(code)){
+    const N=bf.num,cuts=[];let c0=0;
+    if(N.weight){c0+=N.wi+N.wd;cuts.push(c0);}
+    c0+=N.wg;cuts.push(c0);c0+=N.bp;cuts.push(c0);
+    if(code.length>c0){
+      const tokens=tokenize(code,{kind:'fixed',cuts}),map={};let i=0;
+      if(N.weight)map[i++]='weight';map[i++]='wage';map[i++]='buyPpg';map[i]='serial';
+      return{code,kind:'fixed',seps:'',cuts,tokens,map,open:false,dirty:false,ext:false,barcodeMode:'keep',serialMode:'token',scaleW:N.weight?Math.pow(10,N.wd):0};
+    }
+  }
   if(/[a-zA-Z]+\{[^}]*\}/.test(code)){
     const tokens=tokenKV(code),map={};
     tokens.forEach((t,i)=>{const cfg=bf.kv.fields.find(f=>f.key===t.key)||bf.kv.fields.find(f=>f.key.toLowerCase()===t.key.toLowerCase());const fl=cfg&&cfg.on?kvToDec(cfg.field):null;if(fl)map[i]=fl;});
@@ -2122,7 +2164,7 @@ function decVals(dec){
     const f=dec.map[i],t=dec.tokens[+i];if(!t)return;
     const raw=t.text;
     if(f==='serial')v.serial=raw;
-    else if(DEC_NUM.has(f)){const n=num(raw);v[f]=f==='weight'?rd(n,3):rd(n,2);}
+    else if(DEC_NUM.has(f)){const n=num(raw);v[f]=f==='weight'?(dec.scaleW?rd(n/dec.scaleW,3):rd(n,3)):rd(n,2);}
     else if(f==='size')v.size=latin(raw).trim();
     else if(f==='name')v.name=raw.trim();
     else if(f==='aud'){if(S.settings.audiences.includes(raw.trim()))v.aud=raw.trim();}
@@ -2179,6 +2221,7 @@ function codableFields(){
   const bf=S.settings.bfmt;let r;
   if(bf.mode==='kv')r=bf.kv.fields.filter(x=>x.on).map(x=>kvToDec(x.field)).filter(Boolean);
   else if(bf.mode==='sep')r=bf.fields.filter(x=>x.on).map(x=>x.k);
+  else if(bf.mode==='num')r=(bf.num.weight?['weight']:[]).concat(['wage','buyPpg','serial']);
   else r=['weight','wage','buyPpg','serial'];
   if(!r.includes('size'))r.push('size');
   return r;
@@ -2205,8 +2248,8 @@ function genIncUI(f){
     const el=f.elements[n];if(!el||el.type==='hidden'||f.querySelector('[data-inc="'+n+'"]'))return;
     const lb=el.closest('label');if(!lb)return;
     const sp=document.createElement('span');sp.className='inc';sp.title='يدخل هذا الحقل في الباركود المُولَّد';
-    const posSize=n==='size'&&S.settings.bfmt.mode==='pos',on_=n==='size'?(sizeInFormat()&&!off.has('size')):!off.has(n);
-    if(posSize)sp.title='تنسيق «الموضع» لا يحمل المقاس. غيّر التنسيق إلى «كلمات» أو «فاصل» من الإعدادات ← تنسيق الباركود.';
+    const posSize=n==='size'&&['pos','num'].includes(S.settings.bfmt.mode),on_=n==='size'?(sizeInFormat()&&!off.has('size')):!off.has(n);
+    if(posSize)sp.title='تنسيقا «الموضع» و«الأرقام فقط» لا يحملان المقاس. غيّر التنسيق إلى «كلمات» أو «فاصل» من الإعدادات ← تنسيق الباركود.';
     sp.innerHTML=`<input type="checkbox" data-inc="${n}" ${on_?'checked':''} ${(n==='weight'||posSize)?'disabled':''}>في الكود`;
     lb.appendChild(sp);
   });
@@ -2434,6 +2477,20 @@ function kvVal(f,v){
 function buildCode(v){
   const bf=S.settings.bfmt,issues=[],off=new Set(bf.genOff||[]);
   if(!(v.weight>0))return{code:'',issues:['أدخل الوزن ليُولَّد الباركود.']};
+  if(bf.mode==='num'){
+    const N=bf.num,pad=(x,n)=>String(Math.max(0,Math.round(x))).padStart(n,'0');
+    const wage=off.has('wage')?0:Math.round(v.wage||0),bp=off.has('buyPpg')?0:Math.round(v.buyPpg||0);
+    const sd=String(v.serial||'').replace(/\D/g,'');
+    if(v.serial&&String(v.serial)!==sd)issues.push('الرقم التسلسلي يحوي حروفًا، فيُستخدم جزؤه الرقمي فقط ('+(sd||'—')+').');
+    if(!off.has('wage')&&Math.abs(wage-(v.wage||0))>1e-9)issues.push('تُرمَّز الأجرة كرقم صحيح ('+wage+').');
+    if(!off.has('buyPpg')&&Math.abs(bp-(v.buyPpg||0))>1e-9)issues.push('يُرمَّز سعر غرام الشراء كرقم صحيح ('+bp+').');
+    if(wage>=Math.pow(10,N.wg))return{code:'',issues:['الأجرة ('+wage+') لا تتسع في '+N.wg+' خانات. زد الخانات من الإعدادات ← تنسيق الباركود.'],fatal:true};
+    if(bp>=Math.pow(10,N.bp))return{code:'',issues:['سعر غرام الشراء ('+bp+') لا يتسع في '+N.bp+' خانات. زد الخانات من الإعدادات ← تنسيق الباركود.'],fatal:true};
+    let code='';
+    if(N.weight){const wi=Math.round(v.weight*Math.pow(10,N.wd));if(wi>=Math.pow(10,N.wi+N.wd))return{code:'',issues:['الوزن لا يتسع في '+(N.wi+N.wd)+' خانات. زد الخانات من الإعدادات.'],fatal:true};code+=pad(wi,N.wi+N.wd);if(Math.abs(wi/Math.pow(10,N.wd)-v.weight)>1e-9)issues.push('سيُرمَّز الوزن بـ '+N.wd+' خانات عشرية.');}
+    code+=pad(wage,N.wg)+pad(bp,N.bp)+(off.has('serial')?'':sd);
+    return{code,issues};
+  }
   if(bf.mode==='kv'){
     const parts=[];
     bf.kv.fields.filter(f=>f.on).forEach(f=>{const dn=kvToDec(f.field);if(dn&&dn!=='weight'&&off.has(dn))return;const x=kvVal(f.field,v);if(x!=='')parts.push(f.key+'{'+x+'}');});
@@ -3936,6 +3993,13 @@ function bfSectionHTML(){
     body=`<div class="bfd"><span class="s1">الوزن = الأرقام قبل العلامة العشرية + أول <b>${P.wd}</b> بعدها</span><span>الأجرة (لكل جرام) = التالي <b>${P.wg}</b></span><span>سعر غرام الشراء = التالي <b>${P.bp}</b></span><span>الباقي = الرقم التسلسلي</span></div>
       <div class="grid3" style="max-width:640px;margin-top:12px"><label class="f">خانات الوزن بعد العلامة<input type="number" min="1" max="8" data-pos="wd" value="${P.wd}"></label><label class="f">خانات الأجرة<input type="number" min="1" max="8" data-pos="wg" value="${P.wg}"></label><label class="f">خانات سعر غرام الشراء<input type="number" min="1" max="8" data-pos="bp" value="${P.bp}"></label></div>
       <small>مثال: <span class="mono">${esc(ex)}</span> ← الوزن ${fmt(er.weight)} · الأجرة ${er.wage} · سعر غرام الشراء ${er.buyPpg} · رقم تسلسلي ${esc(er.serial||'—')}. المقاس يُدخل يدويًا.</small>`;
+  }else if(md==='num'){
+    const N=bf.num,pd2=(v,n)=>String(v).padStart(n,'0').slice(-n);
+    const ex=(N.weight?pd2(215,N.wi+N.wd):'')+pd2(45,N.wg)+pd2(375,N.bp)+'00511',er=parseNum(ex).vals;
+    body=`<div class="bfd"><span class="s1">باركود من <b>أرقام فقط</b> بلا حروف ولا رموز، فلا تتأثر بلوحة مفاتيح الماسح</span>${N.weight?`<span>الوزن = أول <b>${N.wi+N.wd}</b> خانات (آخر ${N.wd} عشرية)</span>`:''}<span>الأجرة (لكل جرام) = <b>${N.wg}</b> خانات</span><span>سعر غرام الشراء = <b>${N.bp}</b> خانات</span><span>الباقي = الرقم التسلسلي</span></div>
+      <div class="grid3" style="max-width:640px;margin-top:12px"><label class="f">خانات الأجرة<input type="number" min="1" max="6" data-num="wg" value="${N.wg}"></label><label class="f">خانات سعر غرام الشراء<input type="number" min="1" max="6" data-num="bp" value="${N.bp}"></label><label class="chk" style="display:flex;gap:8px;align-items:center;cursor:pointer;margin-top:24px"><input type="checkbox" data-numw ${N.weight?'checked':''}>إضافة الوزن إلى الرقم</label></div>
+      ${N.weight?`<div class="grid3" style="max-width:640px;margin-top:8px"><label class="f">خانات الوزن (صحيح)<input type="number" min="1" max="6" data-num="wi" value="${N.wi}"></label><label class="f">خانات الوزن (عشرية)<input type="number" min="0" max="4" data-num="wd" value="${N.wd}"></label></div>`:''}
+      <small>مثال: <span class="mono">${esc(ex)}</span> ← ${N.weight?'الوزن '+fmt(er.weight)+' · ':''}الأجرة ${er.wage} · سعر غرام الشراء ${er.buyPpg} · رقم تسلسلي ${esc(er.serial||'—')}. المقاس يُدخل يدويًا.</small>`;
   }else if(md==='sep'){
     body=`<div class="grid" style="max-width:560px"><label class="f">الفاصل بين الأرقام<select id="sepSel">${SEPS.map(([v,l])=>`<option value="${esc(v)}" ${bf.sep===v?'selected':''}>${esc(l)}</option>`).join('')}<option value="__c" ${sepKnown?'':'selected'}>فاصل آخر…</option></select></label><label class="f" id="sepCw" ${sepKnown?'hidden':''}>الفاصل المخصص<input id="sepC" dir="ltr" value="${sepKnown?'':esc(bf.sep)}"></label></div>
       <div class="tablewrap" style="margin:12px 0"><table><thead><tr><th>الترتيب</th><th>الحقل</th><th>مفعّل</th><th>قسمة القيمة على</th></tr></thead><tbody>${bf.fields.map((f,i)=>`<tr><td><span class="row" style="flex-wrap:nowrap"><b>${i+1}</b><button type="button" class="btn ghost sm" data-act="fmove" data-i="${i}" data-d="-1" aria-label="رفع">↑</button><button type="button" class="btn ghost sm" data-act="fmove" data-i="${i}" data-d="1" aria-label="خفض">↓</button></span></td><td>${FIELDS[f.k].label}</td><td><input type="checkbox" data-fon="${i}" ${f.on?'checked':''}></td><td>${FIELDS[f.k].num?`<input type="number" step="any" min="0" data-fdiv="${i}" value="${f.div}" style="max-width:110px">`:'—'}</td></tr>`).join('')}</tbody></table></div>
@@ -3945,7 +4009,7 @@ function bfSectionHTML(){
   }
   const kvDetails=md==='kv'?'':`<details class="kvd" ${S.settings.label.codeMode==='tpl'?'open':''} style="margin-top:14px"><summary>رموز محتوى QR في الملصق (مفتاح{قيمة})</summary><p class="muted" style="margin:8px 0">الحقول التي تظهر داخل رمز QR المطبوع على الملصق. أي عنصر تضيفه للباركود من مصمم الملصق يظهر هنا، والعكس.</p><div id="kvwrap">${kvTableHTML(false)}</div></details>`;
   return `<section class="panel"><h2>تنسيق الباركود</h2><p class="muted">يُقسَّم الباركود تلقائيًا عند المسح لتنتقل كل قيمة إلى حقلها. اختر الطريقة التي يُطبع بها باركودك.</p>
-    <div class="grid" style="max-width:560px;margin-top:10px"><label class="f">طريقة التقسيم<select id="bfMode"><option value="pos" ${md==='pos'?'selected':''}>حسب موضع الخانات (أرقام بعد العلامة العشرية)</option><option value="sep" ${md==='sep'?'selected':''}>حسب فاصل بين الأرقام</option><option value="kv" ${md==='kv'?'selected':''}>مفتاح{قيمة} مثل w{12.5}k{18}</option></select></label></div>
+    <div class="grid" style="max-width:560px;margin-top:10px"><label class="f">طريقة التقسيم<select id="bfMode"><option value="num" ${md==='num'?'selected':''}>أرقام فقط: الأجرة + سعر الغرام + الرقم التسلسلي (الأضمن مع الماسحات)</option><option value="pos" ${md==='pos'?'selected':''}>حسب موضع الخانات (أرقام بعد العلامة العشرية)</option><option value="sep" ${md==='sep'?'selected':''}>حسب فاصل بين الأرقام</option><option value="kv" ${md==='kv'?'selected':''}>مفتاح{قيمة} مثل w{12.5}k{18}</option></select></label></div>
     <div style="margin-top:12px">${body}</div>${kvDetails}
     <label class="f" style="max-width:560px;margin-top:14px">جرّب باركودًا<input id="bfTest" dir="ltr" placeholder="الصق باركودًا أو امسحه هنا لترى كيف يُقسَّم"></label><div id="bfOut"></div></section>`;
 }
@@ -4103,6 +4167,11 @@ document.addEventListener('click',async e=>{
     case 'selused':{sel.used=b.dataset.v==='1';afterSel();break;}
     case 'imode':setIntakeMode(b.dataset.v);break;
     case 'kbdcal':openKbdCal();break;
+    case 'numon':{S.settings.bfmt.mode='num';S.settings.label.codeMode='barcode';save();render();toast('فُعّل الباركود الرقمي: الأجرة + سعر الغرام + الرقم التسلسلي');break;}
+    case 'numconv':{
+      if(S.settings.bfmt.mode!=='num'){toast('فعّل الباركود الرقمي أولًا','bad');break;}
+      if(!await ask('سيُحوَّل باركود كل القطع الحالية إلى الباركود الرقمي. تبقى الملصقات القديمة تُقرأ، لكن الملصقات الجديدة ستحمل الرقم الجديد. متابعة؟','تحويل'))break;
+      convertToNum();break;}
     case 'kbdreset':S.settings.kbd=null;save();render();toast('أُلغيت معايرة الماسح');break;
     case 'pickcand':{closeDlg();const p=piece(id);if(p)useFound(b.dataset.ctx,p);break;}
     case 'undoadd':undoAdd(id);break;
@@ -4255,7 +4324,7 @@ main.addEventListener('change',e=>{
   else if(t.id==='nodeSel'){stF.node=t.value;renderList();}
   else if(t.dataset.nname!==undefined)renameNode(t.dataset.nname,t.value);
   else if(t.dataset.vfree!==undefined){const a=S.settings.vatFree=(S.settings.vatFree||[]).filter(k=>k!==t.dataset.vfree);if(t.checked)a.push(t.dataset.vfree);save();toast('تم الحفظ');}
-  else if(t.id==='bfMode'){S.settings.bfmt.mode=['sep','kv'].includes(t.value)?t.value:'pos';save();render();}
+  else if(t.id==='bfMode'){S.settings.bfmt.mode=['sep','kv','num'].includes(t.value)?t.value:'pos';if(t.value==='num'){S.settings.label.codeMode='barcode';toast('الباركود الرقمي مفعّل، ومحتوى QR على الملصق صار هو الباركود نفسه');}save();render();}
   else if(t.dataset.kvcode!==undefined){const f=S.settings.bfmt.kv.fields[+t.dataset.kvcode];if(f)toggleCodeKey(f.key,t.checked);}
   else if(t.dataset.kvk!==undefined){const f=S.settings.bfmt.kv.fields[+t.dataset.kvk],oldK=f.key;f.key=t.value.replace(/[^a-zA-Z]/g,'');t.value=f.key;if(oldK!==f.key){const L=S.settings.label;L.codeTpl=L.codeTpl.replace(new RegExp(oldK+'\\{\\}','g'),f.key?f.key+'{}':'');}save();toast('تم الحفظ');bfOut();refreshLinks();}
   else if(t.dataset.kvf!==undefined){const f=S.settings.bfmt.kv.fields[+t.dataset.kvf];f.field=t.value;f.type=(KVSTR[t.value]||String(t.value).startsWith('x:'))?'string':'number';save();toast('تم الحفظ');render();}
@@ -4263,6 +4332,8 @@ main.addEventListener('change',e=>{
   else if(t.dataset.kvon!==undefined){S.settings.bfmt.kv.fields[+t.dataset.kvon].on=t.checked;save();toast('تم الحفظ');bfOut();}
   else if(t.dataset.kvkarat!==undefined){S.settings.bfmt.kv.karatFromCode=t.checked;save();toast('تم الحفظ');render();}
   else if(t.dataset.lbp!==undefined){const v=t.value;if(v){const [w,h,tl]=v.split('x').map(Number);const L=S.settings.label;L.w=w;L.h=h;if(L.tpl==='tag')L.tail=tl||0;save();render();}}
+  else if(t.dataset.num!==undefined){const k=t.dataset.num,lim={wi:[1,6],wd:[0,4],wg:[1,6],bp:[1,6]}[k]||[1,6];S.settings.bfmt.num[k]=Math.min(lim[1],Math.max(lim[0],parseInt(latin(t.value),10)||lim[0]));save();toast('تم الحفظ');render();}
+  else if(t.dataset.numw!==undefined){S.settings.bfmt.num.weight=t.checked;save();toast('تم الحفظ');render();}
   else if(t.dataset.pos!==undefined){S.settings.bfmt.pos[t.dataset.pos]=Math.min(8,Math.max(1,parseInt(latin(t.value),10)||1));save();toast('تم الحفظ');render();}
   else if(t.dataset.fon!==undefined){S.settings.bfmt.fields[+t.dataset.fon].on=t.checked;save();toast('تم الحفظ');bfOut();}
   else if(t.dataset.fdiv!==undefined){S.settings.bfmt.fields[+t.dataset.fdiv].div=num(t.value)||1;save();toast('تم الحفظ');bfOut();}
@@ -4273,8 +4344,12 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.14.0';
+const APP_VERSION='2.15.0';
 const CHANGELOG=[
+ {v:'2.15.0',date:'2026-11-09',title:'الباركود الرقمي من حقول القطعة',items:[
+  'تنسيق جديد «أرقام فقط»: الباركود يتكوّن من الأجرة + سعر غرام الشراء + الرقم التسلسلي مأخوذة من الحقول (مثل 04537500511)، بلا حروف ولا رموز، فلا يتأثر بلغة لوحة مفاتيح الماسح.',
+  'تفعيله بضغطة واحدة من الإعدادات ← الطابعة ← «الباركود الرقمي»، ويصبح محتوى QR على الملصق هو الباركود نفسه. وخيار لإضافة الوزن وضبط عدد خانات كل رقم.',
+  'زر «تحويل باركودات القطع الحالية» يحوّل القطع المسجّلة، وتبقى الملصقات القديمة تُقرأ.']},
  {v:'2.14.0',date:'2026-11-09',title:'معايرة الماسح وتعرف أقوى على الملصقات',items:[
   'أداة «معايرة الماسح» (الإعدادات ← الطابعة): تمسح رمزًا واحدًا فتتعلم المنصة كيف يكتب ماسحك الأحرف والرموز (حتى لو كان بلوحة مفاتيح عربية)، وتصحّح بعدها كل باركود تلقائيًا.',
   'التعرف على القطعة من الرقم التسلسلي حتى لو بقيت في المقروء رموز غريبة، وتنظيف رموز الاتجاه الخفية والأرقام الفارسية وصيغ الأحرف المركّبة.',
