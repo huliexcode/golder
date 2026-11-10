@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.11.0">
+<meta name="app-version" content="2.12.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -505,6 +505,9 @@ table.dect tr.unm td{background:rgba(230,160,0,.12)}
 .sess .sum{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 10px}
 .sess td .btn{min-height:30px;padding:0 10px;font-size:12.5px}
 .sess tr.k-dup td:first-child,.sess tr.k-need td:first-child{font-weight:700}
+
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 </style>
 </head>
 <body>
@@ -2026,10 +2029,28 @@ function decSrc(dec,v,form){
 /* ---- apply decoder to the open form ---- */
 
 function codableFields(){
+  const bf=S.settings.bfmt;let r;
+  if(bf.mode==='kv')r=bf.kv.fields.filter(x=>x.on).map(x=>kvToDec(x.field)).filter(Boolean);
+  else if(bf.mode==='sep')r=bf.fields.filter(x=>x.on).map(x=>x.k);
+  else r=['weight','wage','buyPpg','serial'];
+  if(!r.includes('size'))r.push('size');
+  return r;
+}
+function sizeInFormat(){
   const bf=S.settings.bfmt;
-  if(bf.mode==='kv')return bf.kv.fields.filter(x=>x.on).map(x=>kvToDec(x.field)).filter(Boolean);
-  if(bf.mode==='sep')return bf.fields.filter(x=>x.on).map(x=>x.k);
-  return ['weight','wage','buyPpg','serial'];
+  if(bf.mode==='kv')return bf.kv.fields.some(f=>f.on&&f.field==='size');
+  if(bf.mode==='sep')return bf.fields.some(f=>f.on&&f.k==='size');
+  return false;
+}
+function ensureSizeInFormat(){
+  const bf=S.settings.bfmt;
+  if(bf.mode==='kv'){
+    let c=bf.kv.fields.find(f=>f.field==='size');
+    if(!c){const used=new Set(bf.kv.fields.map(f=>f.key));let key='z';if(used.has(key))key=['y','x','q','v','m','j'].find(k=>!used.has(k))||'z2';bf.kv.fields.push({key,field:'size',type:'string',on:true});}
+    else c.on=true;
+  }else if(bf.mode==='sep'){
+    const c=bf.fields.find(f=>f.k==='size');if(c)c.on=true;else bf.fields.splice(1,0,{k:'size',on:true,div:1});
+  }
 }
 function genIncUI(f){
   const off=new Set(S.settings.bfmt.genOff||[]);
@@ -2037,7 +2058,9 @@ function genIncUI(f){
     const el=f.elements[n];if(!el||el.type==='hidden'||f.querySelector('[data-inc="'+n+'"]'))return;
     const lb=el.closest('label');if(!lb)return;
     const sp=document.createElement('span');sp.className='inc';sp.title='يدخل هذا الحقل في الباركود المُولَّد';
-    sp.innerHTML=`<input type="checkbox" data-inc="${n}" ${off.has(n)?'':'checked'} ${n==='weight'?'disabled':''}>في الكود`;
+    const posSize=n==='size'&&S.settings.bfmt.mode==='pos',on_=n==='size'?(sizeInFormat()&&!off.has('size')):!off.has(n);
+    if(posSize)sp.title='تنسيق «الموضع» لا يحمل المقاس. غيّر التنسيق إلى «كلمات» أو «فاصل» من الإعدادات ← تنسيق الباركود.';
+    sp.innerHTML=`<input type="checkbox" data-inc="${n}" ${on_?'checked':''} ${(n==='weight'||posSize)?'disabled':''}>في الكود`;
     lb.appendChild(sp);
   });
 }
@@ -3313,6 +3336,7 @@ document.addEventListener('keydown',ev=>{
   const st=ev.shiftKey?2:0.5,m={ArrowLeft:[-st,0],ArrowRight:[st,0],ArrowUp:[0,-st],ArrowDown:[0,st]}[key];
   if(m){ev.preventDefault();edPush();es.forEach(e=>{e.x=rd(e.x+m[0],2);e.y=rd(e.y+m[1],2);});save();paintEditor();}
 });
+document.addEventListener('wheel',e=>{const a=document.activeElement;if(a&&a.type==='number'&&e.target===a)a.blur();},{passive:true});
 /* Enter moves to the next field */
 document.addEventListener('keydown',ev=>{
   if(ev.key!=='Enter'||ev.isComposing||ev.defaultPrevented)return;
@@ -3325,8 +3349,12 @@ document.addEventListener('keydown',ev=>{
   if(tag==='INPUT'&&['button','submit','checkbox','radio','file'].includes(t.type))return;
   if(t.closest('.scan')||['einTxt','dname','bfTest'].includes(t.id)||t.name==='barcode')return;
   const scope=t.closest('[data-enter],form.pform,#xf,#prf');if(!scope)return;
-  const list=[...scope.querySelectorAll('input,select,textarea')].filter(x=>!x.disabled&&!x.readOnly&&x.type!=='hidden'&&!x.hidden&&!x.closest('details:not([open])')&&!x.closest('[hidden]'));
+  const list=[...scope.querySelectorAll('input,select,textarea')].filter(x=>!x.disabled&&!x.readOnly&&!['hidden','checkbox','radio','button','submit','file'].includes(x.type)&&!x.hidden&&!x.closest('details:not([open])')&&!x.closest('[hidden]'));
   const i=list.indexOf(t);if(i<0)return;
+  if(t.closest('form#pf')&&view==='intake'&&draft){
+    const row=scope.querySelector('.frow'),rl=row?list.filter(x=>row.contains(x)):[];
+    if(rl.length&&t===rl[rl.length-1]){ev.preventDefault();scope.dispatchEvent(new Event('submit',{cancelable:true}));return;}
+  }
   const nx=list[i+1];
   if(nx){ev.preventDefault();nx.focus();if(nx.tagName==='INPUT'&&!['checkbox','radio'].includes(nx.type)){try{nx.select();}catch(er){}}}
 });
@@ -4051,7 +4079,7 @@ main.addEventListener('change',e=>{
   else if(t.id==='einMode'){S.settings.label.codeMode=t.value==='tpl'?'tpl':'barcode';save();paintInline();paintCanvas();const i=$('#einTxt');if(i&&!i.disabled)i.focus();}
   else if(t.id==='per'){period=t.value;render();}
   else if(t.dataset.pr!==undefined){setPr(t);}
-  else if(t.dataset.inc!==undefined){const bf=S.settings.bfmt;bf.genOff=bf.genOff||[];const n=t.dataset.inc,i=bf.genOff.indexOf(n);if(t.checked&&i>=0)bf.genOff.splice(i,1);else if(!t.checked&&i<0)bf.genOff.push(n);save();const f0=$('#pf');if(f0)f0.dispatchEvent(new Event('recalc'));}
+  else if(t.dataset.inc!==undefined){const bf=S.settings.bfmt;bf.genOff=bf.genOff||[];const n=t.dataset.inc;if(n==='size'&&t.checked)ensureSizeInFormat();const i=bf.genOff.indexOf(n);if(t.checked&&i>=0)bf.genOff.splice(i,1);else if(!t.checked&&i<0)bf.genOff.push(n);save();const f0=$('#pf');if(f0)f0.dispatchEvent(new Event('recalc'));}
   else if(t.dataset.ed==='ruler'||t.dataset.ed==='grid'){ED[t.dataset.ed]=t.checked;const bt=document.querySelector('[data-act="etgl"][data-k="'+t.dataset.ed+'"]');if(bt)bt.setAttribute('aria-pressed',String(t.checked));paintCanvas();}
   else if(t.id==='einCodeAdd'){if(t.value)toggleCodeField(t.value);}
   else if(t.dataset.dti!==undefined){decAssign(+t.dataset.dti,t.value||null);}
@@ -4088,8 +4116,12 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.11.0';
+const APP_VERSION='2.12.0';
 const CHANGELOG=[
+ {v:'2.12.0',date:'2026-11-09',title:'إدخال أسرع بلوحة المفاتيح',items:[
+  'خانة «في الكود» للمقاس في بيانات القطعة، تُدخل المقاس في الباركود المُولَّد أو تُخرجه (في تنسيق «كلمات» أو «فاصل»).',
+  'زر Enter ينتقل بين حقول البيانات فقط ويتخطى خانات «في الكود». وعند Enter في آخر حقل من سطر البيانات (الرقم التسلسلي) تُضاف القطعة ويعود المؤشر إلى الوزن لإدخال قطعة جديدة، أو إلى حقل المسح إن كنت تمسح.',
+  'أُلغيت الأسهم الصغيرة داخل الحقول الرقمية، وأُوقف تغيير القيمة بعجلة الفأرة بالخطأ.']},
  {v:'2.11.0',date:'2026-11-09',title:'قسم الإدخال بطريقتين: مسح أو يدوي',items:[
   'قسم «إدخال» صار بطريقتين تتبدلان من أعلاه: مسح الباركود أو الإدخال اليدوي.',
   'عند المسح تُضاف القطعة تلقائيًا إن كانت بياناتها كاملة، ويبقى المؤشر في حقل المسح لتمسح القطع التالية واحدة بعد أخرى بلا لمس الشاشة.',
