@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.16.0">
+<meta name="app-version" content="2.17.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -539,6 +539,13 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .tact button:hover{border-color:var(--accent)}
 .tile.add{border-style:dashed;color:var(--muted);background:transparent}
 .catbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:2px 0 8px}
+
+.prem{display:inline-flex;gap:12px;align-items:center;flex-wrap:wrap;border:1px solid var(--line);border-radius:12px;padding:4px 10px;background:var(--surface)}
+.prem>span{font-weight:700;font-size:12.5px;color:var(--muted)}
+.prem label{display:inline-flex;gap:6px;align-items:center;font-size:12.5px;white-space:nowrap}
+.prem input{width:74px;min-height:32px;padding:0 8px;text-align:center}
+.prem select{min-height:32px;padding:0 6px;width:auto}
+.pgrid.big,.pgrid{direction:rtl}
 </style>
 </head>
 <body>
@@ -739,6 +746,8 @@ function normalize(o){
   if(!Array.isArray(s.vatFree))s.vatFree=['24'];
   if(!s.prices||typeof s.prices!=='object')s.prices={};
   if(!o.settings||o.settings.premiumUsed==null)s.premiumUsed=num(s.premium);
+  s.premiumT=s.premiumT==='amt'?'amt':'pct';s.premiumUsedT=s.premiumUsedT==='amt'?'amt':'pct';
+  s.priceEvery=[1,2,5,10,15,30].includes(+s.priceEvery)?+s.priceEvery:5;
   if(!o.settings||!o.settings.pricesUsed||typeof o.settings.pricesUsed!=='object')s.pricesUsed=Object.assign({},s.prices);
   if(!Array.isArray(s.customFields))s.customFields=[];
   if(!Array.isArray(s.nodes)||!s.nodes.length||(s.schema||0)<2){
@@ -923,15 +932,21 @@ function findPiece(code){
 }
 
 /* ---------- prices ---------- */
-const gram24=(usd,used)=>usd/TROY*(S.settings.fx||3.75)*(1+(num(used?S.settings.premiumUsed:S.settings.premium)||0)/100);
+const applyPrem=(v,used)=>{const t=(used?S.settings.premiumUsedT:S.settings.premiumT)==='amt'?'amt':'pct',p=num(used?S.settings.premiumUsed:S.settings.premium)||0;return t==='amt'?v+p:v*(1+p/100);};
+const usedFromNew=p=>{const tn=S.settings.premiumT==='amt'?'amt':'pct',tu=S.settings.premiumUsedT==='amt'?'amt':'pct',pn=num(S.settings.premium)||0,pu=num(S.settings.premiumUsed)||0;if(tn==='pct'&&tu==='pct')return p*(1+pu/100)/(1+pn/100);if(tn==='amt'&&tu==='amt')return p+(pu-pn);return p;};
+const gram24=(usd,used)=>applyPrem(usd/TROY*(S.settings.fx||3.75),used);
 const priceFor=(k,used)=>((used?S.settings.pricesUsed:S.settings.prices)||{})[k]||0;
 const buyAuto=(k,used)=>{const pr=priceFor(k,used);return pr>0?r2(pr*(1+(S.settings.buyAdj||0)/100)):0;};
 function setPricesFromOunce(usd,src){
-  const gn=gram24(usd,false),gu=gram24(usd,true);
-  S.settings.karats.forEach(k=>{S.settings.prices[k]=r2(gn*num(k)/24);S.settings.pricesUsed[k]=r2(gu*num(k)/24);});
+  const base=usd/TROY*(S.settings.fx||3.75);
+  S.settings.karats.forEach(k=>{const bk=base*num(k)/24;S.settings.prices[k]=r2(applyPrem(bk,false));S.settings.pricesUsed[k]=r2(applyPrem(bk,true));});
   S.settings.usd=usd;S.settings.priceSrc=src;S.settings.pricesAt=new Date().toISOString();
 }
-function recomputePrices(){if(S.settings.usd>0){setPricesFromOunce(S.settings.usd,S.settings.priceSrc||'manual');save();}}
+function recomputePrices(){
+  const s=S.settings;
+  if(s.priceSrc==='feed'){s.karats.forEach(k=>{if(s.prices[k]>0)s.pricesUsed[k]=r2(usedFromNew(s.prices[k]));});save();return;}
+  if(s.usd>0){setPricesFromOunce(s.usd,s.priceSrc||'manual');save();}
+}
 
 /* ================= ui bits ================= */
 const ICON={
@@ -2046,16 +2061,20 @@ function priceSrcBadge(){
   if(s.priceSrc==='feed'&&pstate.fb)return '<span class="pbadge warn">الرابط تعذّر — سوق عالمي</span>';
   return '<span class="pbadge live">'+(s.priceSrc==='feed'?'مباشر من الرابط':'مباشر')+'</span>';
 }
+function premEditorHTML(){
+  const s=S.settings,sel=(k,t)=>`<select data-pmt="${k}" aria-label="نوع العلاوة"><option value="pct" ${t!=='amt'?'selected':''}>%</option><option value="amt" ${t==='amt'?'selected':''}>${esc(cur())}</option></select>`;
+  return `<div class="prem" role="group" aria-label="علاوة السوق" title="العلاوة نسبة مئوية (%) أو مبلغ ثابت يُضاف إلى سعر جرام كل عيار"><span>علاوة السوق</span><label>جديد <input data-pm="new" inputmode="decimal" value="${num(s.premium)||0}" aria-label="علاوة الجديد">${sel('new',s.premiumT)}</label><label>مستعمل <input data-pm="used" inputmode="decimal" value="${num(s.premiumUsed)||0}" aria-label="علاوة المستعمل">${sel('used',s.premiumUsedT)}</label></div>`;
+}
 function priceBoardHTML(){
   const s=S.settings,pd=s.pday||{},op=pd.open||{},pn=s.prices||{},pu=s.pricesUsed||{},hide=phideGet();
   const ks=s.karats.slice().sort((a,b)=>num(b)-num(a));
   const cell=v=>v>0?fmt(v):'—';
-  const head=`<div class="phead"><h3>${ic('trend')}<span>أسعار الذهب والفضة</span> ${priceSrcBadge()}</h3><div class="pmeta">${pd.lo>0&&pd.hi>0?'نطاق اليوم: <b dir="ltr">'+fmt(pd.lo)+' – '+fmt(pd.hi)+'</b> · ':''}${s.pricesAt?'آخر تحديث: '+dtf(s.pricesAt):'لم تُحدَّد أسعار بعد'}</div></div>`;
+  const head=`<div class="phead"><h3>${ic('trend')}<span>أسعار الذهب والفضة</span> ${priceSrcBadge()}</h3><div class="pmeta">${pd.lo>0&&pd.hi>0?'نطاق اليوم: <b dir="ltr">'+fmt(pd.lo)+' – '+fmt(pd.hi)+'</b> · ':''}${s.pricesAt?'آخر تحديث: '+dtf(s.pricesAt)+' · ':'لم تُحدَّد أسعار بعد · '}يتحدّث كل ${s.priceEvery||5} دقائق</div></div>`;
   const msg=pstate.st==='fail'?`<p class="hint warn" style="margin:0 0 10px">تعذّر التحديث التلقائي${s.pricesAt?'، وتُعرض آخر أسعار محفوظة':''}.${pstate.err?' '+esc(pstate.err):''}</p>`:'';
   const big=`<div class="pgrid big"><div class="pcard gold"><div class="pl"><span>أونصة الذهب</span><small>USD</small></div><div class="pv">${cell(s.usd)}</div><div class="pf"><span>سعر عالمي</span>${pdelta(s.usd,op.xau)}</div></div><div class="pcard"><div class="pl"><span>أونصة الفضة</span><small>USD</small></div><div class="pv">${cell(s.xag)}</div><div class="pf"><span>سعر عالمي</span>${pdelta(s.xag,op.xag)}</div></div></div>`;
   const grid=`<div class="pgrid">${ks.map(k=>`<div class="pcard ${k==='24'?'gold':''}"><div class="pl"><span>ذهب عيار ${esc(k)}</span><small>${esc(cur())}</small></div><div class="pv">${cell(pn[k])}</div><div class="pf"><span>للجرام</span>${pdelta(pn[k],op['g'+k])}</div></div>`).join('')}</div>`;
   const used=`<details style="margin-top:12px"><summary>الجديد والمستعمل</summary><div class="tablewrap" style="margin-top:8px"><table class="mini"><thead><tr><th></th>${ks.map(k=>`<th>عيار ${esc(k)}</th>`).join('')}</tr></thead><tbody><tr><td><b>جديد</b></td>${ks.map(k=>`<td>${cell(pn[k])}</td>`).join('')}</tr><tr><td><b>مستعمل</b></td>${ks.map(k=>`<td>${cell(pu[k])}</td>`).join('')}</tr></tbody></table></div><small class="muted">${s.priceSrc==='auto'?'سعر الصرف '+s.fx+' · علاوة السوق: جديد '+(num(s.premium)||0)+'% ومستعمل '+(num(s.premiumUsed)||0)+'%':s.priceSrc==='feed'?'أسعار الجرام مأخوذة من الرابط المخصص':'أسعار أُدخلت يدويًا'}</small></details>`;
-  const acts=`<div class="row" style="margin-top:12px"><button class="btn ghost sm" data-act="refreshPrices">${ic('refresh')||''}<span>تحديث الآن</span></button><button class="btn ghost sm" data-act="prices">إدخال يدوي</button><button class="btn ghost sm" data-act="pgosrc">مصدر الأسعار</button><button class="btn ghost sm" data-act="applyPrices">تطبيق على القطع المتوفرة</button><button class="btn ghost sm" data-act="phide">${hide?'إظهار الأسعار':'إخفاء الأسعار'}</button></div>`;
+  const acts=`<div class="row" style="margin-top:12px"><button class="btn ghost sm" data-act="refreshPrices">${ic('refresh')||''}<span>تحديث الآن</span></button><button class="btn ghost sm" data-act="prices">إدخال يدوي</button><button class="btn ghost sm" data-act="pgosrc">مصدر الأسعار</button><button class="btn ghost sm" data-act="applyPrices">تطبيق على القطع المتوفرة</button><button class="btn ghost sm" data-act="phide">${hide?'إظهار الأسعار':'إخفاء الأسعار'}</button>${premEditorHTML()}</div>`;
   return `<div class="pboard">${head}${hide?'':msg+big+grid+used}${acts}</div>`;
 }
 function priceStripHTML(){return priceBoardHTML();}
@@ -2071,7 +2090,7 @@ function priceSourcePanelHTML(){
   const prem=num(s.premium)||0;
   const px=['','https://api.allorigins.win/raw?url=','https://corsproxy.io/?url='].includes(f.proxy)?f.proxy:'__c';
   return `<section class="panel" id="psrc"><h2>مصدر أسعار الذهب</h2><p class="muted">اختر من أين تأتي أسعار اليوم، وتُحدَّث تلقائيًا بالمدة التي تحددها.</p>
-    <div class="grid" style="max-width:640px"><label class="f">المصدر${sel('src',src,[['auto','السوق العالمي المباشر (مع علاوة تضبطها)'],['feed','رابط مخصص (بيانات موقع الجنيه العربي أو غيره)'],['manual','يدوي']])}</label><label class="f">التحديث كل${sel('every',f.every,[[1,'دقيقة'],[2,'دقيقتين'],[5,'5 دقائق'],[10,'10 دقائق'],[15,'15 دقيقة'],[30,'30 دقيقة']])}</label></div>
+    <div class="grid" style="max-width:640px"><label class="f">المصدر${sel('src',src,[['auto','السوق العالمي المباشر (مع علاوة تضبطها)'],['feed','رابط مخصص (بيانات موقع الجنيه العربي أو غيره)'],['manual','يدوي']])}</label><label class="f">التحديث كل${sel('every',s.priceEvery||5,[[1,'دقيقة'],[2,'دقيقتين'],[5,'5 دقائق'],[10,'10 دقائق'],[15,'15 دقيقة'],[30,'30 دقيقة']])}</label></div>
     <div style="margin-top:14px"><h3 style="margin:0 0 6px">مطابقة أسعار شركة الجنية العربي</h3><p class="muted" style="margin:0 0 8px">اكتب سعر <b>عيار 24</b> الظاهر الآن في موقع الشركة، فتضبط المنصة علاوة السوق تلقائيًا لتطابق أسعارها عند كل تحديث. العلاوة الحالية: <b>${prem}%</b>.</p>
       <div class="inl" style="max-width:420px"><input type="number" step="any" min="0" inputmode="decimal" data-ps="cal" placeholder="مثال: 491.85" aria-label="سعر عيار 24 في موقع الشركة"><button type="button" class="btn" data-act="pcal">ضبط العلاوة</button></div></div>
     <details style="margin-top:14px" ${src==='feed'?'open':''}><summary><b>رابط بيانات مخصص</b></summary>
@@ -2095,7 +2114,7 @@ async function pfeedTest(){
     const u=$('#pfeeduse');if(u)u.disabled=false;
   }catch(e){pfeedLast=null;res.innerHTML='<p class="scanres show bad">'+esc(feedErrMsg(e))+'</p>';const u=$('#pfeeduse');if(u)u.disabled=true;}
 }
-function paintPrices(){const e=$('#pstrip');if(e)e.innerHTML=priceStripHTML();const m=$('#pmini');if(m)m.innerHTML=priceMiniHTML();}
+function paintPrices(){const e=$('#pstrip');if(e&&!(e.contains(document.activeElement)&&document.activeElement.matches&&document.activeElement.matches('input,select')))e.innerHTML=priceStripHTML();const m=$('#pmini');if(m)m.innerHTML=priceMiniHTML();}
 function vDash(m){
   const inS=S.pieces.filter(p=>p.status==='in');
   const strip=`<section class="panel" id="pstrip">${priceStripHTML()}</section>`;
@@ -2660,7 +2679,7 @@ function pieceFormHTML(p,mode){
       <label class="f span3">الباركود${p._gen?' <small>(يُولَّد تلقائيًا من البيانات)</small>':''}<div class="inl"><input name="barcode" dir="ltr" value="${esc(p.barcode)}" ${p._gen?'readonly':''}>${p._gen?'':`<button type="button" class="btn ghost" data-act="m-cam">${ic('camera')}<span>مسح</span></button><button type="button" class="btn ghost" data-act="m-gen">توليد</button>`}</div></label>
       <div id="bcStat" class="bcstat span3" aria-live="polite"></div>
       ${p._gen?'<small class="span3 muted">فعّل أو ألغِ الحقول التي تدخل في الباركود المُولَّد بخانة «في الكود» عند كل حقل (في تنسيق الموضع تُملأ الحقول الملغاة بأصفار).</small>':''}
-      ${p._gen?`<div class="span3 row" style="gap:10px"><label class="chip gold" style="display:inline-flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" data-bcman ${genBulk?'disabled':''}>تعديل الباركود يدويًا</label><label class="chip gold" style="display:inline-flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" data-bulk ${genBulk?'checked':''}>طباعة جماعية</label></div><small class="span3 muted" id="bulkHint">${genBulk?'الطباعة الجماعية مفعّلة: اكتب الوزن واضغط Enter ليُحفظ ويُطبع الملصق، ويبقى باقي البيانات كما هو والرقم التسلسلي يتقدم تلقائيًا. ألغِ التأشير للتوقف.':'عند تفعيل الطباعة الجماعية يصبح Enter حفظًا وطباعةً للقطعة، ثم يُحدَّد حقل الوزن للقطعة التالية.'}</small>`:''}
+      ${p._gen?`<div class="span3 row" style="gap:10px"><label class="chip gold" style="display:inline-flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" data-bcman ${genBulk?'disabled':''}>تعديل الباركود يدويًا</label><label class="chip gold" style="display:inline-flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" data-bulk ${genBulk?'checked':''}>طباعة جماعية</label><label class="chip gold" style="display:inline-flex;gap:8px;align-items:center;cursor:pointer" title="يُطبع الملصق تلقائيًا عند اكتمال الحقول وحفظ القطعة (Enter في آخر حقل)"><input type="checkbox" data-autoprint ${S.settings.label.autoPrint?'checked':''}>طباعة عند اكتمال الحقول</label></div><small class="span3 muted" id="bulkHint">${genBulk?'الطباعة الجماعية مفعّلة: اكتب الوزن واضغط Enter ليُحفظ ويُطبع الملصق، ويبقى باقي البيانات كما هو والرقم التسلسلي يتقدم تلقائيًا. ألغِ التأشير للتوقف.':'عند تفعيل الطباعة الجماعية يصبح Enter حفظًا وطباعةً للقطعة، ثم يُحدَّد حقل الوزن للقطعة التالية.'}</small>`:''}
     </div><div class="frow">
       <label class="f">الوزن<div class="ig"><input name="weight" type="number" step="any" min="0" inputmode="decimal" value="${v(p.weight,3)}"><span>جم</span></div></label>
       <label class="f">المقاس<input name="size" value="${esc(p.size||'')}"></label>
@@ -2888,6 +2907,7 @@ function vIntake(m){
       <div class="segb imode" role="tablist" aria-label="طريقة الإدخال"><button type="button" data-act="imode" data-v="scan" aria-pressed="${md==='scan'}">مسح باركود</button><button type="button" data-act="imode" data-v="manual" aria-pressed="${md==='manual'}">إدخال يدوي</button></div>
       <section class="panel" id="scanCard" ${md==='scan'?'':'hidden'}><h3>مسح الباركود</h3><p class="muted" id="scanHint" style="margin-bottom:10px"></p>${scanBar('intake','امسح باركود القطعة أو اكتبه ثم Enter','يبقى المؤشر في هذا الحقل: امسح القطع واحدة تلو الأخرى، وتُضاف كل قطعة تلقائيًا إن كانت بياناتها كاملة.')}
         <label class="chk" style="display:inline-flex;gap:8px;align-items:center;cursor:pointer;margin-top:6px"><input type="checkbox" id="autoAdd" ${iautoGet()?'checked':''}>إضافة القطعة تلقائيًا عند مسح باركود مكتمل البيانات (وإلا تُفتح لاستكمالها)</label>
+        <label class="chk" style="display:inline-flex;gap:8px;align-items:center;cursor:pointer;margin-top:6px;margin-inline-start:14px"><input type="checkbox" data-autoprint ${S.settings.label.autoPrint?'checked':''}>طباعة الملصق عند اكتمال الحقول</label>
         <div id="scanMsg" class="scanres" role="status" aria-live="polite"></div>
         <div class="row" style="margin-top:8px"><span class="muted">أو</span><button type="button" class="btn" data-act="imode" data-v="manual">${ic('plus')}<span>إدخال يدوي</span></button></div></section>
       <section class="panel" id="manualCard" ${md==='manual'?'':'hidden'}><h3>إدخال يدوي</h3><p class="muted">أدخل الوزن والمقاس والأجرة وسعر الغرام، ويُولَّد الباركود من المنصة عند الحفظ.</p><div class="row"><button type="button" id="genBtn" class="btn accent" data-act="gennew" disabled>${ic('plus')}<span>قطعة جديدة</span></button><button type="button" class="btn ghost" data-act="imode" data-v="scan">العودة إلى المسح</button></div></section>
@@ -3695,6 +3715,32 @@ document.addEventListener('keydown',ev=>{
   const st=ev.shiftKey?2:0.5,m={ArrowLeft:[-st,0],ArrowRight:[st,0],ArrowUp:[0,-st],ArrowDown:[0,st]}[key];
   if(m){ev.preventDefault();edPush();es.forEach(e=>{e.x=rd(e.x+m[0],2);e.y=rd(e.y+m[1],2);});save();paintEditor();}
 });
+/* numeric fields: plain text with a decimal keypad, Arabic-Indic digits and separators converted to English as you type */
+function normNumText(v){
+  let t=String(v).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g,d=>String(d.charCodeAt(0)-0x06F0)).replace(/٫/g,'.').replace(/[٬،]/g,',');
+  if(!t.includes('.')&&(t.match(/,/g)||[]).length===1&&/,\d{1,2}$/.test(t))t=t.replace(',','.');
+  else t=t.replace(/,/g,'');
+  t=t.replace(/[^\d.\-]/g,'');
+  const i=t.indexOf('.');if(i>=0)t=t.slice(0,i+1)+t.slice(i+1).replace(/\./g,'');
+  return t;
+}
+function toTextNumber(el){
+  if(!el||el.tagName!=='INPUT'||el.type!=='number')return;
+  const v=el.getAttribute('value');
+  el.type='text';
+  if(!el.hasAttribute('inputmode'))el.setAttribute('inputmode','decimal');
+  el.setAttribute('autocomplete','off');
+  if(v!=null)el.value=v;
+}
+function fixNumberInputs(root){(root||document).querySelectorAll('input[type="number"]').forEach(toTextNumber);}
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(!t||t.tagName!=='INPUT'||!(t.getAttribute('inputmode')==='decimal'||t.getAttribute('inputmode')==='numeric'))return;
+  const n=normNumText(t.value);
+  if(n!==t.value){const pos=t.selectionStart,len=t.value.length;t.value=n;try{const np=Math.max(0,(pos==null?n.length:pos)-(len-n.length));t.setSelectionRange(np,np);}catch(err){}}
+},true);
+new MutationObserver(ms=>{ms.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType===1){if(n.matches&&n.matches('input[type="number"]'))toTextNumber(n);if(n.querySelectorAll)fixNumberInputs(n);}}));}).observe(document.documentElement,{childList:true,subtree:true});
+fixNumberInputs(document);
 document.addEventListener('wheel',e=>{const a=document.activeElement;if(a&&a.type==='number'&&e.target===a)a.blur();},{passive:true});
 /* Enter moves to the next field */
 document.addEventListener('keydown',ev=>{
@@ -4100,10 +4146,10 @@ function feedErrMsg(e){
   return 'تعذّرت قراءة الرابط: غالبًا يمنع الموقع القراءة من متصفحك (CORS)، أو لا يوجد اتصال. جرّب «وسيط CORS» أو رابط بيانات يسمح بالقراءة.';
 }
 function applyFeedVals(v){
-  const s=S.settings,pn=num(s.premium)||0,pu=num(s.premiumUsed)||0;
+  const s=S.settings;
   s.karats.forEach(k=>{
     let p=v['g'+k];if(!(p>0)&&v.g24>0)p=v.g24*num(k)/24;
-    if(p>0){s.prices[k]=r2(p);s.pricesUsed[k]=r2(p*(1+pu/100)/(1+pn/100));}
+    if(p>0){s.prices[k]=r2(p);s.pricesUsed[k]=r2(usedFromNew(p));}
   });
   if(v.xau>0)s.usd=v.xau;if(v.xag>0)s.xag=v.xag;
   s.priceSrc='feed';s.pricesAt=new Date().toISOString();
@@ -4271,14 +4317,12 @@ function vPrefs(m){
 function prefGeneral(body){
   const s=S.settings;
   body.innerHTML=accountPanelHTML()+priceSourcePanelHTML()+`<section class="panel"><h2>المنشأة والضريبة والأسعار</h2><p class="muted" style="margin:0">إصدار المنصة: <b>${esc(APP_VERSION)}</b> <button type="button" class="btn ghost sm" data-act="verinfo">ما الجديد</button></p>
-    <div class="grid3" style="margin-top:10px"><label class="f span3">اسم المنشأة (يظهر في التقارير المطبوعة)<input id="shopIn" value="${esc(s.shop)}"></label><label class="f">رمز العملة<input id="curIn" value="${esc(cur())}"></label><label class="f">نسبة الضريبة %<input id="vatIn" type="number" step="any" min="0" value="${s.vat}"></label><label class="f">سعر الصرف (${esc(cur())} لكل دولار)<input id="fxIn" type="number" step="any" min="0" value="${s.fx||3.75}"></label><label class="f">علاوة السوق المحلي على السعر العالمي % — للجديد<input id="premIn" type="number" step="any" value="${s.premium||0}"></label><label class="f">علاوة السوق المحلي على السعر العالمي % — للمستعمل<input id="premUsedIn" type="number" step="any" value="${s.premiumUsed||0}"></label><label class="f">فرق سعر شراء الجرام عن السوق % <small class="muted">(سالب = أقل من السوق)</small><input id="buyAdjIn" type="number" step="any" value="${s.buyAdj||0}"></label><label class="f">هامش الربح الافتراضي % <small class="muted">(0 = سعر البيع من سعر السوق)</small><input id="defMarginIn" type="number" step="any" min="0" max="95" value="${s.defMargin||0}"></label></div>
+    <div class="grid3" style="margin-top:10px"><label class="f span3">اسم المنشأة (يظهر في التقارير المطبوعة)<input id="shopIn" value="${esc(s.shop)}"></label><label class="f">رمز العملة<input id="curIn" value="${esc(cur())}"></label><label class="f">نسبة الضريبة %<input id="vatIn" type="number" step="any" min="0" value="${s.vat}"></label><label class="f">سعر الصرف (${esc(cur())} لكل دولار)<input id="fxIn" type="number" step="any" min="0" value="${s.fx||3.75}"></label><div class="f span2"><span>علاوة السوق المحلي على السعر العالمي</span>${premEditorHTML()}<small class="muted">نسبة مئوية (%) أو مبلغ ثابت يُضاف إلى سعر جرام كل عيار. وتجدها أيضًا بجانب أزرار الأسعار في الرئيسية.</small></div><label class="f">فرق سعر شراء الجرام عن السوق % <small class="muted">(سالب = أقل من السوق)</small><input id="buyAdjIn" type="number" step="any" value="${s.buyAdj||0}"></label><label class="f">هامش الربح الافتراضي % <small class="muted">(0 = سعر البيع من سعر السوق)</small><input id="defMarginIn" type="number" step="any" min="0" max="95" value="${s.defMargin||0}"></label></div>
     <div style="margin-top:14px"><b>أعيرة معفاة من الضريبة</b><div class="row" style="margin-top:6px">${s.karats.map(k=>`<label class="chip gold" style="display:inline-flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" data-vfree="${esc(k)}" ${s.vatFree.includes(k)?'checked':''}>عيار ${esc(k)}</label>`).join('')}</div><small>القطع بهذه الأعيرة تُعبّأ ضريبتها بصفر، وغيرها بنسبة الضريبة الافتراضية. يمكن تعديل النسبة لكل قطعة.</small></div></section>`;
   $('#shopIn').addEventListener('change',e=>{s.shop=e.target.value.trim();save();toast('تم الحفظ');});
   $('#curIn').addEventListener('change',e=>{s.currency=e.target.value.trim()||'ر.س';save();toast('تم الحفظ');});
   $('#vatIn').addEventListener('change',e=>{s.vat=Math.max(0,num(e.target.value));save();toast('تم الحفظ');});
   $('#fxIn').addEventListener('change',e=>{s.fx=num(e.target.value)||3.75;recomputePrices();toast('تم الحفظ');if(s.priceSrc==='auto')refreshPrices(true);});
-  $('#premIn').addEventListener('change',e=>{s.premium=num(e.target.value);recomputePrices();toast('تم الحفظ');if(s.priceSrc==='auto')refreshPrices(true);});
-  $('#premUsedIn').addEventListener('change',e=>{s.premiumUsed=num(e.target.value);recomputePrices();toast('تم الحفظ');if(s.priceSrc==='auto')refreshPrices(true);});
   $('#buyAdjIn').addEventListener('change',e=>{s.buyAdj=Math.max(-50,Math.min(50,num(e.target.value)));save();toast('تم الحفظ');});
   $('#defMarginIn').addEventListener('change',e=>{s.defMargin=Math.max(0,Math.min(95,num(e.target.value)));save();toast('تم الحفظ');});
 }
@@ -4415,8 +4459,8 @@ document.addEventListener('click',async e=>{
       const v=num(($('[data-ps="cal"]')||{}).value),s=S.settings;
       if(!(v>0)){toast('اكتب سعر عيار 24 الظاهر في موقع الشركة','bad');break;}
       if(!(s.usd>0)){toast('جارٍ جلب سعر الأونصة… أعد المحاولة بعد لحظات','bad');refreshPrices(true);break;}
-      const base=s.usd/31.1035*(s.fx||3.75),prem=rd((v/base-1)*100,3);
-      s.premium=prem;s.premiumUsed=prem;if(s.priceSrc==='manual')s.priceSrc='auto';recomputePrices();save();render();toast('ضُبطت علاوة السوق على '+prem+'% لتطابق أسعار الشركة');break;}
+      const base=s.usd/31.1035*(s.fx||3.75),amt=s.premiumT==='amt',prem=amt?rd(v-base,2):rd((v/base-1)*100,3);
+      s.premium=prem;if(s.premiumUsedT===s.premiumT)s.premiumUsed=prem;if(s.priceSrc==='manual')s.priceSrc='auto';recomputePrices();save();render();toast('ضُبطت علاوة السوق على '+prem+(amt?' '+cur()+' للجرام':'%')+' لتطابق أسعار الشركة');break;}
     case 'pfeedtest':pfeedTest();break;
     case 'pfeeduse':{
       if(!pfeedLast)break;const f=feedCfg();
@@ -4588,10 +4632,23 @@ main.addEventListener('change',e=>{
   else if(t.dataset.kvon!==undefined){S.settings.bfmt.kv.fields[+t.dataset.kvon].on=t.checked;save();toast('تم الحفظ');bfOut();}
   else if(t.dataset.kvkarat!==undefined){S.settings.bfmt.kv.karatFromCode=t.checked;save();toast('تم الحفظ');render();}
   else if(t.dataset.lbp!==undefined){const v=t.value;if(v){const [w,h,tl]=v.split('x').map(Number);const L=S.settings.label;L.w=w;L.h=h;if(L.tpl==='tag')L.tail=tl||0;save();render();}}
+  else if(t.dataset.pm!==undefined||t.dataset.pmt!==undefined){
+    const s2=S.settings;
+    if(t.dataset.pm==='new')s2.premium=num(t.value);else if(t.dataset.pm==='used')s2.premiumUsed=num(t.value);
+    else if(t.dataset.pmt==='new')s2.premiumT=t.value==='amt'?'amt':'pct';else if(t.dataset.pmt==='used')s2.premiumUsedT=t.value==='amt'?'amt':'pct';
+    recomputePrices();save();toast('تم الحفظ');paintPrices();
+    document.querySelectorAll('[data-pm="new"]').forEach(x=>{x.value=num(s2.premium)||0;});document.querySelectorAll('[data-pm="used"]').forEach(x=>{x.value=num(s2.premiumUsed)||0;});
+    document.querySelectorAll('[data-pmt="new"]').forEach(x=>{x.value=s2.premiumT;});document.querySelectorAll('[data-pmt="used"]').forEach(x=>{x.value=s2.premiumUsedT;});
+  }
+  else if(t.hasAttribute&&t.hasAttribute('data-autoprint')){
+    S.settings.label.autoPrint=t.checked;save();
+    document.querySelectorAll('[data-autoprint],[data-lb="autoPrint"]').forEach(x=>{x.checked=t.checked;});
+    toast(t.checked?'ستُطبع الملصقات عند اكتمال الحقول وحفظ القطعة':'أُوقفت الطباعة عند اكتمال الحقول');
+  }
   else if(t.dataset.ps!==undefined){
     const k=t.dataset.ps,f=feedCfg();
     if(k==='src'){S.settings.priceSrc=t.value;save();if(t.value!=='manual')refreshPrices(true);render();}
-    else if(k==='every'){f.every=+t.value;save();toast('تم الحفظ');}
+    else if(k==='every'){S.settings.priceEvery=+t.value;f.every=+t.value;save();toast('تم الحفظ');paintPrices();}
     else if(k==='proxy'){if(t.value==='__c'){const c=$('#pxc');if(c)c.hidden=false;}else{f.proxy=t.value;save();const c=$('#pxc');if(c)c.hidden=true;}}
     else if(k==='proxyc'){f.proxy=t.value.trim();save();}
     else if(k==='fb'){f.fallback=t.checked;save();}
@@ -4609,8 +4666,13 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.16.0';
+const APP_VERSION='2.17.0';
 const CHANGELOG=[
+ {v:'2.17.0',date:'2026-11-10',title:'أرقام إنجليزية دائمًا وعلاوة بنسبة أو مبلغ',items:[
+  'الحقول الرقمية تقبل الأرقام العربية والعلامة العشرية بأي شكل (٦.٨ أو ٦٫٨ أو 6,8) وتحوّلها فورًا إلى أرقام إنجليزية، فلا يختفي الرقم من الباركود بعد الآن.',
+  'علاوة السوق (جديد ومستعمل) صارت بجانب أزرار إخفاء الأسعار في الرئيسية، وكل علاوة نسبة مئوية (%) أو مبلغ ثابت للجرام.',
+  'تحديث الأسعار تلقائيًا كل 5 دقائق افتراضيًا (قابل للتغيير) لكل المصادر، ويظهر في اللوحة.',
+  'خانة «طباعة عند اكتمال الحقول» بجانب «طباعة جماعية» (وفي بطاقة المسح) لتفعيل أو إلغاء طباعة الملصق تلقائيًا عند حفظ القطعة.']},
  {v:'2.16.0',date:'2026-11-10',title:'لوحة أسعار احترافية وإدارة الأصناف من الإدخال',items:[
   'لوحة «أسعار الذهب والفضة» بتصميم أنيق: أونصة الذهب والفضة بالدولار وسعر الجرام لكل عيار مع التغير ونطاق اليوم، وإخفاء وإظهار، وشريط مختصر للأسعار في صفحة الإدخال.',
   'تحديث تلقائي كل 1 إلى 30 دقيقة من السوق العالمي المباشر، أو من رابط بيانات مخصص يكتشف فيه المنصة الأسعار تلقائيًا، مع بديل تلقائي عند تعذر الرابط.',
@@ -5213,7 +5275,7 @@ fromHash();render();
 paintVersion();
 cloudBoot().then(()=>{fromHash();render();paintPill();paintVersion();prnAutoReconnect();maybeShowWhatsNew();});
 refreshPrices();
-setInterval(()=>{const s=S.settings;if(s.priceSrc==='manual')return;const m=(s.priceSrc==='feed'?feedCfg().every:5)*60000;if(Date.now()-(pstate.last||0)>=m-2000)refreshPrices(true);},30000);
+setInterval(()=>{const s=S.settings;if(s.priceSrc==='manual')return;const m=(s.priceEvery||5)*60000;if(Date.now()-(pstate.last||0)>=m-2000)refreshPrices(true);},30000);
 })();
 </script>
 </body>
