@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.12.0">
+<meta name="app-version" content="2.13.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -555,7 +555,7 @@ const KBD_SHIFT={'َ':'Q','ً':'W','ُ':'E','ٌ':'R','إ':'Y','ِ':'A','ٍ':'S',
 let lastKbdFix=null;
 function fixKbd(raw){
   const t=String(raw||'');
-  if(!/[\u0600-\u06FF]/.test(t))return t;
+  if(!/[\u0600-\u06FF]/.test(t)||/[A-Za-z]/.test(t))return t;
   let m=t;KBD_SEQ.forEach(([a,b])=>{m=m.split(a).join(b);});
   m=m.replace(/[\u0600-\u06FF]/g,ch=>KBD_AR2EN[ch]||KBD_SHIFT[ch]||ch);
   const hadBr=/[<>]/.test(t);
@@ -600,8 +600,8 @@ const DEF_KV=()=>({karatFromCode:true,fields:[{key:'w',field:'weight',type:'numb
 const FCAT=[['price','السعر شامل الضريبة'],['shop','اسم المنشأة'],['karat','العيار والحالة'],['karatN','العيار (رقم)'],['aud','الفئة'],['weight','الوزن'],['size','المقاس'],['wage','الأجرة'],['serial','الرقم التسلسلي'],['name','اسم/وصف القطعة'],['cat','الصنف'],['codeText','نص الرمز']];
 const TPL_DEF={price:'{price} {cur}',shop:'{shop}',karat:'عيار {karat} {cond}',karatN:'{karat}',aud:'{aud}',weight:'{weight} جم',size:'مقاس {size}',wage:'أجرة {wage}/جم',serial:'S/N {serial}',name:'{name}',cat:'{cat}',codeText:'{code}'};
 const TAGDEF={w:80,h:12,tail:20},STDDEF={w:50,h:30,tail:0};
-const DKEYS=['w','h','tail','tailSide','split','fmt','ec','qz','codeMode','codeTpl','printRot','thr','offX','offY','els'];
-const DEF_LABEL=()=>({tpl:'tag',w:80,h:12,tail:20,tailSide:'right',split:50,layout:'roll',cols:3,gap:2,fmt:'qr',ec:'M',qz:2,codeMode:'tpl',codeTpl:'w{}t{}g{}s{}',printRot:0,thr:65,offX:0,offY:0,autoPrint:false,els:null});
+const DKEYS=['w','h','tail','tailSide','split','fmt','ec','qz','codeMode','codeTpl','codeId','printRot','thr','offX','offY','els'];
+const DEF_LABEL=()=>({tpl:'tag',w:80,h:12,tail:20,tailSide:'right',split:50,layout:'roll',cols:3,gap:2,fmt:'qr',ec:'M',qz:2,codeMode:'tpl',codeTpl:'w{}t{}g{}s{}',codeId:true,printRot:0,thr:65,offX:0,offY:0,autoPrint:false,els:null});
 function defaultEls(L,kind){
   const W=L.w,H=L.h,out=[];
   const mk=o=>out.push(Object.assign({id:uid(),t:'text',text:'',r:0,fs:6,b:false,al:'left',wr:false},o));
@@ -631,7 +631,7 @@ function normLabel(raw){
   lb.tpl=lb.tpl==='std'?'std':'tag';lb.tailSide=lb.tailSide==='left'?'left':'right';lb.layout=lb.layout==='sheet'?'sheet':'roll';
   lb.autoPrint=!!lb.autoPrint;lb.fmt=['qr','auto','CODE128','EAN13'].includes(lb.fmt)?lb.fmt:'qr';lb.ec=['L','M','Q','H'].includes(lb.ec)?lb.ec:'M';
   lb.codeMode=lb.codeMode==='barcode'?'barcode':'tpl';lb.codeTpl=typeof lb.codeTpl==='string'?lb.codeTpl.slice(0,120):dl.codeTpl;
-  lb.printRot=Number(lb.printRot)===180?180:0;
+  lb.codeId=lb.codeId!==false;lb.printRot=Number(lb.printRot)===180?180:0;
   const cl=(v,a,b,d)=>{v=parseFloat(v);return isNaN(v)?d:Math.min(b,Math.max(a,v));};
   lb.els=(Array.isArray(lb.els)?lb.els:[]).filter(e=>e&&['field','text','code','line','rect'].includes(e.t)).map(e=>{
     let t=e.t,text=String(e.text||'');
@@ -718,8 +718,19 @@ function normalize(o){
 }
 let S=blank();
 function load(){try{const r=localStorage.getItem(KEY);if(r){const raw=JSON.parse(r);const was=(raw.settings||{}).schema;S=normalize(raw);if(was!==3||!(raw.settings&&raw.settings.wagePerGram))save();}}catch(e){}
-  if(!S.settings||!S.settings.label||!Array.isArray(S.settings.label.els))S=normalize(S||{});}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}if(typeof cloudMark==='function')cloudMark();}
+  if(!S.settings||!S.settings.label||!Array.isArray(S.settings.label.els))S=normalize(S||{});
+  ensureSerialKv();}
+function ensureSerialKv(){
+  try{
+    const bf=S.settings.bfmt;if(!bf||!bf.kv||!Array.isArray(bf.kv.fields))return;
+    if(S.settings.label&&S.settings.label.codeId===false)return;
+    const f=bf.kv.fields.find(x=>x.field==='serialNumber');
+    if(f){if(!f.on)f.on=true;return;}
+    const used=new Set(bf.kv.fields.map(x=>x.key));
+    bf.kv.fields.push({key:['s','sn','id','no'].find(k=>!used.has(k))||'s2',field:'serialNumber',type:'string',on:true});
+  }catch(e){}
+}
+function save(){ensureSerialKv();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}if(typeof cloudMark==='function')cloudMark();}
 
 let view='dashboard',sel={karat:'',path:[],used:false,aud:'',condSet:false,skipK:false},draft=null,editingExisting=false,genBulk=false;
 let stF={status:'in',cond:'all',karat:'all',aud:'all',node:'all',q:''},period='month',txType='all',txQ='';
@@ -998,6 +1009,54 @@ function intakeScan(code,p){
   scanResult('warn','يحتاج استكمالًا: '+why);
   sessAdd('need',{code,msg:why});
 }
+
+function explicitKV(code){
+  const kv=S.settings.bfmt.kv,out={},re=/([a-zA-Z]+)\{([^}]+)\}/g;let m;
+  while((m=re.exec(code))){
+    const cfg=kv.fields.find(f=>f.key===m[1])||kv.fields.find(f=>f.key.toLowerCase()===m[1].toLowerCase());
+    if(!cfg||!cfg.on)continue;
+    const raw=m[2].trim(),t=KVMAP[cfg.field];
+    if(['weight','wage','buyPpg','cost'].includes(t))out[t]=num(raw);
+    else if(t==='karat')out.karat=String(num(raw));
+    else if(t==='size'||t==='aud')out[t]=raw;
+  }
+  return out;
+}
+function findCandidates(code){
+  if(!/\{[^}]*\}/.test(code))return [];
+  const v=explicitKV(code);
+  if(!(v.weight>0))return [];
+  const near=(a,b)=>Math.abs((+a||0)-(+b||0))<0.006;
+  return S.pieces.filter(p=>{
+    if(!near(p.weight,v.weight))return false;
+    if(v.wage!=null&&!near(p.wage,v.wage))return false;
+    if(v.buyPpg!=null&&!near(p.buyPpg,v.buyPpg))return false;
+    if(v.cost!=null&&!near(p.cost,v.cost))return false;
+    if(v.karat!=null&&String(p.karat)!==String(v.karat))return false;
+    if(v.size&&String(p.size||'')!==String(v.size))return false;
+    if(v.aud&&(p.aud||'')!==v.aud)return false;
+    return true;
+  });
+}
+function notFoundMsg(ctx,code){
+  const base=ctx==='sale'?'هذا الباركود غير مسجّل في المخزون':'لا توجد قطعة بهذا الباركود';
+  let why='';
+  if(/\{[^}]*\}/.test(code)){try{if(!parseKV(code).vals.serial)why=' — المقروء لا يحمل الرقم التسلسلي ولا توجد قطعة بنفس قيمه';}catch(e){}}
+  return base+why+' ['+String(code).slice(0,70)+']';
+}
+function useFound(ctx,p){
+  if(ctx==='stock'){beep();openPiece(p);return;}
+  if(p.status==='sold'){beep(false);toast('هذه القطعة مباعة'+(p.invNo?' بالفاتورة '+p.invNo:''),'bad');return;}
+  if(cart.some(l=>l.pid===p.id)){beep(false);toast('القطعة موجودة في الفاتورة','bad');return;}
+  beep();addToCart(p);
+}
+function chooseCandidate(list,ctx){
+  beep(false);
+  const d=dlg(`<div class="modal"><h2>عدة قطع تطابق هذا الباركود</h2><p class="muted">الباركود المقروء لا يحمل الرقم التسلسلي، وتوجد ${list.length} قطع بنفس القيم. اختر القطعة:</p>
+    <div class="tablewrap"><table class="rt"><thead><tr><th>الرقم</th><th>الصنف</th><th>العيار</th><th>الوزن</th><th>التكلفة</th><th></th></tr></thead><tbody>${list.map(p=>`<tr><td data-l="الرقم"><span class="mono">${esc(p.serial||p.barcode)}</span></td><td data-l="الصنف">${esc(pathOf(p.nodeId))}</td><td data-l="العيار">${esc(p.karat)}</td><td data-l="الوزن">${fmtW(p.weight)}</td><td data-l="التكلفة">${money(p.cost)}</td><td><button type="button" class="btn" data-act="pickcand" data-ctx="${ctx}" data-id="${p.id}">اختيار</button></td></tr>`).join('')}</tbody></table></div>
+    <div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-act="closedlg">إلغاء</button></div></div>`);
+  d.showModal();
+}
 function handleCode(ctx,raw,forceNew){
   const code=cleanCode(raw);if(!code)return;
   if(lastKbdFix&&lastKbdFix.to===code&&ctx!=='form'){toast('صُحِّح الباركود من لوحة المفاتيح العربية');}
@@ -1005,13 +1064,15 @@ function handleCode(ctx,raw,forceNew){
   const p0=findPiece(code),p=(forceNew&&p0&&p0.extCode===code&&p0.barcode!==code)?null:p0;
   if(ctx==='intake'){
     intakeScan(code,p);
-  }else if(ctx==='stock'){
-    if(p){beep();openPiece(p);}else{beep(false);toast('لا توجد قطعة بهذا الباركود','bad');}
-  }else if(ctx==='sale'){
-    if(!p){beep(false);toast('هذا الباركود غير مسجّل في المخزون','bad');return;}
-    if(p.status==='sold'){beep(false);toast('هذه القطعة مباعة'+(p.invNo?' بالفاتورة '+p.invNo:''),'bad');return;}
-    if(cart.some(l=>l.pid===p.id)){beep(false);toast('القطعة موجودة في الفاتورة','bad');return;}
-    beep();addToCart(p);
+  }else if(ctx==='stock'||ctx==='sale'){
+    let q=p;
+    if(!q){
+      const cs=findCandidates(code).filter(x=>ctx!=='sale'||x.status==='in');
+      if(cs.length===1){q=cs[0];toast('تم التعرف على القطعة بمطابقة قيمها (الباركود لا يحمل الرقم التسلسلي)');}
+      else if(cs.length>1){chooseCandidate(cs,ctx);return;}
+    }
+    if(!q){beep(false);toast(notFoundMsg(ctx,code),'bad');return;}
+    useFound(ctx,q);
   }
 }
 let scanStream=null,scanTimer=null,scanCb=null;
@@ -1710,7 +1771,8 @@ function paintCount(){
 function countScan(raw){
   const c=openCount();if(!c)return;
   const code=cleanCode(raw);if(!code)return;
-  const p=findPiece(code);
+  let p=findPiece(code);
+  if(!p){const cs=findCandidates(code);if(cs.length===1)p=cs[0];}
   let st,pid=null;
   if(!p)st='unknown';
   else{
@@ -2727,10 +2789,15 @@ function codePayload(p,L){
     case 'shop':return S.settings.shop||'';
     case 'wageTotal':return (p.wage>0&&p.weight>0)?String(rd(p.wage*p.weight,2)):'';
   }return '';};
-  return L.codeTpl.replace(/([a-zA-Z]+)\{\}/g,(m,key)=>{
+  let out=L.codeTpl.replace(/([a-zA-Z]+)\{\}/g,(m,key)=>{
     const c=kvf.find(f=>f.key===key)||kvf.find(f=>f.key.toLowerCase()===key.toLowerCase());
     if(!c)return m;const v=val(c.field);return v===''?'':key+'{'+v+'}';
   });
+  if(L.codeId!==false&&out){
+    const sf=kvf.find(f=>f.field==='serialNumber'&&f.on);
+    if(sf&&!new RegExp('(?:^|\\})'+sf.key+'\\{').test(out)){const sv=val('serialNumber');if(sv)out+=sf.key+'{'+sv+'}';}
+  }
+  return out;
 }
 function tokenVal(p,key,L){
   if(key.startsWith('x:'))return String((p.extra||{})[key.slice(2)]||'');
@@ -3040,7 +3107,8 @@ function paintCanvas(){
   const cw=$('#codeWarn');
   if(cw){
     const flds=(L.codeMode==='tpl'?(L.codeTpl.match(/[a-zA-Z]+(?=\{\})/g)||[]):[]).map(key=>{const c=S.settings.bfmt.kv.fields.find(f=>f.key===key)||S.settings.bfmt.kv.fields.find(f=>f.key.toLowerCase()===key.toLowerCase());return c?c.field:'';});
-    cw.innerHTML=flds.some(f=>['purchasePrice','makingCharge','buyPpg'].includes(f))?'<p class="warn" style="margin-top:8px">تنبيه: هذا القالب يضع الأجرة أو سعر الشراء داخل الرمز، فيستطيع أي شخص يمسح الملصق قراءتها. احذف المفاتيح t و g من القالب إن كان الملصق يصل إلى العملاء.</p>':'';
+    {const noId=L.codeMode==='tpl'&&L.codeTpl&&L.codeId===false&&!flds.includes('serialNumber');
+    cw.innerHTML=(flds.some(f=>['purchasePrice','makingCharge','buyPpg'].includes(f))?'<p class="warn" style="margin-top:8px">تنبيه: هذا القالب يضع الأجرة أو سعر الشراء داخل الرمز، فيستطيع أي شخص يمسح الملصق قراءتها. احذف المفاتيح t و g من القالب إن كان الملصق يصل إلى العملاء.</p>':'')+(noId?'<p class="warn" style="margin-top:8px">تنبيه: هذا الرمز لا يحمل الرقم التسلسلي، فقد لا تتعرف المنصة على القطعة عند مسح الملصق. فعّل «يحمل الباركود الرقم التسلسلي دائمًا».</p>':'');};
   }
 }
 function paintElList(){
@@ -3382,6 +3450,7 @@ function labelSectionHTML(){
   const P_DESIGN=`<div class="lblock"><div class="row">${tb('eladd','+ نص','data-kind="text"')}${tb('eladd','+ خط','data-kind="line"')}${tb('eladd','+ إطار','data-kind="rect"')}${tb('eladd','+ رمز QR/باركود','data-kind="code"')}</div></div>
     <div class="lblock"><h3>الحقول والباركود (QR)</h3><div class="flist" id="flist"></div><div class="legend"><small class="muted"><span class="lgd used">✓</span>مضاف للملصق (اضغط الاسم لإزالته)</small><small class="muted"><span class="lgd code">▣</span>يدخل في الباركود (اضغط ▣ للتبديل)</small></div>
       <small class="muted" style="display:block;margin-top:8px">اضغط ▣ بجانب أي حقل ليدخل في الباركود (QR). عند إلغاء الكل يصبح الباركود فارغًا.</small>
+      <label class="chk" style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="checkbox" data-lb="codeId" ${L.codeId!==false?'checked':''}>يحمل الباركود الرقم التسلسلي دائمًا (لتتعرف المنصة على القطعة عند مسحه)</label>
       <details style="margin-top:10px"><summary>إعدادات الرمز</summary><div class="grid" style="margin-top:8px">
         <label class="f">نوع الرمز${so('fmt',[['qr','QR (ثنائي الأبعاد)'],['CODE128','CODE 128'],['EAN13','EAN-13 (13 رقمًا)'],['auto','تلقائي']])}</label>
         ${qr?`<label class="f">تصحيح الخطأ${so('ec',[['L','L'],['M','M'],['Q','Q'],['H','H']])}</label>`+nf_('qz','الهامش الأبيض (وحدات)','1'):''}
@@ -3416,7 +3485,7 @@ function labelSectionHTML(){
 }
 function setLb(t){
   const L=S.settings.label,k=t.dataset.lb;
-  if(t.type==='checkbox'){L[k]=t.checked;save();return;}
+  if(t.type==='checkbox'){L[k]=t.checked;if(k==='codeId')ensureSerialKv();save();if(k==='codeId')paintCanvas();return;}
   if(k==='printRot'){L.printRot=t.value==='180'?180:0;save();return;}
   if(['tpl','tailSide','layout','fmt','ec','codeMode'].includes(k)){
     L[k]=t.value;if(k==='tpl')L.tpl=t.value==='std'?'std':'tag';
@@ -3948,6 +4017,7 @@ document.addEventListener('click',async e=>{
     case 'wzpath':{sel.path=sel.path.slice(0,+b.dataset.i);sel.condSet=false;afterSel();break;}
     case 'selused':{sel.used=b.dataset.v==='1';afterSel();break;}
     case 'imode':setIntakeMode(b.dataset.v);break;
+    case 'pickcand':{closeDlg();const p=piece(id);if(p)useFound(b.dataset.ctx,p);break;}
     case 'undoadd':undoAdd(id);break;
     case 'sessopen':{const p=piece(id);if(p)openPiece(p);break;}
     case 'sessprint':{const a=sess.filter(x=>x.kind==='added'&&piece(x.pid)).map(x=>piece(x.pid));if(!a.length){toast('لا توجد قطع مُضافة في الجلسة','bad');break;}printLabels(a,1);break;}
@@ -4116,8 +4186,13 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.12.0';
+const APP_VERSION='2.13.0';
 const CHANGELOG=[
+ {v:'2.13.0',date:'2026-11-09',title:'التعرف على القطعة من الملصق المطبوع',items:[
+  'الباركود (QR) على الملصق يحمل الرقم التسلسلي دائمًا، فتتعرف المنصة على القطعة عند مسحه. خانة في تبويب «التصميم» لإيقاف ذلك عند الحاجة، مع تنبيه إن أُوقفت.',
+  'إن مُسح ملصق مطبوع لا يحمل الرقم التسلسلي، تُطابَق القطعة بقيمها (الوزن والأجرة والتكلفة والعيار)، وإن تطابقت عدة قطع تظهر قائمة لاختيار القطعة. ويعمل هذا في المخزون والبيع والجرد.',
+  'رسالة «لا توجد قطعة» تعرض الآن الباركود المقروء وسبب الإخفاق المحتمل.',
+  'تصحيح لوحة المفاتيح العربية لا يمس الباركود الذي يحوي حروفًا لاتينية مع نصوص عربية حقيقية.']},
  {v:'2.12.0',date:'2026-11-09',title:'إدخال أسرع بلوحة المفاتيح',items:[
   'خانة «في الكود» للمقاس في بيانات القطعة، تُدخل المقاس في الباركود المُولَّد أو تُخرجه (في تنسيق «كلمات» أو «فاصل»).',
   'زر Enter ينتقل بين حقول البيانات فقط ويتخطى خانات «في الكود». وعند Enter في آخر حقل من سطر البيانات (الرقم التسلسلي) تُضاف القطعة ويعود المؤشر إلى الوزن لإدخال قطعة جديدة، أو إلى حقل المسح إن كنت تمسح.',
