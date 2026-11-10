@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.13.0">
+<meta name="app-version" content="2.14.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -547,26 +547,78 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 const $=(s,r=document)=>r.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const AR='٠١٢٣٤٥٦٧٨٩';
-const latin=s=>String(s==null?'':s).replace(/[٠-٩]/g,d=>AR.indexOf(d));
+const latin=s=>String(s==null?'':s).replace(/[٠-٩]/g,d=>AR.indexOf(d)).replace(/[۰-۹]/g,d=>String(d.charCodeAt(0)-0x06F0));
 const num=v=>{const n=parseFloat(latin(v).replace(/[٬,]/g,'').replace('٫','.'));return isNaN(n)?0:n;};
 const KBD_AR2EN={'ض':'q','ص':'w','ث':'e','ق':'r','ف':'t','غ':'y','ع':'u','ه':'i','خ':'o','ح':'p','ج':'[','د':']','ش':'a','س':'s','ي':'d','ب':'f','ل':'g','ا':'h','ت':'j','ن':'k','م':'l','ك':';','ط':"'",'ئ':'z','ء':'x','ؤ':'c','ر':'v','ى':'n','ة':'m','و':',','ز':'.','ظ':'/'};
 const KBD_SEQ=[['لا','b'],['لإ','T'],['لأ','G'],['لآ','B']];
 const KBD_SHIFT={'َ':'Q','ً':'W','ُ':'E','ٌ':'R','إ':'Y','ِ':'A','ٍ':'S','أ':'H','ـ':'J','،':'K','ْ':'X','آ':'N'};
+const KBD_VAR={'ی':'d','ک':';'};
+const KBD_CAL='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789{}[]<>.,;:/-_*+=';
+const BIDI_RX=/[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF\u061C]/g;
 let lastKbdFix=null;
+function kbdMaps(){
+  const k=(typeof S!=='undefined'&&S&&S.settings&&S.settings.kbd&&typeof S.settings.kbd==='object')?S.settings.kbd:null;
+  const lm=(k&&k.map&&typeof k.map==='object')?k.map:{};
+  const ls=(k&&Array.isArray(k.seq))?k.seq.filter(x=>Array.isArray(x)&&x.length===2&&typeof x[0]==='string'&&typeof x[1]==='string'):[];
+  return{m:Object.assign({},KBD_AR2EN,KBD_SHIFT,KBD_VAR,lm),seq:ls.concat(KBD_SEQ)};
+}
+function kbdApply(t){
+  const {m,seq}=kbdMaps();let out=String(t);
+  seq.forEach(([a,b])=>{out=out.split(a).join(b);});
+  return [...out].map(ch=>(m[ch]!==undefined?m[ch]:ch)).join('');
+}
 function fixKbd(raw){
   const t=String(raw||'');
-  if(!/[\u0600-\u06FF]/.test(t)||/[A-Za-z]/.test(t))return t;
-  let m=t;KBD_SEQ.forEach(([a,b])=>{m=m.split(a).join(b);});
-  m=m.replace(/[\u0600-\u06FF]/g,ch=>KBD_AR2EN[ch]||KBD_SHIFT[ch]||ch);
-  const hadBr=/[<>]/.test(t);
-  if(hadBr)m=m.replace(/</g,'{').replace(/>/g,'}');
-  if(/[\u0600-\u06FF]/.test(m))return t;
-  const kv=/[a-zA-Z]+\{[^}]*\}/.test(m);
-  const kvs=m.split(/[\s\/\-*|,;:+]+/).filter(Boolean),kvsOk=kvs.length>0&&kvs.every(x=>/^[A-Za-z]{1,3}\d[\d.]*$/.test(x));
-  const num_=/^\d+([.]\d+)?$/.test(m);
-  return (kv||kvsOk||num_)?m:t;
+  if(!/[\u0600-\u06FF]/.test(t))return t;
+  const keyAr=/[\u0600-\u06FF]+\s*[{<]/.test(t);
+  if(/[A-Za-z]/.test(t)&&!keyAr)return t;
+  let out=kbdApply(t);
+  if(/[<>]/.test(t))out=out.replace(/</g,'{').replace(/>/g,'}');
+  const kv=/[a-zA-Z]+\{[^}]*\}/.test(out);
+  const kvs=out.split(/[\s\/\-*|,;:+]+/).filter(Boolean),kvsOk=kvs.length>0&&kvs.every(x=>/^[A-Za-z]{1,3}\d[\d.]*$/.test(x));
+  const num_=/^\d+([.]\d+)?$/.test(out);
+  return (kv||kvsOk||num_)?out:t;
 }
-const cleanCode=s=>{const a=latin(s).trim().replace(/\s+/g,' '),f=fixKbd(a);if(f!==a){lastKbdFix={from:a,to:f};return f;}return a;};
+const cleanCode=s=>{
+  let a=String(s==null?'':s);
+  try{a=a.normalize('NFKC');}catch(e){}
+  a=latin(a.replace(BIDI_RX,'')).trim().replace(/\s+/g,' ');
+  const f=fixKbd(a);if(f!==a){lastKbdFix={from:a,to:f};return f;}return a;
+};
+function kbdAlign(exp,rec){
+  const E=[...exp],R=[...rec],LIG=new Set(['b','T','G','B']),LIGS=new Set(['لا','لإ','لأ','لآ']);
+  function go(i,j,acc){
+    if(i===E.length)return j===R.length?acc:null;
+    if(j>=R.length)return null;
+    const e=E[i];let r;
+    if(LIG.has(e)&&j+1<R.length&&LIGS.has(R[j]+R[j+1])){r=go(i+1,j+2,acc.concat([[e,R[j]+R[j+1]]]));if(r)return r;}
+    return go(i+1,j+1,acc.concat([[e,R[j]]]));
+  }
+  return go(0,0,[]);
+}
+function kbdLearn(raw){
+  const rec=String(raw||'').replace(BIDI_RX,'').trim();
+  if(rec===KBD_CAL)return{ok:true,same:true};
+  const al=kbdAlign(KBD_CAL,rec);
+  if(!al)return{ok:false,len:[...rec].length};
+  const map={},seq=[];
+  al.forEach(([e,tok])=>{if(tok===e)return;if([...tok].length===1){if(!(tok in map))map[tok]=e;}else seq.push([tok,e]);});
+  return{ok:true,map,seq,pairs:al};
+}
+function toArLayout(key){
+  const {m,seq}=kbdMaps(),inv={};
+  Object.keys(m).forEach(a=>{if(inv[m[a]]===undefined)inv[m[a]]=a;});
+  seq.forEach(([a,b])=>{if(inv[b]===undefined)inv[b]=a;});
+  return String(key).split('').map(c=>inv[c]!==undefined?inv[c]:c).join('');
+}
+function garbledSerial(code){
+  for(const f of S.settings.bfmt.kv.fields.filter(x=>x.field==='serialNumber'&&x.on)){
+    const ak=toArLayout(f.key).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    const mm=new RegExp(ak+'\\s*[{<]([^}>]+)[}>]').exec(code);
+    if(mm)return latin(mm[1]).trim();
+  }
+  return '';
+}
 const rd=(n,d)=>{const k=Math.pow(10,d);return Math.round((+n||0)*k)/k;};
 const r2=n=>rd(n,2),r3=n=>rd(n,3);
 const nf=new Intl.NumberFormat('en-US',{maximumFractionDigits:2});
@@ -819,6 +871,7 @@ function findPiece(code){
   const r=parseCode(code);
   if(r.vals.serial)p=S.pieces.find(x=>(x.serial&&x.serial===r.vals.serial)||x.barcode===r.vals.serial);
   if(!p){const c0=S.pieces.filter(x=>x.extCode&&x.extCode===code);p=c0.find(x=>x.status==='in')||c0[0];}
+  if(!p&&/[\u0600-\u06FF]/.test(code)){const sv=garbledSerial(code);if(sv)p=S.pieces.find(x=>x.serial===sv||x.barcode===sv);}
   return p||null;
 }
 
@@ -1042,7 +1095,9 @@ function notFoundMsg(ctx,code){
   const base=ctx==='sale'?'هذا الباركود غير مسجّل في المخزون':'لا توجد قطعة بهذا الباركود';
   let why='';
   if(/\{[^}]*\}/.test(code)){try{if(!parseKV(code).vals.serial)why=' — المقروء لا يحمل الرقم التسلسلي ولا توجد قطعة بنفس قيمه';}catch(e){}}
-  return base+why+' ['+String(code).slice(0,70)+']';
+  let hint='';
+  if(/[\u0600-\u06FF]/.test(code)&&/[{<]/.test(code)){hint=' — يبدو أن الماسح يكتب بلوحة مفاتيح عربية: بدّل لغة الجهاز إلى الإنجليزية أو افتح الإعدادات ← الطابعة ← «معايرة الماسح». رموز: '+[...String(code)].slice(0,10).map(c=>c.codePointAt(0).toString(16)).join(' ');}
+  return base+why+hint+' ['+String(code).slice(0,70)+']';
 }
 function useFound(ctx,p){
   if(ctx==='stock'){beep();openPiece(p);return;}
@@ -1056,6 +1111,36 @@ function chooseCandidate(list,ctx){
     <div class="tablewrap"><table class="rt"><thead><tr><th>الرقم</th><th>الصنف</th><th>العيار</th><th>الوزن</th><th>التكلفة</th><th></th></tr></thead><tbody>${list.map(p=>`<tr><td data-l="الرقم"><span class="mono">${esc(p.serial||p.barcode)}</span></td><td data-l="الصنف">${esc(pathOf(p.nodeId))}</td><td data-l="العيار">${esc(p.karat)}</td><td data-l="الوزن">${fmtW(p.weight)}</td><td data-l="التكلفة">${money(p.cost)}</td><td><button type="button" class="btn" data-act="pickcand" data-ctx="${ctx}" data-id="${p.id}">اختيار</button></td></tr>`).join('')}</tbody></table></div>
     <div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-act="closedlg">إلغاء</button></div></div>`);
   d.showModal();
+}
+
+function scanPanelHTML(){
+  const k=S.settings.kbd,n=(k&&k.map)?Object.keys(k.map).length:0;
+  return `<section class="panel"><h2>ماسح الباركود (USB / بلوتوث)</h2><p class="muted">إن كان ماسحك يكتب بلوحة مفاتيح عربية تظهر الأكواد مقلوبة (مثل ص{2.15}). تصحّح المنصة الحالات الشائعة تلقائيًا، ويمكنك معايرتها على ماسحك بمسح رمز واحد لتتعلم تخطيطه تمامًا.</p><div class="row" style="align-items:center"><span class="chip ${n?'gold':''}">${n?'معايرة محفوظة: '+n+' حرفًا':'بلا معايرة (التصحيح العام التلقائي)'}</span><button type="button" class="btn" data-act="kbdcal">معايرة الماسح</button>${n?'<button type="button" class="btn ghost" data-act="kbdreset">مسح المعايرة</button>':''}</div></section>`;
+}
+function kbdProcess(raw){
+  const el=$('#kcres'),rawEl=$('#kcraw');if(!el)return;
+  const rec=String(raw||'').replace(BIDI_RX,'').trim();if(!rec)return;
+  if(rawEl)rawEl.textContent=rec;
+  const r=kbdLearn(rec);
+  if(!r.ok){el.className='scanres show bad';el.textContent='لم تُقرأ كل الرموز كما يجب (طول المقروء '+r.len+' من '+[...KBD_CAL].length+'). امسح الرمز كاملًا مرة أخرى.';return;}
+  if(r.same){S.settings.kbd=null;save();el.className='scanres show ok';el.textContent='✓ الماسح يكتب الأحرف صحيحة ولا يحتاج معايرة.';return;}
+  S.settings.kbd={map:r.map,seq:r.seq,at:new Date().toISOString()};save();
+  const bad=r.pairs.filter(([e,tok])=>kbdApply(tok)!==e),n=Object.keys(r.map).length+r.seq.length;
+  el.className='scanres show '+(bad.length?'warn':'ok');
+  el.textContent=bad.length?('تعلّمت المنصة جزءًا من التخطيط، لكن '+bad.length+' رمزًا لم يُستعد بدقة ('+bad.slice(0,6).map(x=>x[0]).join(' ')+'). أعد المسح أو بدّل لغة الماسح.'):('✓ تعلّمت المنصة '+n+' رمزًا من تخطيط ماسحك واستُعيدت كل الرموز بدقة. من الآن تُصحَّح أكوادك تلقائيًا.');
+}
+function openKbdCal(){
+  const d=dlg(`<div class="modal"><h2>معايرة الماسح</h2><p class="muted">امسح الرمز أدناه بماسحك مرة واحدة (يمكنك مسحه من الشاشة). تتعلم المنصة كيف يكتب ماسحك الأحرف والرموز، فتصحّح بعدها أي باركود تلقائيًا.</p>
+    <div class="qrbox" id="kcqr" style="width:230px;height:230px;margin:10px auto;background:#fff;padding:6px;border-radius:8px"></div>
+    <label class="f">المقروء من الماسح<input id="kcin" dir="ltr" autocomplete="off" placeholder="امسح الرمز هنا ثم Enter"></label>
+    <p class="hint mono" id="kcraw" dir="ltr" style="word-break:break-all"></p><div id="kcres" class="scanres"></div>
+    <div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-act="closedlg">إغلاق</button></div></div>`);
+  try{$('#kcqr').innerHTML=qrSvg(KBD_CAL,'M',2);}catch(e){}
+  d.showModal();
+  const inp=$('#kcin');let tm=null;
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();clearTimeout(tm);kbdProcess(inp.value);}});
+  inp.addEventListener('input',()=>{clearTimeout(tm);tm=setTimeout(()=>{if([...inp.value].length>=[...KBD_CAL].length-6)kbdProcess(inp.value);},500);});
+  setTimeout(()=>inp.focus(),30);
 }
 function handleCode(ctx,raw,forceNew){
   const code=cleanCode(raw);if(!code)return;
@@ -1401,7 +1486,7 @@ function prefPrinter(body){
   };
   const st=stat(),needConn=['usb','serial','ble'].includes(PS.mode),viaBridge=PS.mode==='net'||PS.mode==='queue';
   const sel=(k,opts)=>`<select data-pr="${k}">${opts.map(([v,l])=>`<option value="${v}" ${String(PS[k])===String(v)?'selected':''}>${l}</option>`).join('')}</select>`;
-  body.innerHTML=`<section class="panel"><h2>الطابعة وطريقة الاتصال</h2>
+  body.innerHTML=scanPanelHTML()+`<section class="panel"><h2>الطابعة وطريقة الاتصال</h2>
     <p class="muted">اختر كيف تتصل المنصة بالطابعة. التوصية: <b>شبكة IP بكابل LAN</b> أو <b>USB</b> للاستقرار والسرعة، و<b>البلوتوث</b> للمرونة فقط.</p>
     <div class="hint" style="background:var(--goldbg);border:1px solid var(--accent);border-radius:12px;padding:12px 14px;margin:10px 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:240px"><b>Zebra TLP 2844 (لغة EPL، USB، دقة 203 DPI)</b><br><small>إعداد جاهز بضغطة واحدة: يضبط الاتصال المباشر ولغة EPL والدقة والفاصل، ثم تختار الطابعة من نافذة المتصفح مرة واحدة. بعدها يطبع زر «طباعة» مباشرة.</small></div><button type="button" class="btn accent" data-act="przebra">ربط Zebra TLP 2844 الآن</button></div>
     <div class="prmodes">${M.map(([v,t,d,ok])=>`<button type="button" class="prmode" data-act="prmode" data-v="${v}" aria-pressed="${PS.mode===v}" ${ok?'':'disabled'}><b>${t}</b><small>${d}${ok?'':' (غير مدعوم في هذا المتصفح)'}</small></button>`).join('')}</div>
@@ -4017,6 +4102,8 @@ document.addEventListener('click',async e=>{
     case 'wzpath':{sel.path=sel.path.slice(0,+b.dataset.i);sel.condSet=false;afterSel();break;}
     case 'selused':{sel.used=b.dataset.v==='1';afterSel();break;}
     case 'imode':setIntakeMode(b.dataset.v);break;
+    case 'kbdcal':openKbdCal();break;
+    case 'kbdreset':S.settings.kbd=null;save();render();toast('أُلغيت معايرة الماسح');break;
     case 'pickcand':{closeDlg();const p=piece(id);if(p)useFound(b.dataset.ctx,p);break;}
     case 'undoadd':undoAdd(id);break;
     case 'sessopen':{const p=piece(id);if(p)openPiece(p);break;}
@@ -4186,8 +4273,12 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.13.0';
+const APP_VERSION='2.14.0';
 const CHANGELOG=[
+ {v:'2.14.0',date:'2026-11-09',title:'معايرة الماسح وتعرف أقوى على الملصقات',items:[
+  'أداة «معايرة الماسح» (الإعدادات ← الطابعة): تمسح رمزًا واحدًا فتتعلم المنصة كيف يكتب ماسحك الأحرف والرموز (حتى لو كان بلوحة مفاتيح عربية)، وتصحّح بعدها كل باركود تلقائيًا.',
+  'التعرف على القطعة من الرقم التسلسلي حتى لو بقيت في المقروء رموز غريبة، وتنظيف رموز الاتجاه الخفية والأرقام الفارسية وصيغ الأحرف المركّبة.',
+  'رسالة عدم التعرف تعرض رموز المقروء (Unicode) وتوجّه إلى المعايرة، ليسهل تشخيص أي ماسح.']},
  {v:'2.13.0',date:'2026-11-09',title:'التعرف على القطعة من الملصق المطبوع',items:[
   'الباركود (QR) على الملصق يحمل الرقم التسلسلي دائمًا، فتتعرف المنصة على القطعة عند مسحه. خانة في تبويب «التصميم» لإيقاف ذلك عند الحاجة، مع تنبيه إن أُوقفت.',
   'إن مُسح ملصق مطبوع لا يحمل الرقم التسلسلي، تُطابَق القطعة بقيمها (الوزن والأجرة والتكلفة والعيار)، وإن تطابقت عدة قطع تظهر قائمة لاختيار القطعة. ويعمل هذا في المخزون والبيع والجرد.',
