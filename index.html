@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.18.0">
+<meta name="app-version" content="2.20.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -658,6 +658,23 @@ h1{font-size:clamp(22px,3.4vw,30px)}
 #kbar button{flex:1;min-height:50px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:700;font-size:16px;cursor:pointer}
 #kbar button.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 @media (pointer:fine){#kbar{display:none!important}}
+
+.pcalc{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 12px;padding:10px 12px;border:1px dashed var(--line);border-radius:14px;background:var(--surface)}
+.pcalc>b{font-size:13px}
+.pcalc label{display:inline-flex;gap:8px;align-items:center;font-weight:600;font-size:13px}
+.pcalc input{width:110px;min-height:40px;text-align:center;font-weight:800;font-size:16px}
+.pcalc .segb button{min-height:38px;padding:4px 12px}
+.pcx{margin-top:6px;border-top:1px dashed var(--line);padding-top:8px;display:flex;flex-direction:column;gap:6px;font-size:12.5px}
+.pcx .pcv{display:flex;justify-content:space-between;gap:6px;color:var(--muted)}
+.pcx .pcv b{color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pcx .pci{display:flex;gap:8px;align-items:center;justify-content:space-between;font-weight:600}
+.pcx .pci input{width:100px;min-height:38px;padding:0 8px;text-align:center;font-weight:800;font-size:15px}
+.pcx .pcr{display:flex;flex-direction:column;gap:4px}
+.pcx .pcr>div{display:flex;justify-content:space-between;gap:6px;color:var(--muted)}
+.pcx .pcr b{font-variant-numeric:tabular-nums;white-space:nowrap;direction:ltr}
+.pcx .pcr .up{color:#1f9d55}.pcx .pcr .dn{color:#d63c3c}
+@media (pointer:coarse){.pcalc input{min-height:48px}.pcx .pci input{min-height:44px}}
+@media (max-width:600px){.pcalc .segb{flex:1 1 100%}.pcalc .segb button{white-space:normal;font-size:13px;padding:4px 8px;line-height:1.3}.pcalc>b{flex:1 1 100%}}
 </style>
 </head>
 <body>
@@ -900,7 +917,7 @@ function normalize(o){
   delete s.cats;delete s.invPrefix;delete s.invSeq;
   s.schema=3;
   const pieces=(Array.isArray(o.pieces)?o.pieces:[]).map(p=>{
-    const q=Object.assign({id:uid(),barcode:'',serial:null,karat:'21',aud:'',src:{},extCode:'',nodeId:'',name:'',used:false,weight:0,size:'',wage:0,buyPpg:null,cost:0,sellPpg:0,sellAmt:0,vatRate:null,notes:'',extra:{},status:'in'},p);
+    const q=Object.assign({id:uid(),barcode:'',serial:null,karat:'21',aud:'',src:{},extCode:'',aliases:[],nodeId:'',name:'',used:false,weight:0,size:'',wage:0,buyPpg:null,cost:0,sellPpg:0,sellAmt:0,vatRate:null,notes:'',extra:{},status:'in'},p);
     q.karat=String(q.karat);
     if(!q.nodeId){const nm=q.cat||'أخرى';const f=s.nodes.find(x=>x.name===nm);q.nodeId=(f||ensureNode(s.nodes,nm,null)).id;}
     delete q.cat;
@@ -1029,6 +1046,42 @@ function parseCode(code){
   if(parts.length!==f.length)note='عدد الأرقام في الباركود ('+parts.length+') يختلف عن تنسيق الباركود ('+f.length+'). راجع الحقول أو عدّل التنسيق من الإعدادات.';
   return{vals,note,parts};
 }
+
+const pieceAliasList=p=>{const a=new Set(Array.isArray(p.aliases)?p.aliases.map(String):[]);if(p.extCode)a.add(String(p.extCode));return [...a];};
+const aliasPieces=code=>S.pieces.filter(x=>pieceAliasList(x).includes(code));
+const parseAliasText=t=>[...new Set(String(t||'').split(/[\n،,;]+/).map(x=>cleanCode(x)).filter(Boolean))].slice(0,12);
+let lkCb=null,lkSkip=null,lkCode='',lkDone=false;
+function lkMatches(q){
+  const t=String(q||'').trim().toLowerCase(),n=num(t);
+  let l=S.pieces.slice();
+  if(t){
+    l=l.filter(p=>(p.serial||'').toLowerCase().includes(t)||(p.barcode||'').toLowerCase().includes(t)||pieceAliasList(p).some(a=>a.toLowerCase().includes(t))||(n>0&&Math.abs(p.weight-n)<0.0051)||pathOf(p.nodeId).toLowerCase().includes(t)||(p.name||'').toLowerCase().includes(t));
+  }else l=l.filter(p=>p.status==='in').slice().reverse();
+  return l.slice(0,12);
+}
+function openLinkOld(code,cb,skip){
+  lkCb=cb||null;lkSkip=skip||null;lkCode=code;lkDone=false;
+  const d=dlg(`<div class="modal"><h2>ربط باركود قديم بقطعة</h2><p class="muted">لم تُعرف قطعة من هذا الباركود: <span class="mono" dir="ltr" style="word-break:break-all">${esc(code)}</span>. اربطه بقطعة مسجّلة فتتعرف عليه المنصة في كل مرة بعد ذلك. امسح الباركود الجديد للقطعة، أو ابحث بالرقم التسلسلي أو الوزن أو الصنف.</p>
+    <label class="f">الباركود الجديد أو بحث<input id="lkq" autocomplete="off" placeholder="امسح أو اكتب ثم Enter"></label><div id="lkres" style="margin-top:8px"></div>
+    <div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-act="closedlg">تخطّي</button></div></div>`);
+  d.addEventListener('close',()=>{if(!lkDone&&lkSkip){const f=lkSkip;lkSkip=null;f();}},{once:true});
+  d.showModal();
+  const inp=$('#lkq'),draw=()=>{
+    const q=cleanCode(inp.value),l=lkMatches(q);
+    $('#lkres').innerHTML=l.length?`<div class="tablewrap"><table class="rt"><thead><tr><th>الرقم</th><th>الصنف</th><th>العيار</th><th>الوزن</th><th>التكلفة</th><th></th></tr></thead><tbody>${l.map(p=>`<tr><td data-l="الرقم"><span class="mono">${esc(p.serial||p.barcode)}</span></td><td data-l="الصنف">${esc(pathOf(p.nodeId))}</td><td data-l="العيار">${esc(p.karat)}</td><td data-l="الوزن">${fmtW(p.weight)}</td><td data-l="التكلفة">${money(p.cost)}</td><td><button type="button" class="btn" data-act="lkpick" data-id="${p.id}">ربط</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">لا توجد قطع مطابقة.</p>';
+  };
+  inp.addEventListener('input',draw);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const p=findPiece(cleanCode(inp.value));if(p)linkAlias(p.id);else draw();}});
+  draw();setTimeout(()=>inp.focus(),30);
+}
+function linkAlias(pid){
+  const p=piece(pid);if(!p||!lkCode)return;
+  lkDone=true;
+  p.aliases=[...new Set(pieceAliasList(p).concat([lkCode]))].slice(0,12);if(!p.extCode)p.extCode=lkCode;
+  save();emitEvent('piece.updated',pieceOut(p));
+  closeDlg();toast('رُبط الباركود القديم بالقطعة '+(p.serial||p.barcode));
+  const cb=lkCb;lkCb=null;lkSkip=null;if(cb)cb(p);
+}
 function findPiece(code){
   let p=S.pieces.find(x=>x.barcode===code);if(p)return p;
   p=S.pieces.find(x=>x.serial&&x.serial===code);if(p)return p;
@@ -1038,7 +1091,7 @@ function findPiece(code){
   }
   const r=parseCode(code);
   if(r.vals.serial)p=S.pieces.find(x=>(x.serial&&x.serial===r.vals.serial)||x.barcode===r.vals.serial);
-  if(!p){const c0=S.pieces.filter(x=>x.extCode&&x.extCode===code);p=c0.find(x=>x.status==='in')||c0[0];}
+  if(!p){const c0=aliasPieces(code);p=c0.find(x=>x.status==='in')||c0[0];}
   if(!p&&/[\u0600-\u06FF]/.test(code)){const sv=garbledSerial(code);if(sv)p=S.pieces.find(x=>x.serial===sv||x.barcode===sv);}
   return p||null;
 }
@@ -1106,7 +1159,7 @@ function renderNav(){$('#nav').innerHTML=TABS.map(([id,l,i])=>`<button type="but
 function go(v){if(location.hash==='#'+v){fromHash();render(true);}else location.hash=v;}
 function fromHash(){const h=location.hash.replace('#','');view=TABS.some(t=>t[0]===h)?h:'dashboard';}
 window.addEventListener('hashchange',()=>{fromHash();render(true);});
-function render(top){if(view!=='intake')genBulk=false;renderNav();const m=$('#main');({dashboard:vDash,intake:vIntake,stock:vStock,count:vCount,sale:vSale,ledger:vLedger,prefs:vPrefs}[view])(m);if(top)window.scrollTo(0,0);}
+function render(top){if(view!=='intake')genBulk=false;renderNav();const m=$('#main');({dashboard:vDash,intake:vIntake,stock:vStock,count:vCount,sale:vSale,ledger:vLedger,prefs:vPrefs}[view])(m);pcalcApply();if(top)window.scrollTo(0,0);}
 
 /* ================= scan ================= */
 function scanBar(ctx,ph,hint){
@@ -1198,6 +1251,7 @@ function quickSave(d){
   const o={barcode:bc,serial,karat,aud,nodeId:d.nodeId,used:!!d.used,name:String(d.name||'').trim(),weight:r3(weight),size:latin(String(d.size||'').trim()),wage:r2(v.wage),buyPpg:r2(v.buyPpg),cost,sellPpg,sellAmt,vatRate:Math.max(0,num(d.vatRate)),notes:String(d.notes||'').trim(),extra:Object.assign({},d.extra||{})};
   o.src={};SRC_FIELDS.forEach(n=>{const t=(d._src||{})[n];if(t)o.src[n]=t;});
   if(d._extCode)o.extCode=String(d._extCode).slice(0,120);
+  o.aliases=d._extCode?[String(d._extCode).slice(0,120)]:[];
   const saved=Object.assign({id:uid(),created:new Date().toISOString(),status:'in'},o);
   S.pieces.push(saved);bumpSerial(saved.serial);
   S.txs.push({id:uid(),date:saved.created,type:'purchase',items:[{pid:saved.id,name:dname(saved),barcode:saved.barcode,serial:saved.serial,karat:saved.karat,nodeId:saved.nodeId,cat:pathOf(saved.nodeId),aud:saved.aud||'',used:saved.used,weight:saved.weight,size:saved.size,wage:saved.wage,buyPpg:saved.buyPpg,amount:saved.cost}],total:saved.cost});
@@ -1214,7 +1268,7 @@ function undoAdd(pid){
 function intakeScan(code,p){
   if(p){
     beep(false);
-    const isExt=!!(p.extCode&&p.extCode===code&&p.barcode!==code);
+    const isExt=!!(pieceAliasList(p).includes(code)&&p.barcode!==code);
     const msg='موجودة مسبقًا: '+dname(p)+' · '+fmtW(p.weight)+' جم'+(p.serial?' · '+p.serial:'');
     scanResult('warn',(isExt?'سبق إدخال هذا الباركود القديم. ':'')+msg);
     sessAdd('dup',{pid:p.id,code,ext:isExt?code:'',msg});return;
@@ -1297,7 +1351,7 @@ function convertToNum(){
     if(!r.code){skip++;return;}
     if(r.code===p.barcode)return;
     if(used.has(r.code)){skip++;return;}
-    if(!p.extCode)p.extCode=p.barcode;
+    {const al=new Set(pieceAliasList(p));if(p.barcode)al.add(p.barcode);al.delete(r.code);p.aliases=[...al].slice(0,12);if(!p.extCode)p.extCode=p.barcode;}
     used.delete(p.barcode);used.add(r.code);p.barcode=r.code;ok++;
   });
   save();render();
@@ -1338,17 +1392,18 @@ function handleCode(ctx,raw,forceNew){
   const code=cleanCode(raw);if(!code)return;
   if(lastKbdFix&&lastKbdFix.to===code&&ctx!=='form'){toast('صُحِّح الباركود من لوحة المفاتيح العربية');}
   if(ctx==='form'){const i=$('#pf [name="barcode"]');if(i){i.value=code;applyParsed(code);}return;}
-  const p0=findPiece(code),p=(forceNew&&p0&&p0.extCode===code&&p0.barcode!==code)?null:p0;
+  const p0=findPiece(code),p=(forceNew&&p0&&pieceAliasList(p0).includes(code)&&p0.barcode!==code)?null:p0;
   if(ctx==='intake'){
     intakeScan(code,p);
   }else if(ctx==='stock'||ctx==='sale'){
     let q=p;
+    if(q&&q.barcode!==code){const al=aliasPieces(code).filter(x=>ctx!=='sale'||x.status==='in');if(al.length>1){chooseCandidate(al,ctx);return;}}
     if(!q){
       const cs=findCandidates(code).filter(x=>ctx!=='sale'||x.status==='in');
       if(cs.length===1){q=cs[0];toast('تم التعرف على القطعة بمطابقة قيمها (الباركود لا يحمل الرقم التسلسلي)');}
       else if(cs.length>1){chooseCandidate(cs,ctx);return;}
     }
-    if(!q){beep(false);toast(notFoundMsg(ctx,code),'bad');return;}
+    if(!q){beep(false);openLinkOld(code,pp=>useFound(ctx,pp));return;}
     useFound(ctx,q);
   }
 }
@@ -1742,7 +1797,7 @@ function pieceOut(p,o){
     weight_g:rd(p.weight,3),size:p.size||'',wage_per_gram:rd(p.wage,2),wage_total:rd((p.wage||0)*(p.weight||0),2),
     purchase_price_per_gram:rd(p.buyPpg,2),cost_total:rd(p.cost,2),
     sell_price_per_gram:rd(p.sellPpg,2),sell_price_before_vat:rd(sp,2),vat_rate:p.vatRate==null?null:rd(p.vatRate,2),vat_amount:c.vat,sell_price_incl_vat:c.total,
-    status:p.status,notes:p.notes||'',external_code:p.extCode||'',custom:ex,created_at:p.created||null,sold_at:p.soldAt||null,invoice_no:p.invNo||null};
+    status:p.status,notes:p.notes||'',external_code:p.extCode||'',aliases:pieceAliasList(p),custom:ex,created_at:p.created||null,sold_at:p.soldAt||null,invoice_no:p.invNo||null};
   if(o.safe){delete r.purchase_price_per_gram;delete r.cost_total;delete r.qr_payload;}
   return r;
 }
@@ -2045,11 +2100,13 @@ function paintCount(){
   }
   $('#clist').innerHTML=h;
 }
+let raw__skip=false;
 function countScan(raw){
   const c=openCount();if(!c)return;
   const code=cleanCode(raw);if(!code)return;
   let p=findPiece(code);
   if(!p){const cs=findCandidates(code);if(cs.length===1)p=cs[0];}
+  if(!p&&!raw__skip){beep(false);const fc=()=>setTimeout(()=>{const i=$('#cin');if(i)i.focus();},60);openLinkOld(code,pp=>{countScan(code);fc();},()=>{raw__skip=true;try{countScan(code);}finally{raw__skip=false;}fc();});return;}
   let st,pid=null;
   if(!p)st='unknown';
   else{
@@ -2177,6 +2234,45 @@ function premEditorHTML(){
   const s=S.settings,sel=(k,t)=>`<select data-pmt="${k}" aria-label="نوع العلاوة"><option value="pct" ${t!=='amt'?'selected':''}>%</option><option value="amt" ${t==='amt'?'selected':''}>${esc(cur())}</option></select>`;
   return `<div class="prem" role="group" aria-label="علاوة السوق" title="العلاوة نسبة مئوية (%) أو مبلغ ثابت يُضاف إلى سعر جرام كل عيار"><span>علاوة السوق</span><label>جديد <input data-pm="new" inputmode="decimal" value="${num(s.premium)||0}" aria-label="علاوة الجديد">${sel('new',s.premiumT)}</label><label>مستعمل <input data-pm="used" inputmode="decimal" value="${num(s.premiumUsed)||0}" aria-label="علاوة المستعمل">${sel('used',s.premiumUsedT)}</label></div>`;
 }
+
+function calcCfg(){
+  const d={mode:'price',base:'new',sell:{},margin:{}},c=S.settings.calc&&typeof S.settings.calc==='object'?S.settings.calc:{};
+  S.settings.calc=Object.assign(d,c);
+  if(!['price','margin'].includes(S.settings.calc.mode))S.settings.calc.mode='price';
+  if(!['new','used'].includes(S.settings.calc.base))S.settings.calc.base='new';
+  if(!S.settings.calc.sell||typeof S.settings.calc.sell!=='object')S.settings.calc.sell={};
+  if(!S.settings.calc.margin||typeof S.settings.calc.margin!=='object')S.settings.calc.margin={};
+  return S.settings.calc;
+}
+const pcwGet=()=>{try{return localStorage.getItem('jard.pcw')||'';}catch(e){return '';}};
+const pcwSet=v=>{try{localStorage.setItem('jard.pcw',String(v||''));}catch(e){}};
+function pcalcBar(){
+  const c=calcCfg();
+  return `<div class="pcalc" role="group" aria-label="حاسبة القيمة والربح"><b>حاسبة القيمة والربح</b><label>الوزن <input data-pc="w" inputmode="decimal" placeholder="جم" value="${esc(pcwGet())}" aria-label="الوزن بالجرام"></label><div class="segb" role="group" aria-label="طريقة إدخال سعر البيع"><button type="button" data-act="pcmode" data-v="price" aria-pressed="${c.mode==='price'}">سعر بيعي للجرام</button><button type="button" data-act="pcmode" data-v="margin" aria-pressed="${c.mode==='margin'}">هامش الربح للجرام</button></div><div class="segb" role="group" aria-label="سعر السوق المستخدم"><button type="button" data-act="pcbase" data-v="new" aria-pressed="${c.base==='new'}">جديد</button><button type="button" data-act="pcbase" data-v="used" aria-pressed="${c.base==='used'}">مستعمل</button></div><button type="button" class="btn ghost sm" data-act="pcclear">مسح</button></div>`;
+}
+function pcalcCard(k){
+  const c=calcCfg(),v=c.mode==='margin'?c.margin[k]:c.sell[k];
+  return `<div class="pcx"><div class="pcv" data-role="val" data-k="${esc(k)}"></div><label class="pci"><span>${c.mode==='margin'?'هامش/جم':'سعر بيعي/جم'}</span><input data-pck="${esc(k)}" inputmode="decimal" value="${v==null?'':esc(v)}" placeholder="${c.mode==='margin'?'+ هامش':'سعرك'}" aria-label="${c.mode==='margin'?'هامش الربح للجرام':'سعر البيع للجرام'} عيار ${esc(k)}"></label><div class="pcr" data-role="res" data-k="${esc(k)}"></div></div>`;
+}
+function pcalcApply(){
+  const s=S.settings,c=calcCfg(),w=num(pcwGet()),src=(c.base==='used'?s.pricesUsed:s.prices)||{};
+  s.karats.forEach(k=>{
+    const val=document.querySelector('[data-role="val"][data-k="'+k+'"]'),res=document.querySelector('[data-role="res"][data-k="'+k+'"]');
+    if(!val||!res)return;
+    const mk=num(src[k]);
+    val.innerHTML=(w>0&&mk>0)?`<span>قيمة ${fmtW(w)} جم</span><b>${fmt(w*mk)} ${esc(cur())}</b>`:'';
+    const raw=c.mode==='margin'?c.margin[k]:c.sell[k],has=raw!=null&&String(raw).trim()!=='';
+    if(!has||!(mk>0)){res.innerHTML='';return;}
+    const x=num(raw),sp=c.mode==='margin'?mk+x:x,diff=sp-mk,cl=diff>0.004?'up':diff<-0.004?'dn':'',sg=n=>(n>0.004?'+':'')+fmt(n),pct=mk>0?(diff/mk*100):0;
+    res.innerHTML=(c.mode==='margin'?`<div><span>سعر البيع للجرام</span><b>${fmt(sp)}</b></div>`:'')+`<div><span>الفرق للجرام</span><b class="${cl}">${sg(diff)} <small>(${sg(pct)}%)</small></b></div>`+(w>0?`<div><span>إجمالي البيع</span><b>${fmt(sp*w)}</b></div><div><span>الربح</span><b class="${cl}">${sg(diff*w)} ${esc(cur())}</b></div>`:'');
+  });
+}
+document.addEventListener('input',e=>{
+  const t=e.target;if(!t||!t.dataset)return;
+  if(t.dataset.pc==='w'){pcwSet(t.value);pcalcApply();}
+  else if(t.dataset.pck!==undefined){const c=calcCfg();(c.mode==='margin'?c.margin:c.sell)[t.dataset.pck]=t.value;pcalcApply();}
+});
+document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.pck!==undefined)save();});
 function priceBoardHTML(){
   const s=S.settings,pd=s.pday||{},op=pd.open||{},pn=s.prices||{},pu=s.pricesUsed||{},hide=phideGet();
   const ks=s.karats.slice().sort((a,b)=>num(b)-num(a));
@@ -2184,10 +2280,10 @@ function priceBoardHTML(){
   const head=`<div class="phead"><h3>${ic('trend')}<span>أسعار الذهب والفضة</span> ${priceSrcBadge()}</h3><div class="pmeta">${pd.lo>0&&pd.hi>0?'نطاق اليوم: <b dir="ltr">'+fmt(pd.lo)+' – '+fmt(pd.hi)+'</b> · ':''}${s.pricesAt?'آخر تحديث: '+dtf(s.pricesAt)+' · ':'لم تُحدَّد أسعار بعد · '}يتحدّث كل ${s.priceEvery||5} دقائق</div></div>`;
   const msg=pstate.st==='fail'?`<p class="hint warn" style="margin:0 0 10px">تعذّر التحديث التلقائي${s.pricesAt?'، وتُعرض آخر أسعار محفوظة':''}.${pstate.err?' '+esc(pstate.err):''}</p>`:'';
   const big=`<div class="pgrid big"><div class="pcard gold"><div class="pl"><span>أونصة الذهب</span><small>USD</small></div><div class="pv">${cell(s.usd)}</div><div class="pf"><span>سعر عالمي</span>${pdelta(s.usd,op.xau)}</div></div><div class="pcard"><div class="pl"><span>أونصة الفضة</span><small>USD</small></div><div class="pv">${cell(s.xag)}</div><div class="pf"><span>سعر عالمي</span>${pdelta(s.xag,op.xag)}</div></div></div>`;
-  const grid=`<div class="pgrid">${ks.map(k=>`<div class="pcard ${k==='24'?'gold':''}"><div class="pl"><span>ذهب عيار ${esc(k)}</span><small>${esc(cur())}</small></div><div class="pv">${cell(pn[k])}</div><div class="pf"><span>للجرام</span>${pdelta(pn[k],op['g'+k])}</div></div>`).join('')}</div>`;
+  const grid=`<div class="pgrid">${ks.map(k=>`<div class="pcard ${k==='24'?'gold':''}"><div class="pl"><span>ذهب عيار ${esc(k)}</span><small>${esc(cur())}</small></div><div class="pv">${cell(pn[k])}</div><div class="pf"><span>للجرام</span>${pdelta(pn[k],op['g'+k])}</div>${pcalcCard(k)}</div>`).join('')}</div>`;
   const used=`<details style="margin-top:12px"><summary>الجديد والمستعمل</summary><div class="tablewrap" style="margin-top:8px"><table class="mini"><thead><tr><th></th>${ks.map(k=>`<th>عيار ${esc(k)}</th>`).join('')}</tr></thead><tbody><tr><td><b>جديد</b></td>${ks.map(k=>`<td>${cell(pn[k])}</td>`).join('')}</tr><tr><td><b>مستعمل</b></td>${ks.map(k=>`<td>${cell(pu[k])}</td>`).join('')}</tr></tbody></table></div><small class="muted">${s.priceSrc==='auto'?'سعر الصرف '+s.fx+' · علاوة السوق: جديد '+(num(s.premium)||0)+'% ومستعمل '+(num(s.premiumUsed)||0)+'%':s.priceSrc==='feed'?'أسعار الجرام مأخوذة من الرابط المخصص':'أسعار أُدخلت يدويًا'}</small></details>`;
   const acts=`<div class="row" style="margin-top:12px"><button class="btn ghost sm" data-act="refreshPrices">${ic('refresh')||''}<span>تحديث الآن</span></button><button class="btn ghost sm" data-act="prices">إدخال يدوي</button><button class="btn ghost sm" data-act="pgosrc">مصدر الأسعار</button><button class="btn ghost sm" data-act="applyPrices">تطبيق على القطع المتوفرة</button><button class="btn ghost sm" data-act="phide">${hide?'إظهار الأسعار':'إخفاء الأسعار'}</button>${premEditorHTML()}</div>`;
-  return `<div class="pboard">${head}${hide?'':msg+big+grid+used}${acts}</div>`;
+  return `<div class="pboard">${head}${hide?'':msg+big+pcalcBar()+grid+used}${acts}</div>`;
 }
 function priceStripHTML(){return priceBoardHTML();}
 function priceMiniHTML(){
@@ -2226,7 +2322,7 @@ async function pfeedTest(){
     const u=$('#pfeeduse');if(u)u.disabled=false;
   }catch(e){pfeedLast=null;res.innerHTML='<p class="scanres show bad">'+esc(feedErrMsg(e))+'</p>';const u=$('#pfeeduse');if(u)u.disabled=true;}
 }
-function paintPrices(){const e=$('#pstrip');if(e&&!(e.contains(document.activeElement)&&document.activeElement.matches&&document.activeElement.matches('input,select')))e.innerHTML=priceStripHTML();const m=$('#pmini');if(m)m.innerHTML=priceMiniHTML();}
+function paintPrices(){const e=$('#pstrip');if(e&&!(e.contains(document.activeElement)&&document.activeElement.matches&&document.activeElement.matches('input,select'))){e.innerHTML=priceStripHTML();pcalcApply();}const m=$('#pmini');if(m)m.innerHTML=priceMiniHTML();}
 function vDash(m){
   const inS=S.pieces.filter(p=>p.status==='in');
   const strip=`<section class="panel" id="pstrip">${priceStripHTML()}</section>`;
@@ -2784,12 +2880,14 @@ function pieceFormHTML(p,mode){
     <div class="livepv noprint" id="livepv" aria-label="معاينة الملصق بالبيانات الحالية"></div>
     ${p.status==='sold'?`<p class="warn">هذه القطعة مباعة${p.soldAt?' بتاريخ '+dfmt(p.soldAt):''}${p.invNo?' · الفاتورة '+esc(p.invNo):''}. تعديل بياناتها لا يغيّر الفاتورة المسجّلة.</p>`:''}
     ${mode==='intake'&&editingExisting&&p.status!=='sold'?`<p class="warn">هذا الباركود موجود مسبقًا. تعدّل الآن بيانات القطعة نفسها.${p._extDup?' <button type="button" class="btn ghost sm" data-act="extnew">إدخال قطعة جديدة بنفس الباركود القديم</button>':''}</p>`:''}
+    ${mode==='intake'&&!p.id&&p._fromScan&&p._extCode?`<p class="hint"><button type="button" class="btn ghost sm" data-act="lkexisting">هذه القطعة مسجّلة مسبقًا؟ اربط هذا الباركود القديم بها</button></p>`:''}
     ${p._note?`<p class="warn" id="pnote">${esc(p._note)}</p>`:''}
     ${ctx}
     ${p._dec?'<div id="decBox"></div>':''}
     <fieldset><legend>بيانات القطعة</legend><div class="grid3">
       <label class="f span3">الباركود${p._gen?' <small>(يُولَّد تلقائيًا من البيانات)</small>':''}<div class="inl"><input name="barcode" dir="ltr" value="${esc(p.barcode)}" ${p._gen?'readonly':''}>${p._gen?'':`<button type="button" class="btn ghost" data-act="m-cam">${ic('camera')}<span>مسح</span></button><button type="button" class="btn ghost" data-act="m-gen">توليد</button>`}</div></label>
       <div id="bcStat" class="bcstat span3" aria-live="polite"></div>
+      <label class="f span3">باركودات قديمة مرتبطة (اختياري)<input name="alias" dir="ltr" autocomplete="off" value="${esc([...new Set(pieceAliasList(p).concat(p._extCode?[p._extCode]:[]))].join('، '))}" placeholder="امسح باركود الملصق القديم هنا ليُربط بهذه القطعة"><small class="srcn">كل باركود قديم مكتوب هنا تتعرف عليه المنصة عند مسحه في البيع والمخزون والجرد. افصل بين أكثر من باركود بفاصلة.</small></label>
       ${p._gen?'<small class="span3 muted">فعّل أو ألغِ الحقول التي تدخل في الباركود المُولَّد بخانة «في الكود» عند كل حقل (في تنسيق الموضع تُملأ الحقول الملغاة بأصفار).</small>':''}
       ${p._gen?`<div class="span3 row" style="gap:10px"><label class="chip gold" style="display:inline-flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" data-bcman ${genBulk?'disabled':''}>تعديل الباركود يدويًا</label><label class="chip gold" style="display:inline-flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" data-bulk ${genBulk?'checked':''}>طباعة جماعية</label><label class="chip gold" style="display:inline-flex;gap:8px;align-items:center;cursor:pointer" title="يُطبع الملصق تلقائيًا عند اكتمال الحقول وحفظ القطعة (Enter في آخر حقل)"><input type="checkbox" data-autoprint ${S.settings.label.autoPrint?'checked':''}>طباعة عند اكتمال الحقول</label></div><small class="span3 muted" id="bulkHint">${genBulk?'الطباعة الجماعية مفعّلة: اكتب الوزن واضغط Enter ليُحفظ ويُطبع الملصق، ويبقى باقي البيانات كما هو والرقم التسلسلي يتقدم تلقائيًا. ألغِ التأشير للتوقف.':'عند تفعيل الطباعة الجماعية يصبح Enter حفظًا وطباعةً للقطعة، ثم يُحدَّد حقل الوزن للقطعة التالية.'}</small>`:''}
     </div><div class="frow">
@@ -2967,6 +3065,12 @@ function submitPiece(f,p,mode){
   S.settings.customFields.forEach(c=>{o.extra[c.key]=String(fd.get('x:'+c.key)||'').trim();});
   o.src={};SRC_FIELDS.forEach(n=>{const t=(p._src||p.src||{})[n];if(t)o.src[n]=t;});
   if(p._extCode)o.extCode=String(p._extCode).slice(0,120);
+  {
+    const prev=p.id?piece(p.id):null,al=new Set(parseAliasText(fd.get('alias')));
+    if(p._extCode)al.add(String(p._extCode).slice(0,120));
+    if(prev&&prev.barcode&&prev.barcode!==bc)al.add(prev.barcode);
+    al.delete(bc);o.aliases=[...al].slice(0,12);o.extCode=o.aliases[0]||'';
+  }
   let newSaved=null;
   const pItem=q=>({pid:q.id,name:dname(q),barcode:q.barcode,serial:q.serial,karat:q.karat,nodeId:q.nodeId,cat:pathOf(q.nodeId),aud:q.aud||'',used:q.used,weight:q.weight,size:q.size,wage:q.wage,buyPpg:q.buyPpg,amount:q.cost});
   if(!p.id){
@@ -4590,6 +4694,11 @@ document.addEventListener('click',async e=>{
     case 'wzpath':{sel.path=sel.path.slice(0,+b.dataset.i);sel.condSet=false;afterSel();break;}
     case 'selused':{sel.used=b.dataset.v==='1';afterSel();break;}
     case 'imode':setIntakeMode(b.dataset.v);break;
+    case 'pcmode':{calcCfg().mode=b.dataset.v;save();paintPrices();break;}
+    case 'pcbase':{calcCfg().base=b.dataset.v;save();paintPrices();break;}
+    case 'pcclear':{const c=calcCfg();c.sell={};c.margin={};pcwSet('');save();paintPrices();break;}
+    case 'lkpick':linkAlias(id);break;
+    case 'lkexisting':{const c0=draft&&draft._extCode;if(c0)openLinkOld(c0,pp=>{draft=null;editingExisting=false;renderDraft();sessAdd('dup',{pid:pp.id,code:c0,msg:'رُبط الباركود القديم بالقطعة '+(pp.serial||pp.barcode)});scanResult('ok','✓ رُبط الباركود القديم بالقطعة '+(pp.serial||pp.barcode));keepScanFocus();});break;}
     case 'catedit':catEdit=!catEdit;renderWizard();break;
     case 'cataddhere':openCatAdd(sel.path.length?selNode():null);break;
     case 'cataddc':openCatAdd(id);break;
@@ -4808,8 +4917,17 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.18.0';
+const APP_VERSION='2.20.0';
 const CHANGELOG=[
+ {v:'2.20.0',date:'2026-11-11',title:'حاسبة القيمة والربح في لوحة الأسعار',items:[
+  'حقل «الوزن» في لوحة الأسعار: يُحسب تحت كل عيار قيمة السلعة بسعر السوق (الوزن × سعر الجرام).',
+  'تحت كل عيار حقل لسعرك للجرام (مثلًا عيار 21 سوقه 426 وأنت تبيع بـ 480): يظهر الفرق للجرام ونسبته وإجمالي البيع والربح بالريال.',
+  'يمكن إدخال «هامش الربح للجرام» بدل السعر (سعر السوق + هامش)، وتختار الحساب على سعر الجديد أو المستعمل. أسعارك تُحفظ لكل عيار وتبقى بعد تحديث الأسعار.']},
+ {v:'2.19.0',date:'2026-11-10',title:'ربط الباركود القديم بالباركود الجديد',items:[
+  'عند مسح باركود قديم غير معروف في المخزون أو البيع أو الجرد تفتح المنصة نافذة «ربط باركود قديم بقطعة»: تمسح الباركود الجديد للقطعة أو تبحث عنها وتضغط «ربط». وبعدها تعرف المنصة الباركود القديم مباشرة عند مسحه مرة ثانية.',
+  'القطعة الواحدة يمكن أن ترتبط بأكثر من باركود قديم، ويظهر في نموذج القطعة حقل «باركودات قديمة مرتبطة» تضيف إليه أو تحذف منه.',
+  'تغيير بيانات القطعة بحيث يتولّد لها باركود جديد، أو تحويل الباركودات إلى الرقمي، يُبقي الباركود السابق مرتبطًا فتستمر الملصقات المطبوعة بالعمل.',
+  'عند إدخال قطعة بمسح باركود قديم يمكنك ربطه بقطعة مسجّلة مسبقًا بدل إنشاء قطعة جديدة. وإن اشتركت عدة قطع في باركود قديم واحد تظهر قائمة للاختيار.']},
  {v:'2.18.0',date:'2026-11-10',title:'تصميم متجاوب لشاشات اللمس',items:[
   'تحسين شامل للآيباد والتابلت والجوال: أزرار وحقول وخانات بأحجام مناسبة للمس (48 بكسل فأكثر) وخط 16 لمنع تكبير آيفون، وبطاقات وأرقام ومخرجات متناسبة.',
   'الآيباد الأفقي: شريط جانبي مضغوط بالأيقونات ومحتوى يملأ الشاشة دون تمرير أفقي. والآيباد العمودي والجوال: شريط تنقل سفلي مع مراعاة حواف الشاشة.',
