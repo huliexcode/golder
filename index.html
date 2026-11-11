@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.17.0">
+<meta name="app-version" content="2.18.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -546,6 +546,118 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .prem input{width:74px;min-height:32px;padding:0 8px;text-align:center}
 .prem select{min-height:32px;padding:0 6px;width:auto}
 .pgrid.big,.pgrid{direction:rtl}
+
+/* ===================== touch & responsive pass ===================== */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+.app{grid-template-columns:220px minmax(0,1fr)}
+.main{min-width:0}
+.intake>*,.grid>*,.grid3>*,.frow>*,.kpis>*,.pgrid>*,.vals>*{min-width:0}
+h2 svg,h3 svg{width:1.15em;height:1.15em;flex:none;vertical-align:-.2em}
+.pboard .phead h3 svg{width:22px;height:22px;color:var(--accent-text,#8a6d00)}
+button,[role=button],a,select,summary,label.chip,label.chk,.tile,.crumb,.segb button,.ptab,.nav button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.tablewrap,.ptabs,.kpis.one{-webkit-overflow-scrolling:touch}
+h1{font-size:clamp(22px,3.4vw,30px)}
+@supports (height:100dvh){.app{min-height:100dvh}.side{height:100dvh}}
+@media (max-width:899px){.app{grid-template-columns:minmax(0,1fr)}@supports (height:100dvh){.side{height:auto}}}
+
+/* the “في الكود” tick sits under its field so it never overlaps the label */
+.inc{position:static!important;order:8;font-size:13px;margin-top:4px;gap:8px;min-height:30px}
+.kpi b{white-space:nowrap;font-size:clamp(18px,2.2vw,26px)}
+@media (max-width:899px){.sidefoot{transition:transform .22s ease,opacity .22s ease}body.scrolled .sidefoot{transform:translateY(-140%);opacity:0;pointer-events:none}}
+@media (min-width:721px) and (max-width:1100px){table th,table td{padding-inline:8px}.tablewrap table{font-size:13.5px}}
+/* iPad landscape / small laptops: compact icon sidebar */
+@media (min-width:900px) and (max-width:1180px){
+  .app{grid-template-columns:86px minmax(0,1fr)}
+  .side{padding:16px 6px;align-items:center;gap:14px}
+  .brand{flex-direction:column;gap:6px;padding:0}.brand b{display:none}
+  .nav{width:100%}
+  .nav button{flex-direction:column;gap:4px;padding:10px 2px;font-size:11.5px;text-align:center;justify-content:center;align-items:center;min-height:64px;opacity:1}
+  .sidefoot{width:100%}.syncpill{font-size:10px;padding:6px 4px;word-break:break-word}.verbtn{font-size:10px}
+  .main{padding:20px 22px 40px}
+}
+@media (min-width:1001px) and (max-width:1180px){.intake{grid-template-columns:minmax(270px,330px) minmax(0,1fr)}}
+
+/* iPad portrait & phones: bottom navigation, safe areas */
+@media (max-width:899px){
+  .main{padding:calc(64px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right)) 122px max(16px,env(safe-area-inset-left))}
+  .sidefoot{top:calc(10px + env(safe-area-inset-top,0px));inset-inline-start:max(10px,env(safe-area-inset-left));flex-direction:column;gap:4px;max-width:calc(100vw - 20px)}
+  .syncpill{font-size:12.5px;padding:7px 14px;border-radius:999px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  .verbtn{font-size:11px;padding:3px 12px;border-radius:999px;white-space:nowrap;align-self:flex-start}
+  .side{padding:6px max(6px,env(safe-area-inset-left)) calc(6px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-right))}
+  .nav button{min-height:56px;font-size:12px}
+  .nav svg{width:22px;height:22px}
+  #toasts,#toasts[popover]{bottom:calc(86px + env(safe-area-inset-bottom,0px))}
+  #pf>.row:last-child{position:sticky;bottom:calc(72px + env(safe-area-inset-bottom,0px));z-index:6;background:var(--surface);padding:10px 4px;border-top:1px solid var(--line);margin-top:8px}
+  .inc{position:static!important;order:8;font-size:13px;margin-top:4px;gap:8px;min-height:34px}
+}
+@media (max-width:899px) and (min-width:601px){
+  .sidefoot{flex-direction:row;align-items:center}
+  .verbtn{align-self:center}
+  .main{padding-top:calc(60px + env(safe-area-inset-top,0px))}
+}
+
+/* phones */
+@media (max-width:600px){
+  .main{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}
+  .head h1{font-size:24px}
+  .head{margin-bottom:12px}
+  .pcard{padding:12px 14px}.pcard .pv{font-size:24px}.pgrid.big .pcard .pv{font-size:28px}
+  .pcard .pl{flex-wrap:wrap;gap:2px 8px}.pcard .pl span{white-space:nowrap}
+  .pgrid{gap:10px}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kpi b{font-size:clamp(16px,5vw,22px)}
+  .ptabs{grid-auto-columns:minmax(92px,1fr)}.ptab{min-height:64px;font-size:12.5px}.ptab svg{width:22px;height:22px}
+  dialog,dialog.wide{width:100%!important;max-width:100%;margin:auto 0 0;border-radius:20px 20px 0 0}
+  @supports (max-height:100dvh){dialog,dialog.wide{max-height:96dvh}}
+  .modal{padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px))}
+  .modal>.row.end:last-child{position:sticky;bottom:0;background:var(--surface);padding:10px 0 2px;margin-top:6px}
+  .prem{width:100%;justify-content:space-between}
+  .pmini{gap:8px 12px;padding:8px 12px}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .row{gap:8px}
+  .scanres{font-size:14px}
+}
+
+@media (max-width:360px){.pgrid.big{grid-template-columns:1fr}.pcard .pv{font-size:21px}.pgrid.big .pcard .pv{font-size:26px}.pcard .pf{font-size:12px}.main{padding-inline:10px}.btn{padding-inline:12px}}
+/* touch screens (iPad, iPhone, Android): large, easy targets */
+@media (pointer:coarse){
+  body{font-size:16px}
+  .btn{min-height:48px;padding:10px 18px;font-size:16px}
+  .btn.sm{min-height:44px;padding:0 14px;font-size:14.5px}
+  .btn.lg{min-height:56px;font-size:17px}
+  input,select,textarea{min-height:48px;font-size:16px;padding:10px 14px}
+  textarea{min-height:88px}
+  select{padding-inline-end:36px}
+  input[type=checkbox],input[type=radio]{width:24px;height:24px;min-height:0;padding:0;flex:none;accent-color:var(--accent)}
+  label.chip,label.chk,button.chip{min-height:44px;padding:6px 14px;gap:10px}
+  .segb button{min-height:48px;font-size:15px}
+  .tile{min-height:92px;font-size:20px}
+  .tiles{gap:12px;grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+  .tact button{width:42px;height:42px;font-size:19px;border-radius:10px}
+  .crumb{min-height:44px;font-size:14px;padding:0 14px}
+  .ptab{min-height:76px}
+  .scan input,#scanIn{min-height:58px;font-size:18px}
+  td .btn,.rt .btn{min-height:44px}
+  .verbtn,.syncpill{min-height:38px;display:inline-flex;align-items:center;justify-content:center}
+  details>summary{min-height:46px;display:flex;align-items:center;cursor:pointer}
+  .inc{font-size:13.5px;min-height:40px}
+  .ltoolbar .btn{min-height:44px;font-size:14px}
+  .ltabs button{min-height:48px;font-size:15px}
+  .hnd{width:calc(28px/var(--z));height:calc(28px/var(--z))}
+  .hnd.rs{right:calc(-14px/var(--z));bottom:calc(-14px/var(--z))}
+  .hnd.rt{top:calc(-44px/var(--z));margin-left:calc(-14px/var(--z))}
+  .ebox::before{left:calc(-10px/var(--z));right:calc(-10px/var(--z));top:calc(-10px/var(--z));bottom:calc(-10px/var(--z))}
+  .pcard .pv{font-variant-numeric:tabular-nums}
+  .prem input{min-height:44px;width:84px}.prem select{min-height:44px}
+  .pd{font-size:13.5px}
+}
+
+/* floating next/save bar above the on-screen keyboard (iPhone decimal pads have no Enter key) */
+#kbar{position:fixed;inset-inline:0;bottom:0;z-index:70;display:none;gap:10px;padding:8px 12px;background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -4px 14px rgba(0,0,0,.12)}
+#kbar.on{display:flex}
+#kbar button{flex:1;min-height:50px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:700;font-size:16px;cursor:pointer}
+#kbar button.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+@media (pointer:fine){#kbar{display:none!important}}
 </style>
 </head>
 <body>
@@ -2090,7 +2202,7 @@ function priceSourcePanelHTML(){
   const prem=num(s.premium)||0;
   const px=['','https://api.allorigins.win/raw?url=','https://corsproxy.io/?url='].includes(f.proxy)?f.proxy:'__c';
   return `<section class="panel" id="psrc"><h2>مصدر أسعار الذهب</h2><p class="muted">اختر من أين تأتي أسعار اليوم، وتُحدَّث تلقائيًا بالمدة التي تحددها.</p>
-    <div class="grid" style="max-width:640px"><label class="f">المصدر${sel('src',src,[['auto','السوق العالمي المباشر (مع علاوة تضبطها)'],['feed','رابط مخصص (بيانات موقع الجنيه العربي أو غيره)'],['manual','يدوي']])}</label><label class="f">التحديث كل${sel('every',s.priceEvery||5,[[1,'دقيقة'],[2,'دقيقتين'],[5,'5 دقائق'],[10,'10 دقائق'],[15,'15 دقيقة'],[30,'30 دقيقة']])}</label></div>
+    <div class="grid" style="max-width:640px"><label class="f">المصدر${sel('src',src,[['auto','السوق العالمي المباشر'],['feed','رابط بيانات مخصص'],['manual','يدوي']])}</label><label class="f">التحديث كل${sel('every',s.priceEvery||5,[[1,'دقيقة'],[2,'دقيقتين'],[5,'5 دقائق'],[10,'10 دقائق'],[15,'15 دقيقة'],[30,'30 دقيقة']])}</label></div>
     <div style="margin-top:14px"><h3 style="margin:0 0 6px">مطابقة أسعار شركة الجنية العربي</h3><p class="muted" style="margin:0 0 8px">اكتب سعر <b>عيار 24</b> الظاهر الآن في موقع الشركة، فتضبط المنصة علاوة السوق تلقائيًا لتطابق أسعارها عند كل تحديث. العلاوة الحالية: <b>${prem}%</b>.</p>
       <div class="inl" style="max-width:420px"><input type="number" step="any" min="0" inputmode="decimal" data-ps="cal" placeholder="مثال: 491.85" aria-label="سعر عيار 24 في موقع الشركة"><button type="button" class="btn" data-act="pcal">ضبط العلاوة</button></div></div>
     <details style="margin-top:14px" ${src==='feed'?'open':''}><summary><b>رابط بيانات مخصص</b></summary>
@@ -3741,6 +3853,36 @@ document.addEventListener('input',e=>{
 },true);
 new MutationObserver(ms=>{ms.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType===1){if(n.matches&&n.matches('input[type="number"]'))toTextNumber(n);if(n.querySelectorAll)fixNumberInputs(n);}}));}).observe(document.documentElement,{childList:true,subtree:true});
 fixNumberInputs(document);
+
+window.addEventListener('scroll',()=>{document.body.classList.toggle('scrolled',(window.scrollY||document.documentElement.scrollTop)>70);},{passive:true});
+/* on-screen keyboard helper bar for touch devices */
+(function(){
+  if(!window.matchMedia||!matchMedia('(pointer:coarse)').matches)return;
+  const bar=document.createElement('div');bar.id='kbar';bar.setAttribute('role','toolbar');bar.setAttribute('aria-label','تنقل بين الحقول');
+  bar.innerHTML='<button type="button" data-kb="prev">‹ السابق</button><button type="button" data-kb="next">التالي ›</button><button type="button" class="pri" data-kb="save" hidden>حفظ ✓</button>';
+  document.body.appendChild(bar);
+  let cur=null;
+  const fields=()=>{const sc=cur&&(cur.closest('form')||document);return [...sc.querySelectorAll('input,select,textarea')].filter(x=>!x.disabled&&!x.readOnly&&!['hidden','checkbox','radio','button','submit','file'].includes(x.type)&&!x.hidden&&!x.closest('[hidden]')&&!x.closest('details:not([open])')&&x.offsetParent!==null);};
+  const place=()=>{const vv=window.visualViewport;if(!vv){bar.style.bottom='0px';return;}bar.style.bottom=Math.max(0,window.innerHeight-vv.height-vv.offsetTop)+'px';};
+  const upd=()=>{
+    const t=document.activeElement,ok=t&&t.matches&&t.matches('input,select,textarea')&&!['checkbox','radio','button','submit','file','hidden'].includes(t.type)&&t.id!=='scanIn'&&!t.closest('.scan')&&!t.closest('#authScr');
+    if(!ok){bar.classList.remove('on');cur=null;return;}
+    cur=t;bar.classList.add('on');place();
+    const sv=bar.querySelector('[data-kb="save"]'),f=t.closest('form');
+    sv.hidden=!(f&&f.id==='pf');
+  };
+  document.addEventListener('focusin',()=>setTimeout(upd,30));
+  document.addEventListener('focusout',()=>setTimeout(upd,120));
+  if(window.visualViewport){visualViewport.addEventListener('resize',place);visualViewport.addEventListener('scroll',place);}
+  bar.addEventListener('pointerdown',e=>e.preventDefault());
+  bar.addEventListener('click',e=>{
+    const b=e.target.closest('button');if(!b||!cur)return;
+    const list=fields(),i=list.indexOf(cur);
+    if(b.dataset.kb==='next'){cur.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true}));setTimeout(upd,60);}
+    else if(b.dataset.kb==='prev'){const p=list[i-1];if(p){p.focus();try{p.select();}catch(err){}}}
+    else if(b.dataset.kb==='save'){const f=cur.closest('form');if(f){cur.blur();f.dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}));}}
+  });
+})();
 document.addEventListener('wheel',e=>{const a=document.activeElement;if(a&&a.type==='number'&&e.target===a)a.blur();},{passive:true});
 /* Enter moves to the next field */
 document.addEventListener('keydown',ev=>{
@@ -4666,8 +4808,14 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.17.0';
+const APP_VERSION='2.18.0';
 const CHANGELOG=[
+ {v:'2.18.0',date:'2026-11-10',title:'تصميم متجاوب لشاشات اللمس',items:[
+  'تحسين شامل للآيباد والتابلت والجوال: أزرار وحقول وخانات بأحجام مناسبة للمس (48 بكسل فأكثر) وخط 16 لمنع تكبير آيفون، وبطاقات وأرقام ومخرجات متناسبة.',
+  'الآيباد الأفقي: شريط جانبي مضغوط بالأيقونات ومحتوى يملأ الشاشة دون تمرير أفقي. والآيباد العمودي والجوال: شريط تنقل سفلي مع مراعاة حواف الشاشة.',
+  'شريط عائم فوق لوحة المفاتيح بأزرار «السابق» و«التالي» و«حفظ»، لأن لوحة الأرقام في آيفون لا تحتوي زر Enter.',
+  'النوافذ تظهر كأوراق من الأسفل على الجوال، وزر الحفظ ثابت أسفل نموذج الإدخال، وخانات «في الكود» لا تتداخل مع عناوين الحقول.',
+  'مقابض مصمم الملصق أكبر للمس، وأيقونات العناوين لا تتضخم.']},
  {v:'2.17.0',date:'2026-11-10',title:'أرقام إنجليزية دائمًا وعلاوة بنسبة أو مبلغ',items:[
   'الحقول الرقمية تقبل الأرقام العربية والعلامة العشرية بأي شكل (٦.٨ أو ٦٫٨ أو 6,8) وتحوّلها فورًا إلى أرقام إنجليزية، فلا يختفي الرقم من الباركود بعد الآن.',
   'علاوة السوق (جديد ومستعمل) صارت بجانب أزرار إخفاء الأسعار في الرئيسية، وكل علاوة نسبة مئوية (%) أو مبلغ ثابت للجرام.',
