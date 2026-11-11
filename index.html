@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.20.0">
+<meta name="app-version" content="2.21.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -674,7 +674,12 @@ h1{font-size:clamp(22px,3.4vw,30px)}
 .pcx .pcr b{font-variant-numeric:tabular-nums;white-space:nowrap;direction:ltr}
 .pcx .pcr .up{color:#1f9d55}.pcx .pcr .dn{color:#d63c3c}
 @media (pointer:coarse){.pcalc input{min-height:48px}.pcx .pci input{min-height:44px}}
-@media (max-width:600px){.pcalc .segb{flex:1 1 100%}.pcalc .segb button{white-space:normal;font-size:13px;padding:4px 8px;line-height:1.3}.pcalc>b{flex:1 1 100%}}
+.pcalc.pcst{margin-top:-4px;border-style:solid;background:transparent}
+.pcalc.pcst input{width:96px}
+#pcnet{color:var(--muted);font-size:13px;margin-inline-start:auto}
+#pcnet b{color:var(--ink);font-variant-numeric:tabular-nums}
+#pcnet.warn{color:#d63c3c}
+@media (max-width:600px){.pcalc .segb{flex:1 1 100%}.pcalc.pcst label{flex:1 1 45%}.pcalc.pcst input{width:100%;min-width:0}#pcnet{flex:1 1 100%;margin:0}.pcalc .segb button{white-space:normal;font-size:13px;padding:4px 8px;line-height:1.3}.pcalc>b{flex:1 1 100%}}
 </style>
 </head>
 <body>
@@ -2246,30 +2251,38 @@ function calcCfg(){
 }
 const pcwGet=()=>{try{return localStorage.getItem('jard.pcw')||'';}catch(e){return '';}};
 const pcwSet=v=>{try{localStorage.setItem('jard.pcw',String(v||''));}catch(e){}};
+const pcstGet=()=>{try{return localStorage.getItem('jard.pcst')||'';}catch(e){return '';}};
+const pcstSet=v=>{try{localStorage.setItem('jard.pcst',String(v||''));}catch(e){}};
+const pcsaGet=()=>{try{return localStorage.getItem('jard.pcsa')||'';}catch(e){return '';}};
+const pcsaSet=v=>{try{localStorage.setItem('jard.pcsa',String(v||''));}catch(e){}};
 function pcalcBar(){
   const c=calcCfg();
-  return `<div class="pcalc" role="group" aria-label="حاسبة القيمة والربح"><b>حاسبة القيمة والربح</b><label>الوزن <input data-pc="w" inputmode="decimal" placeholder="جم" value="${esc(pcwGet())}" aria-label="الوزن بالجرام"></label><div class="segb" role="group" aria-label="طريقة إدخال سعر البيع"><button type="button" data-act="pcmode" data-v="price" aria-pressed="${c.mode==='price'}">سعر بيعي للجرام</button><button type="button" data-act="pcmode" data-v="margin" aria-pressed="${c.mode==='margin'}">هامش الربح للجرام</button></div><div class="segb" role="group" aria-label="سعر السوق المستخدم"><button type="button" data-act="pcbase" data-v="new" aria-pressed="${c.base==='new'}">جديد</button><button type="button" data-act="pcbase" data-v="used" aria-pressed="${c.base==='used'}">مستعمل</button></div><button type="button" class="btn ghost sm" data-act="pcclear">مسح</button></div>`;
+  return `<div class="pcalc" role="group" aria-label="حاسبة القيمة والربح"><b>حاسبة القيمة والربح</b><label>الوزن <input data-pc="w" inputmode="decimal" placeholder="جم" value="${esc(pcwGet())}" aria-label="الوزن بالجرام"></label><div class="segb" role="group" aria-label="طريقة إدخال سعر البيع"><button type="button" data-act="pcmode" data-v="price" aria-pressed="${c.mode==='price'}">سعر بيعي للجرام</button><button type="button" data-act="pcmode" data-v="margin" aria-pressed="${c.mode==='margin'}">هامش الربح للجرام</button></div><div class="segb" role="group" aria-label="سعر السوق المستخدم"><button type="button" data-act="pcbase" data-v="new" aria-pressed="${c.base==='new'}">جديد</button><button type="button" data-act="pcbase" data-v="used" aria-pressed="${c.base==='used'}">مستعمل</button></div><button type="button" class="btn ghost sm" data-act="pcclear">مسح</button></div>
+  <div class="pcalc pcst" role="group" aria-label="خصم الفصوص"><b>خصم الفصوص</b><label>وزن الفصوص <input data-pc="st" inputmode="decimal" placeholder="جم" value="${esc(pcstGet())}" aria-label="وزن الفصوص بالجرام"></label><label>خصم مبلغ <input data-pc="sa" inputmode="decimal" placeholder="${esc(cur())}" value="${esc(pcsaGet())}" aria-label="مبلغ خصم الفصوص"></label><span id="pcnet" aria-live="polite"></span></div>`;
 }
 function pcalcCard(k){
   const c=calcCfg(),v=c.mode==='margin'?c.margin[k]:c.sell[k];
   return `<div class="pcx"><div class="pcv" data-role="val" data-k="${esc(k)}"></div><label class="pci"><span>${c.mode==='margin'?'هامش/جم':'سعر بيعي/جم'}</span><input data-pck="${esc(k)}" inputmode="decimal" value="${v==null?'':esc(v)}" placeholder="${c.mode==='margin'?'+ هامش':'سعرك'}" aria-label="${c.mode==='margin'?'هامش الربح للجرام':'سعر البيع للجرام'} عيار ${esc(k)}"></label><div class="pcr" data-role="res" data-k="${esc(k)}"></div></div>`;
 }
 function pcalcApply(){
-  const s=S.settings,c=calcCfg(),w=num(pcwGet()),src=(c.base==='used'?s.pricesUsed:s.prices)||{};
+  const s=S.settings,c=calcCfg(),w0=num(pcwGet()),st=num(pcstGet()),sa=Math.max(0,num(pcsaGet())),w=Math.max(0,w0-st),src=(c.base==='used'?s.pricesUsed:s.prices)||{};
+  {const nt=document.querySelector('#pcnet');if(nt){if(w0>0&&st>0){nt.className=st>w0?'warn':'';nt.innerHTML=st>w0?'وزن الفصوص أكبر من الوزن الكلي':'الوزن الصافي للذهب: <b>'+fmtW(w)+' جم</b> ('+fmtW(w0)+' − '+fmtW(st)+')';}else if(w0>0&&sa>0){nt.className='';nt.innerHTML='يُخصم <b>'+fmt(sa)+' '+esc(cur())+'</b> من القيمة والبيع';}else{nt.className='';nt.textContent='';}}}
   s.karats.forEach(k=>{
     const val=document.querySelector('[data-role="val"][data-k="'+k+'"]'),res=document.querySelector('[data-role="res"][data-k="'+k+'"]');
     if(!val||!res)return;
     const mk=num(src[k]);
-    val.innerHTML=(w>0&&mk>0)?`<span>قيمة ${fmtW(w)} جم</span><b>${fmt(w*mk)} ${esc(cur())}</b>`:'';
+    val.innerHTML=(w>0&&mk>0)?`<span>قيمة ${fmtW(w)} جم${st>0?' صافي':''}${sa>0?' − خصم':''}</span><b>${fmt(Math.max(0,w*mk-sa))} ${esc(cur())}</b>`:'';
     const raw=c.mode==='margin'?c.margin[k]:c.sell[k],has=raw!=null&&String(raw).trim()!=='';
     if(!has||!(mk>0)){res.innerHTML='';return;}
     const x=num(raw),sp=c.mode==='margin'?mk+x:x,diff=sp-mk,cl=diff>0.004?'up':diff<-0.004?'dn':'',sg=n=>(n>0.004?'+':'')+fmt(n),pct=mk>0?(diff/mk*100):0;
-    res.innerHTML=(c.mode==='margin'?`<div><span>سعر البيع للجرام</span><b>${fmt(sp)}</b></div>`:'')+`<div><span>الفرق للجرام</span><b class="${cl}">${sg(diff)} <small>(${sg(pct)}%)</small></b></div>`+(w>0?`<div><span>إجمالي البيع</span><b>${fmt(sp*w)}</b></div><div><span>الربح</span><b class="${cl}">${sg(diff*w)} ${esc(cur())}</b></div>`:'');
+    res.innerHTML=(c.mode==='margin'?`<div><span>سعر البيع للجرام</span><b>${fmt(sp)}</b></div>`:'')+`<div><span>الفرق للجرام</span><b class="${cl}">${sg(diff)} <small>(${sg(pct)}%)</small></b></div>`+(w>0?`<div><span>إجمالي البيع${sa>0?' بعد الخصم':''}</span><b>${fmt(Math.max(0,sp*w-sa))}</b></div><div><span>الربح</span><b class="${cl}">${sg(diff*w)} ${esc(cur())}</b></div>`:'');
   });
 }
 document.addEventListener('input',e=>{
   const t=e.target;if(!t||!t.dataset)return;
   if(t.dataset.pc==='w'){pcwSet(t.value);pcalcApply();}
+  else if(t.dataset.pc==='st'){pcstSet(t.value);pcalcApply();}
+  else if(t.dataset.pc==='sa'){pcsaSet(t.value);pcalcApply();}
   else if(t.dataset.pck!==undefined){const c=calcCfg();(c.mode==='margin'?c.margin:c.sell)[t.dataset.pck]=t.value;pcalcApply();}
 });
 document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.pck!==undefined)save();});
@@ -4696,7 +4709,7 @@ document.addEventListener('click',async e=>{
     case 'imode':setIntakeMode(b.dataset.v);break;
     case 'pcmode':{calcCfg().mode=b.dataset.v;save();paintPrices();break;}
     case 'pcbase':{calcCfg().base=b.dataset.v;save();paintPrices();break;}
-    case 'pcclear':{const c=calcCfg();c.sell={};c.margin={};pcwSet('');save();paintPrices();break;}
+    case 'pcclear':{const c=calcCfg();c.sell={};c.margin={};pcwSet('');pcstSet('');pcsaSet('');save();paintPrices();break;}
     case 'lkpick':linkAlias(id);break;
     case 'lkexisting':{const c0=draft&&draft._extCode;if(c0)openLinkOld(c0,pp=>{draft=null;editingExisting=false;renderDraft();sessAdd('dup',{pid:pp.id,code:c0,msg:'رُبط الباركود القديم بالقطعة '+(pp.serial||pp.barcode)});scanResult('ok','✓ رُبط الباركود القديم بالقطعة '+(pp.serial||pp.barcode));keepScanFocus();});break;}
     case 'catedit':catEdit=!catEdit;renderWizard();break;
@@ -4917,8 +4930,12 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.20.0';
+const APP_VERSION='2.21.0';
 const CHANGELOG=[
+ {v:'2.21.0',date:'2026-11-11',title:'خصم الفصوص في حاسبة القيمة والربح',items:[
+  'قسم «خصم الفصوص» تحت الحاسبة: اكتب وزن الفصوص فيُخصم من الوزن الكلي ويظهر الوزن الصافي للذهب، وتُحسب عليه القيمة والبيع والربح لكل عيار.',
+  'وحقل «خصم مبلغ» اختياري بالريال يُخصم من قيمة السلعة وإجمالي البيع (فلا يتأثر الربح).',
+  'الأرقام تقبل العربية، وتُحفظ في الجهاز ويمسحها زر «مسح».']},
  {v:'2.20.0',date:'2026-11-11',title:'حاسبة القيمة والربح في لوحة الأسعار',items:[
   'حقل «الوزن» في لوحة الأسعار: يُحسب تحت كل عيار قيمة السلعة بسعر السوق (الوزن × سعر الجرام).',
   'تحت كل عيار حقل لسعرك للجرام (مثلًا عيار 21 سوقه 426 وأنت تبيع بـ 480): يظهر الفرق للجرام ونسبته وإجمالي البيع والربح بالريال.',
@@ -5546,3 +5563,4 @@ setInterval(()=>{const s=S.settings;if(s.priceSrc==='manual')return;const m=(s.p
 </script>
 </body>
 </html>
+  
