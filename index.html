@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.27.0">
+<meta name="app-version" content="2.28.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -708,6 +708,14 @@ h1{font-size:clamp(22px,3.4vw,30px)}
 .frow.main6 [data-act="sz2wage"]{font-size:11.5px;min-height:32px;padding:2px 6px;white-space:normal;line-height:1.3;width:100%}
 @media (max-width:699px){.frow.main6{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:420px){.frow.main6{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.cstrip{display:flex;flex-wrap:wrap;align-items:center;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:24px;font-weight:700;margin:8px 0 4px;row-gap:6px}
+.cch{padding:8px 1px;border-radius:5px;min-width:14px;text-align:center}
+.cch.t0{background:#fde9b8}.cch.t1{background:#d9ecff}.cch.t2{background:#dcf3df}.cch.t3{background:#f5dcf3}.cch.t4{background:#ffe0d6}.cch.t5{background:#e6e6e6}
+.cgap{width:14px;height:44px;border:0;background:transparent;padding:0;cursor:pointer;position:relative}
+.cgap::before{content:"";position:absolute;inset:6px 6px;border-left:2px dashed var(--line)}
+.cgap.on::before{border-left:3px solid #b8860b;inset:0 6px}
+.cgap:hover::before{border-left-color:#b8860b}
+@media (pointer:coarse){.cgap{width:20px;height:52px}}
 </style>
 </head>
 <body>
@@ -2428,7 +2436,7 @@ const decLabel=f=>(decFields().find(x=>x[0]===f)||[f,f])[1];
 const kvToDec=f=>({weight:'weight',size:'size',makingCharge:'wage',buyPpg:'buyPpg',purchasePrice:'cost',serialNumber:'serial',aud:'aud',name:'name',karat:'karat',cond:'cond',cat:'cat'}[f]||(String(f).startsWith('x:')?f:null));
 const decToKv=f=>({weight:'weight',size:'size',wage:'makingCharge',buyPpg:'buyPpg',cost:'purchasePrice',serial:'serialNumber',aud:'aud',name:'name',karat:'karat',cond:'cond',cat:'cat'}[f]||(String(f).startsWith('x:')?f:null));
 function normLearned(a){
-  return (Array.isArray(a)?a:[]).filter(t=>t&&['sep','fixed','kvs'].includes(t.kind)&&t.map&&typeof t.map==='object').slice(0,30).map(t=>({id:String(t.id||uid()),sig:String(t.sig||''),name:String(t.name||'تنسيق').slice(0,40),kind:t.kind,seps:String(t.seps||'').slice(0,12),cuts:(Array.isArray(t.cuts)?t.cuts:[]).map(x=>parseInt(x,10)).filter(x=>x>0),len:parseInt(t.len,10)||0,n:parseInt(t.n,10)||0,map:t.map,keyMap:(t.keyMap&&typeof t.keyMap==='object')?t.keyMap:{},serialMode:['combo','full','auto','token'].includes(t.serialMode)?t.serialMode:'auto',barcodeMode:t.barcodeMode==='keep'?'keep':'gen',sample:String(t.sample||'').slice(0,120)}));
+  return (Array.isArray(a)?a:[]).filter(t=>t&&['sep','fixed','kvs'].includes(t.kind)&&t.map&&typeof t.map==='object').slice(0,30).map(t=>({id:String(t.id||uid()),sig:String(t.sig||''),name:String(t.name||'تنسيق').slice(0,40),kind:t.kind,seps:String(t.seps||'').slice(0,12),cuts:(Array.isArray(t.cuts)?t.cuts:[]).map(x=>parseInt(x,10)).filter(x=>x>0),len:parseInt(t.len,10)||0,n:parseInt(t.n,10)||0,tail:Array.isArray(t.tail)?t.tail.map(x=>parseInt(x,10)||0).filter(x=>x>0):null,map:t.map,keyMap:(t.keyMap&&typeof t.keyMap==='object')?t.keyMap:{},serialMode:['combo','full','auto','token'].includes(t.serialMode)?t.serialMode:'auto',barcodeMode:t.barcodeMode==='keep'?'keep':'gen',sample:String(t.sample||'').slice(0,120)}));
 }
 function tokenize(code,cfg){
   const c=String(code),t=[];
@@ -2548,6 +2556,15 @@ function decMatch(code){
       if(!tokens.every(x=>keys.includes(x.key))||keys.length!==tokens.length)continue;
       map={};tokens.forEach((x,i)=>{const f=t.keyMap[x.key];if(f)map[i]=f;});
     }else{
+      if(t.kind==='fixed'&&Array.isArray(t.tail)&&t.tail.length){
+        const rest=t.tail.reduce((a,b)=>a+b,0),head=code.slice(0,Math.max(0,code.length-rest));
+        if(!/^\d+\.\d+$/.test(head)||!/^\d+$/.test(code.slice(head.length)))continue;
+        const cc=[head.length];let acc=head.length;t.tail.slice(0,-1).forEach(w=>{acc+=w;cc.push(acc);});
+        tokens=tokenize(code,{kind:'fixed',cuts:cc});
+        if(tokens.length!==t.n)continue;
+        map=Object.assign({},t.map);
+        return{code,kind:'fixed',seps:'',cuts:cc,tokens,map,serialMode:t.serialMode,barcodeMode:t.barcodeMode,ext:false,tpl:t.id,tplName:t.name,open:false,dirty:false};
+      }
       if(t.kind==='fixed'){if(code.length!==t.len)continue;tokens=tokenize(code,{kind:'fixed',cuts:t.cuts});}
       else tokens=tokenize(code,{kind:'sep',seps:t.seps});
       if(tokens.length!==t.n)continue;
@@ -2698,6 +2715,10 @@ function decSerialRefresh(f,p){
   f.dispatchEvent(new Event('recalc'));
 }
 /* ---- panel ---- */
+function cstrip(dec){
+  const code=String(dec.code),ti=i=>dec.tokens.findIndex(t=>i>=t.s&&i<t.e);
+  return `<div class="cstripw"><small class="muted">اضغط على الفاصل بين رقمين لقصّ الباركود هناك، ثم اختر لكل جزء الحقل الذي يخصه من الجدول.</small><div class="cstrip" dir="ltr" role="group" aria-label="خانات الباركود">${[...code].map((ch,i)=>`<span class="cch t${ti(i)%6}">${esc(ch)}</span>${i<code.length-1?`<button type="button" class="cgap ${(dec.cuts||[]).includes(i+1)?'on':''}" data-act="deccut" data-i="${i+1}" aria-label="قصّ بعد الخانة ${i+1}"></button>`:''}`).join('')}</div></div>`;
+}
 function decPanelHTML(dec){
   const flds=decFields(),isK=dec.kind==='kv'||dec.kind==='kvs';
   const pill=dec.tpl?`<span class="pill gold">تنسيق محفوظ: ${esc(dec.tplName)}</span>`:dec.ext?'<span class="pill gold">باركود خارجي — راجع التوافق</span>':'<span class="pill">بتنسيق المنصة</span>';
@@ -2706,6 +2727,7 @@ function decPanelHTML(dec){
   return `<div class="dh"><h3>تفسير الباركود ${pill}</h3><button type="button" class="btn ghost sm" data-act="dectoggle">${dec.open?'إخفاء':'إظهار'}</button></div>
   ${dec.open?`${dec.kbdFrom?`<p class="hint">صُحِّح الباركود تلقائيًا من تخطيط لوحة المفاتيح العربي. المقروء أصلًا: <span class="mono" dir="ltr">${esc(dec.kbdFrom)}</span>. الأفضل تبديل لغة لوحة المفاتيح إلى الإنجليزية قبل المسح.</p>`:''}
   <p class="hint">الباركود الممسوح: <span class="mono" dir="ltr" style="font-size:16px">${esc(dec.code)}</span></p>
+  ${dec.kind==='fixed'?cstrip(dec):''}
   <div class="tablewrap"><table class="dect"><thead><tr><th>الجزء</th><th>القيمة</th><th>يُحفظ في حقل</th></tr></thead><tbody>${rows||'<tr><td colspan="3" class="muted">لا توجد أجزاء.</td></tr>'}</tbody></table></div>
   <small class="muted">اختر لكل جزء الحقل الذي يخصه، وتُحدَّث القيم أسفل فورًا ويظهر مصدر كل قيمة تحت حقلها. الأجزاء الصفراء بلا حقل.</small>
   ${cuts}${dec.kind==='sep'?'<div class="row" style="margin-top:6px"><button type="button" class="btn ghost sm" data-act="deckind" data-v="fixed">تقسيم بالخانات بدل الفواصل</button></div>':''}
@@ -2752,9 +2774,11 @@ function decLearn(dec){
   const keyMap={};
   if(dec.kind==='kvs')dec.tokens.forEach((t,i)=>{if(dec.map[i])keyMap[t.key]=dec.map[i];});
   const sig=dec.kind==='kvs'?('kvs|'+dec.tokens.map(t=>t.key).sort().join(',')):dec.kind==='sep'?('sep|'+dec.seps+'|'+dec.tokens.length):('fixed|'+dec.code.length+'|'+dec.cuts.join(','));
-  const tpl={id:uid(),sig,name:'تنسيق '+((bf.learned||[]).length+1),kind:dec.kind,seps:dec.seps||'',cuts:dec.cuts||[],len:dec.code.length,n:dec.tokens.length,map:Object.assign({},dec.map),keyMap,serialMode:dec.serialMode==='manual'?'auto':dec.serialMode,barcodeMode:dec.barcodeMode==='keep'?'keep':'gen',sample:dec.code};
+  let tail=null;
+  if(dec.kind==='fixed'&&dec.tokens.length>=3&&dec.map[0]==='weight'&&/^\d+[.٫]\d+$/.test(dec.tokens[0].text)&&dec.tokens.slice(1).every(t=>/^\d+$/.test(latin(t.text))))tail=dec.tokens.slice(1).map(t=>t.text.length);
+  const tpl={tail,id:uid(),sig:tail?('tail|'+tail.join(',')+'|'+Object.keys(dec.map).map(k=>k+':'+dec.map[k]).join(';')):sig,name:'تنسيق '+((bf.learned||[]).length+1),kind:dec.kind,seps:dec.seps||'',cuts:dec.cuts||[],len:dec.code.length,n:dec.tokens.length,map:Object.assign({},dec.map),keyMap,serialMode:dec.serialMode==='manual'?'auto':dec.serialMode,barcodeMode:dec.barcodeMode==='keep'?'keep':'gen',sample:dec.code};
   bf.learned=bf.learned||[];
-  const i=bf.learned.findIndex(x=>x.sig===sig);
+  const i=bf.learned.findIndex(x=>x.sig===tpl.sig);
   if(i>=0){tpl.id=bf.learned[i].id;tpl.name=bf.learned[i].name;bf.learned[i]=tpl;}else{bf.learned.unshift(tpl);bf.learned=bf.learned.slice(0,30);}
   dec.tpl=tpl.id;dec.tplName=tpl.name;
   toast('تم حفظ تنسيق الباركود، وستُفهم الأكواد المشابهة تلقائيًا');
@@ -4047,7 +4071,9 @@ document.addEventListener('input',e=>{
   document.addEventListener('focusin',e=>{
     const t=e.target;
     if(!t||t.tagName!=='INPUT'||skip.has(t.type)||t.readOnly||t.disabled||t.hasAttribute('data-nosel'))return;
-    setTimeout(()=>{try{if(document.activeElement===t&&t.value)t.select();}catch(err){}},0);
+    if(t.closest('.scan')||['scanIn','cin','lkq','decIn','bfTest'].includes(t.id)||t.name==='barcode'||t.name==='alias')return;
+    const v0=t.value;
+    setTimeout(()=>{try{if(document.activeElement===t&&t.value&&t.value===v0)t.select();}catch(err){}},0);
   });
 })();
 /* on-screen keyboard helper bar for touch devices */
@@ -5015,8 +5041,12 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.27.0';
+const APP_VERSION='2.28.0';
 const CHANGELOG=[
+ {v:'2.28.0',date:'2026-11-12',title:'قراءة كاملة للباركود وتفسير بالضغط على الأرقام',items:[
+  'إصلاح: تحديد النص عند الدخول إلى الحقل كان يمحو أول أرقام الباركود إذا بدأ الماسح الكتابة فور انتقال المؤشر، فيظهر الباركود ناقصًا وتتغير البيانات. لم يعد يعمل في حقول المسح والباركود، ولا يمسّ نصًا بدأت كتابته.',
+  'تفسير الباركود: يظهر الباركود أرقامًا ملوّنة، واضغط على الفاصل بين رقمين لقصّ الباركود هناك، ثم اختر لكل جزء الحقل الذي يخصه (الوزن، الأجرة، سعر الغرام، الرقم التسلسلي...). وتُحدَّث القيم أسفل فورًا.',
+  'عند حفظ التنسيق لباركود بلا فواصل (مثل 2.22845025) تُحفظ أطوال الأجزاء بعد الوزن، فيُفهم أي باركود مشابه مهما كان طول الوزن (2.2 أو 12.45).']},
  {v:'2.27.0',date:'2026-11-12',title:'فهم أذكى للباركود وترتيب الحقول في سطر',items:[
   'الحقول الأساسية في سطر واحد بالترتيب: الوزن ← الأجرة ← سعر غرام الشراء ← الرقم التسلسلي ← إجمالي التكلفة، ثم المقاس (اختياري) في آخر السطر. وعلى الشاشات الضيقة تُرتَّب في 3 ثم 2 في كل سطر.',
   'المقاس لم يعد يدخل في الباركود إطلاقًا: أُزيلت خانة «في الكود» منه، ولا يُولَّد في أي تنسيق ولا يظهر ▣ للمقاس في مصمم الملصق.',
