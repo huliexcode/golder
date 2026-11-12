@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.25.0">
+<meta name="app-version" content="2.26.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -2941,7 +2941,7 @@ function pieceFormHTML(p,mode){
     </div><div class="frow">
       <label class="f">الوزن<div class="ig"><input name="weight" type="number" step="any" min="0" inputmode="decimal" value="${v(p.weight,3)}"><span>جم</span></div></label>
       <label class="f">الأجرة / جم<div class="ig"><input name="wage" type="number" step="any" min="0" inputmode="decimal" value="${v(p.wage)}"><span>${C}</span></div><small id="wageTot" class="muted"></small></label>
-      <label class="f">المقاس<input name="size" value="${esc(p.size||'')}"></label>
+      <label class="f">المقاس<input name="size" value="${esc(p.size||'')}"><small class="srcn"><button type="button" class="btn ghost sm" data-act="sz2wage" ${(/^\s*\d+([.,]\d+)?\s*$/.test(String(p.size||''))&&!(num(p.wage)>0))?'':'hidden'} title="ينقل الرقم المكتوب في المقاس إلى حقل الأجرة">هذا الرقم أجرة؟ انقله إلى الأجرة</button></small></label>
       <label class="f">سعر غرام الشراء<div class="ig"><input name="buyPpg" type="number" step="any" min="0" inputmode="decimal" value="${v(p.buyPpg)}"><span>${C}</span></div></label>
       <label class="f">إجمالي التكلفة<div class="ig"><input name="cost" type="number" step="any" min="0" inputmode="decimal" value="${v(p.cost)}"><span>${C}</span></div></label>
       <label class="f">الرقم التسلسلي<input name="serial" dir="ltr" value="${esc(p.serial||'')}"></label>
@@ -4010,6 +4010,13 @@ fixNumberInputs(document);
 
 window.addEventListener('scroll',()=>{document.body.classList.toggle('scrolled',(window.scrollY||document.documentElement.scrollTop)>70);},{passive:true});
 
+
+/* a number typed in the size field while the wage is empty can be moved to the wage with one tap */
+document.addEventListener('input',e=>{
+  const t=e.target;if(!t||!t.name||(t.name!=='size'&&t.name!=='wage'))return;
+  const f=t.form;if(!f)return;const b=f.querySelector('[data-act="sz2wage"]');if(!b)return;
+  b.hidden=!(/^\s*\d+([.,]\d+)?\s*$/.test(f.elements.size.value)&&!(num(f.elements.wage.value)>0));
+});
 /* clicking or tabbing into a field selects its text so typing replaces it */
 (function(){
   const skip=new Set(['checkbox','radio','button','submit','file','hidden','range','color','date','time','datetime-local','month','week','image','reset']);
@@ -4757,6 +4764,12 @@ document.addEventListener('click',async e=>{
     case 'wzpath':{sel.path=sel.path.slice(0,+b.dataset.i);sel.condSet=false;afterSel();break;}
     case 'selused':{sel.used=b.dataset.v==='1';afterSel();break;}
     case 'imode':setIntakeMode(b.dataset.v);break;
+    case 'sz2wage':{
+      const f=b.closest('form');if(!f)break;
+      const v=normNumText(f.elements.size.value);if(!(num(v)>0))break;
+      f.elements.wage.value=v;f.elements.wage.dispatchEvent(new Event('input',{bubbles:true}));
+      f.elements.size.value='';f.elements.size.dispatchEvent(new Event('input',{bubbles:true}));
+      b.hidden=true;f.elements.wage.focus();toast('نُقل الرقم '+v+' إلى حقل الأجرة');break;}
     case 'pcmode':{calcCfg().mode=b.dataset.v;save();paintPrices();break;}
     case 'pcbase':{calcCfg().base=b.dataset.v;save();paintPrices();break;}
     case 'pcclear':{const c=calcCfg();c.sell={};c.margin={};pcwSet('');pcstSet('');pcsaSet('');pcofSet('');save();paintPrices();break;}
@@ -4980,8 +4993,10 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.25.0';
+const APP_VERSION='2.26.0';
 const CHANGELOG=[
+ {v:'2.26.0',date:'2026-11-12',title:'نقل رقم الأجرة من المقاس بلمسة',items:[
+  'إذا كُتب رقم في حقل «المقاس» وحقل «الأجرة» فارغ يظهر تحت المقاس زر «هذا الرقم أجرة؟ انقله إلى الأجرة»، فيُنقل الرقم ويُعاد توليد الباركود ويُحسب سعر الغرام والتكلفة فورًا. ويعمل في الإدخال ونافذة تعديل القطعة.']},
  {v:'2.25.0',date:'2026-11-12',title:'كل بيانات الباركود الممسوح في سطر واحد',items:[
   'قائمة جلسة الإدخال: كل باركود ممسوح صار سطرًا واحدًا فيه كل بياناته (الوقت، النتيجة، الصنف، العيار، الوزن، الأجرة، المقاس، التكلفة، الرقم) دون تفرّع كل بند في سطر، حتى على الجوال (يمرَّر الجدول أفقيًا).',
   'السطر الذي ينتظر الاستكمال يعرض الآن ما فُهم من الباركود (مثل الوزن) وتظهر الأعمدة الناقصة بشرطة، ويتحول إلى سطر «أُضيفت» عند الحفظ بدل أن يبقى سطران.',
