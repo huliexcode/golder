@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.26.0">
+<meta name="app-version" content="2.27.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -699,6 +699,15 @@ h1{font-size:clamp(22px,3.4vw,30px)}
 .sesst .btn{min-height:32px;padding:0 9px;font-size:12px}
 @media (max-width:600px){.sesst{font-size:12.5px}.sesst th:nth-child(1),.sesst td:nth-child(1),.sesst th:nth-child(3),.sesst td:nth-child(3),.sesst th:nth-child(7),.sesst td:nth-child(7){display:none}.sesst th,.sesst td{padding:7px 6px}}
 @media (pointer:coarse){.sesst .btn{min-height:42px}}
+[hidden]{display:none!important}
+.frow.main6{grid-template-columns:repeat(6,minmax(0,1fr));gap:10px 8px}
+.frow.main6 .srcn{font-size:11.5px;line-height:1.5}
+.frow.main6 input{min-width:0;text-align:center;padding-inline:6px}
+.frow.main6 .ig span{display:none}
+.frow.main6 .ig input{width:100%}
+.frow.main6 [data-act="sz2wage"]{font-size:11.5px;min-height:32px;padding:2px 6px;white-space:normal;line-height:1.3;width:100%}
+@media (max-width:699px){.frow.main6{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:420px){.frow.main6{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
@@ -837,7 +846,7 @@ const KVT={weight:'الوزن (weight)',karat:'العيار (karat)',size:'ال�
 const KVMAP={weight:'weight',karat:'karat',size:'size',makingCharge:'wage',buyPpg:'buyPpg',purchasePrice:'cost',serialNumber:'serial',aud:'aud',name:'name',cond:'cond',cat:'cat',price:'_info',shop:'_info',wageTotal:'_info'};
 const KVSTR={size:1,serialNumber:1,aud:1,name:1,cat:1,cond:1,shop:1};
 const KVDEFKEY={weight:'w',karat:'k',makingCharge:'t',purchasePrice:'g',serialNumber:'s',buyPpg:'b',size:'z',aud:'a',name:'n',price:'p',cat:'c',cond:'d',shop:'h',wageTotal:'u'};
-const PAL2KV={price:'price',shop:'shop',karat:'karat',karatN:'karat',aud:'aud',weight:'weight',size:'size',wage:'makingCharge',wageTotal:'wageTotal',serial:'serialNumber',name:'name',cat:'cat'};
+const PAL2KV={price:'price',shop:'shop',karat:'karat',karatN:'karat',aud:'aud',weight:'weight',wage:'makingCharge',wageTotal:'wageTotal',serial:'serialNumber',name:'name',cat:'cat'};
 const kvTargets=()=>Object.keys(KVT).map(k=>[k,KVT[k]]).concat(S.settings.customFields.map(c=>['x:'+c.key,c.label+' — حقل إضافي']));
 const DEF_KV=()=>({karatFromCode:true,fields:[{key:'w',field:'weight',type:'number',on:true},{key:'k',field:'karat',type:'number',on:true},{key:'t',field:'makingCharge',type:'number',on:true},{key:'g',field:'purchasePrice',type:'number',on:true},{key:'s',field:'serialNumber',type:'string',on:true}]});
 const FCAT=[['price','السعر شامل الضريبة'],['shop','اسم المنشأة'],['karat','العيار والحالة'],['karatN','العيار (رقم)'],['aud','الفئة'],['weight','الوزن'],['size','المقاس'],['wage','الأجرة'],['serial','الرقم التسلسلي'],['name','اسم/وصف القطعة'],['cat','الصنف'],['codeText','نص الرمز']];
@@ -969,6 +978,8 @@ function load(){try{const r=localStorage.getItem(KEY);if(r){const raw=JSON.parse
 function ensureSerialKv(){
   try{
     const bf=S.settings.bfmt;if(!bf||!bf.kv||!Array.isArray(bf.kv.fields))return;
+    bf.kv.fields.forEach(f=>{if(f.field==='size')f.on=false;});
+    if(Array.isArray(bf.fields))bf.fields.forEach(f=>{if(f.k==='size')f.on=false;});
     if(S.settings.label&&S.settings.label.codeId===false)return;
     const f=bf.kv.fields.find(x=>x.field==='serialNumber');
     if(f){if(!f.on)f.on=true;return;}
@@ -2443,8 +2454,19 @@ function defaultCuts(code){
   const c1=m[1].length+1+P.wd,c2=c1+P.wg,c3=c2+P.bp;
   return [c1,c2,c3].filter(x=>x>0&&x<code.length);
 }
+function decSeqMap(t){
+  const nums=t.map(x=>latin(x.text).replace(/٫/g,'.')),isN=x=>/^\d+([.]\d+)?$/.test(x),map={};
+  if(t.length<2)return map;
+  const dec0=/[.]/.test(nums[0]),order=(!dec0&&t.length===3&&isN(nums[0])&&isN(nums[1]))?['wage','buyPpg','serial']:['weight','wage','buyPpg','serial'];
+  for(let i=0;i<t.length&&i<order.length;i++){
+    const f=order[i];
+    if(f==='serial'||isN(nums[i]))map[i]=f;else break;
+  }
+  return map;
+}
 function decGuessMap(dec){
   const bf=S.settings.bfmt,map={},t=dec.tokens;
+  if(dec.kind==='sep'&&!(bf.mode==='sep')){const m=decSeqMap(t);if(Object.keys(m).length>=2)return m;}
   if(bf.mode==='sep'){
     const f=bf.fields.filter(x=>x.on);
     if(dec.kind==='sep'){t.forEach((_,i)=>{if(f[i])map[i]=f[i].k;});}
@@ -2473,7 +2495,7 @@ function kvsTokens(code,seps){
   for(const t of sepT){const m=/^([A-Za-z]{1,3})(\d[\d.]*)$/.exec(t.text);if(!m)return null;out.push({s:t.s,e:t.e,key:m[1],text:m[2],raw:t.text});}
   return out.length?out:null;
 }
-function decBarcodeMode(dec){const v=Object.values(dec.map);return(v.includes('weight')&&!v.includes('serial'))?'gen':'keep';}
+function decBarcodeMode(dec){const v=Object.values(dec.map);return(v.includes('weight')||v.includes('wage')||v.includes('buyPpg'))?'gen':'keep';}
 function decAuto(code){
   const bf=S.settings.bfmt;
   if(bf.mode==='num'&&/^\d+$/.test(code)){
@@ -2603,8 +2625,7 @@ function codableFields(){
   else if(bf.mode==='sep')r=bf.fields.filter(x=>x.on).map(x=>x.k);
   else if(bf.mode==='num')r=(bf.num.weight?['weight']:[]).concat(['wage','buyPpg','serial']);
   else r=['weight','wage','buyPpg','serial'];
-  if(!r.includes('size'))r.push('size');
-  return r;
+  return r.filter(x=>x!=='size');
 }
 function sizeInFormat(){
   const bf=S.settings.bfmt;
@@ -2803,7 +2824,7 @@ function draftFromCode(code){
       d.extra=Object.assign({},d.extra,dv.extra||{});
       if(dv.aud&&k!=='24')d.aud=dv.aud;
       if(!d.cost&&d.weight>0&&d.buyPpg>0)d.cost=r2(d.weight*(d.buyPpg+d.wage));
-      const sv=decSerial(dec,Object.assign({},dv,d));if(sv!=null)d.serial=sv;
+      const sv=decSerial(dec,Object.assign({},d,dv));if(sv!=null)d.serial=sv;
       if(dec.barcodeMode==='gen'){d._gen=true;d._extCode=code;d.barcode='';}
       if(dec.ext){d._note=(d._note||'').replace(r.note||'§','').trim();}
       if(dec.ext)d._note=(d._note?d._note+' ':'')+(dec.barcodeMode==='gen'?'هذا الباركود القديم يحمل بيانات فقط، فتركتُ حقل الباركود فارغًا وستُولِّد المنصة باركودًا جديدًا يجمع كل الحقول عند إدخال البيانات. راجع «تفسير الباركود» لضبط توافق الأجزاء.':'هذا الباركود ليس بتنسيق المنصة. راجع «تفسير الباركود» وعدّل توافق الأجزاء مع الحقول بالسحب والإفلات.');
@@ -2938,13 +2959,13 @@ function pieceFormHTML(p,mode){
       <label class="f span3">باركودات قديمة مرتبطة (اختياري)<input name="alias" dir="ltr" autocomplete="off" value="${esc([...new Set(pieceAliasList(p).concat(p._extCode?[p._extCode]:[]))].join('، '))}" placeholder="امسح باركود الملصق القديم هنا ليُربط بهذه القطعة"><small class="srcn">كل باركود قديم مكتوب هنا تتعرف عليه المنصة عند مسحه في البيع والمخزون والجرد. افصل بين أكثر من باركود بفاصلة.</small></label>
       ${p._gen?'<small class="span3 muted">فعّل أو ألغِ الحقول التي تدخل في الباركود المُولَّد بخانة «في الكود» عند كل حقل (في تنسيق الموضع تُملأ الحقول الملغاة بأصفار).</small>':''}
       ${p._gen?`<div class="span3 row" style="gap:10px"><label class="chip gold" style="display:inline-flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" data-bcman ${genBulk?'disabled':''}>تعديل الباركود يدويًا</label><label class="chip gold" style="display:inline-flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" data-bulk ${genBulk?'checked':''}>طباعة جماعية</label><label class="chip gold" style="display:inline-flex;gap:8px;align-items:center;cursor:pointer" title="يُطبع الملصق تلقائيًا عند اكتمال الحقول وحفظ القطعة (Enter في آخر حقل)"><input type="checkbox" data-autoprint ${S.settings.label.autoPrint?'checked':''}>طباعة عند اكتمال الحقول</label></div><small class="span3 muted" id="bulkHint">${genBulk?'الطباعة الجماعية مفعّلة: اكتب الوزن واضغط Enter ليُحفظ ويُطبع الملصق، ويبقى باقي البيانات كما هو والرقم التسلسلي يتقدم تلقائيًا. ألغِ التأشير للتوقف.':'عند تفعيل الطباعة الجماعية يصبح Enter حفظًا وطباعةً للقطعة، ثم يُحدَّد حقل الوزن للقطعة التالية.'}</small>`:''}
-    </div><div class="frow">
-      <label class="f">الوزن<div class="ig"><input name="weight" type="number" step="any" min="0" inputmode="decimal" value="${v(p.weight,3)}"><span>جم</span></div></label>
+    </div><div class="frow main6">
+      <label class="f">الوزن (جم)<div class="ig"><input name="weight" type="number" step="any" min="0" inputmode="decimal" value="${v(p.weight,3)}"><span>جم</span></div></label>
       <label class="f">الأجرة / جم<div class="ig"><input name="wage" type="number" step="any" min="0" inputmode="decimal" value="${v(p.wage)}"><span>${C}</span></div><small id="wageTot" class="muted"></small></label>
-      <label class="f">المقاس<input name="size" value="${esc(p.size||'')}"><small class="srcn"><button type="button" class="btn ghost sm" data-act="sz2wage" ${(/^\s*\d+([.,]\d+)?\s*$/.test(String(p.size||''))&&!(num(p.wage)>0))?'':'hidden'} title="ينقل الرقم المكتوب في المقاس إلى حقل الأجرة">هذا الرقم أجرة؟ انقله إلى الأجرة</button></small></label>
       <label class="f">سعر غرام الشراء<div class="ig"><input name="buyPpg" type="number" step="any" min="0" inputmode="decimal" value="${v(p.buyPpg)}"><span>${C}</span></div></label>
-      <label class="f">إجمالي التكلفة<div class="ig"><input name="cost" type="number" step="any" min="0" inputmode="decimal" value="${v(p.cost)}"><span>${C}</span></div></label>
       <label class="f">الرقم التسلسلي<input name="serial" dir="ltr" value="${esc(p.serial||'')}"></label>
+      <label class="f">إجمالي التكلفة<div class="ig"><input name="cost" type="number" step="any" min="0" inputmode="decimal" value="${v(p.cost)}"><span>${C}</span></div></label>
+      <label class="f">المقاس <small class="muted">(اختياري)</small><input name="size" value="${esc(p.size||'')}"><small class="srcn"><button type="button" class="btn ghost sm" data-act="sz2wage" ${(/^\s*\d+([.,]\d+)?\s*$/.test(String(p.size||''))&&!(num(p.wage)>0))?'':'hidden'} title="ينقل الرقم المكتوب في المقاس إلى حقل الأجرة">نقل الرقم إلى الأجرة</button></small></label>
     </div></fieldset>
     <details open><summary>التسعير المتوقع والضريبة</summary><div class="frow">
       <label class="f">سعر بيع الجرام<div class="ig"><input name="sellPpg" type="number" step="any" min="0" inputmode="decimal" value="${v(p.sellPpg)}"><span>${C}</span></div>${pr>0?`<small class="srcn">سعر اليوم لعيار ${esc(p.karat)}: ${fmt(pr)} — قابل للتعديل</small>`:''}</label>
@@ -4074,7 +4095,8 @@ document.addEventListener('keydown',ev=>{
   const i=list.indexOf(t);if(i<0)return;
   if(t.closest('form#pf')&&view==='intake'&&draft){
     const row=scope.querySelector('.frow'),rl=row?list.filter(x=>row.contains(x)):[];
-    if(rl.length&&t===rl[rl.length-1]){ev.preventDefault();scope.dispatchEvent(new Event('submit',{cancelable:true}));return;}
+    const ser=rl.find(x=>x.name==='serial');
+    if(rl.length&&(t===ser||t===rl[rl.length-1])){ev.preventDefault();scope.dispatchEvent(new Event('submit',{cancelable:true}));return;}
   }
   const nx=list[i+1];
   if(nx){ev.preventDefault();nx.focus();if(nx.tagName==='INPUT'&&!['checkbox','radio'].includes(nx.type)){try{nx.select();}catch(er){}}}
@@ -4993,8 +5015,13 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.26.0';
+const APP_VERSION='2.27.0';
 const CHANGELOG=[
+ {v:'2.27.0',date:'2026-11-12',title:'فهم أذكى للباركود وترتيب الحقول في سطر',items:[
+  'الحقول الأساسية في سطر واحد بالترتيب: الوزن ← الأجرة ← سعر غرام الشراء ← الرقم التسلسلي ← إجمالي التكلفة، ثم المقاس (اختياري) في آخر السطر. وعلى الشاشات الضيقة تُرتَّب في 3 ثم 2 في كل سطر.',
+  'المقاس لم يعد يدخل في الباركود إطلاقًا: أُزيلت خانة «في الكود» منه، ولا يُولَّد في أي تنسيق ولا يظهر ▣ للمقاس في مصمم الملصق.',
+  'فهم توزيع الباركود بعد المسح: أجزاء الكود القديم (مثل 2.2 28 450 25 أو 2.2/28/450/25) تُوزَّع تلقائيًا على الوزن ثم الأجرة ثم سعر غرام الشراء ثم الرقم التسلسلي. وإن كان الكود بلا وزن (28 450 25) فتُوزَّع على الأجرة والسعر والرقم. ويُولَّد باركود المنصة ويبقى القديم مرتبطًا به.',
+  'زر Enter في حقل الرقم التسلسلي يحفظ القطعة، لأن المقاس اختياري.']},
  {v:'2.26.0',date:'2026-11-12',title:'نقل رقم الأجرة من المقاس بلمسة',items:[
   'إذا كُتب رقم في حقل «المقاس» وحقل «الأجرة» فارغ يظهر تحت المقاس زر «هذا الرقم أجرة؟ انقله إلى الأجرة»، فيُنقل الرقم ويُعاد توليد الباركود ويُحسب سعر الغرام والتكلفة فورًا. ويعمل في الإدخال ونافذة تعديل القطعة.']},
  {v:'2.25.0',date:'2026-11-12',title:'كل بيانات الباركود الممسوح في سطر واحد',items:[
