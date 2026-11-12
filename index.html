@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.24.0">
+<meta name="app-version" content="2.25.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -694,6 +694,11 @@ h1{font-size:clamp(22px,3.4vw,30px)}
 .pctools{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .pcmain #pcnet{margin-inline-start:auto}
 @media (max-width:560px){.pcfields{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.sesst{font-size:13px}
+.sesst th,.sesst td{white-space:nowrap;padding:7px 8px}
+.sesst .btn{min-height:32px;padding:0 9px;font-size:12px}
+@media (max-width:600px){.sesst{font-size:12.5px}.sesst th:nth-child(1),.sesst td:nth-child(1),.sesst th:nth-child(3),.sesst td:nth-child(3),.sesst th:nth-child(7),.sesst td:nth-child(7){display:none}.sesst th,.sesst td{padding:7px 6px}}
+@media (pointer:coarse){.sesst .btn{min-height:42px}}
 </style>
 </head>
 <body>
@@ -1226,20 +1231,24 @@ function scanResult(kind,msg){const el=$('#scanMsg');if(!el)return;el.className=
 function sessAdd(kind,o){sess.unshift(Object.assign({id:uid(),t:Date.now(),kind},o||{}));if(sess.length>60)sess.length=60;renderSess();}
 function renderSess(){
   const box=$('#sessBox');if(!box)return;
+  sess=sess.filter(x=>!(x.kind==='added'&&!piece(x.pid)));
   if(!sess.length){box.innerHTML='';return;}
   const added=sess.filter(x=>x.kind==='added'&&piece(x.pid));
   const tw=sum(added,x=>piece(x.pid).weight),tc=sum(added,x=>piece(x.pid).cost);
-  const tm=t=>{try{return new Date(t).toLocaleTimeString('ar-EG-u-nu-latn',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}catch(e){return '';}};
+  const tm=t=>{try{return new Date(t).toLocaleTimeString('ar-EG-u-nu-latn',{hour:'2-digit',minute:'2-digit'});}catch(e){return '';}};
+  const nz=(v,f)=>(num(v)>0?f(num(v)):'—'),mono=v=>`<span class="mono">${esc(v)}</span>`;
+  const chip=(c,t,title)=>`<span class="chip ${c}" title="${esc(title||'')}">${t}</span>`;
+  const line=(x,o)=>`<tr class="k-${x.kind}"><td>${tm(x.t)}</td><td>${o.res}</td><td>${o.cat||'—'}</td><td>${o.karat||'—'}</td><td>${o.weight||'—'}</td><td>${o.wage||'—'}</td><td>${o.size||'—'}</td><td>${o.cost||'—'}</td><td>${o.id||'—'}</td><td>${o.acts||''}</td></tr>`;
+  const ofPiece=p=>({cat:esc(pathOf(p.nodeId)),karat:esc(p.karat),weight:fmtW(p.weight),wage:fmt(p.wage),size:esc(p.size||'—'),cost:money(p.cost),id:mono(p.serial||p.barcode)});
   const row=x=>{
-    if(x.kind==='added'){const p=piece(x.pid);if(!p)return `<tr class="k-added"><td data-l="الوقت">${tm(x.t)}</td><td data-l="النتيجة" colspan="6"><span class="muted">قطعة حُذفت</span></td></tr>`;
-      return `<tr class="k-added"><td data-l="الوقت">${tm(x.t)}</td><td data-l="النتيجة"><span class="chip">✓ أُضيفت</span></td><td data-l="الصنف">${esc(pathOf(p.nodeId))}</td><td data-l="العيار">${esc(p.karat)}</td><td data-l="الوزن">${fmtW(p.weight)}</td><td data-l="التكلفة">${money(p.cost)}</td><td data-l="الرقم"><span class="mono">${esc(p.serial||p.barcode)}</span></td><td><button type="button" class="btn ghost" data-act="sessopen" data-id="${p.id}">تعديل</button> <button type="button" class="btn ghost" data-act="undoadd" data-id="${p.id}">تراجع</button></td></tr>`;}
-    if(x.kind==='dup')return `<tr class="k-dup"><td data-l="الوقت">${tm(x.t)}</td><td data-l="النتيجة"><span class="chip used">⚠ مكررة</span></td><td colspan="4" data-l="التفاصيل">${esc(x.msg||'')}</td><td></td><td><button type="button" class="btn ghost" data-act="sessopen" data-id="${x.pid}">فتح</button>${x.ext?` <button type="button" class="btn ghost" data-act="extnew2" data-code="${esc(x.ext)}">إدخال كقطعة جديدة</button>`:''}</td></tr>`;
-    if(x.kind==='need')return `<tr class="k-need"><td data-l="الوقت">${tm(x.t)}</td><td data-l="النتيجة"><span class="chip gold">✎ للاستكمال</span></td><td colspan="4" data-l="التفاصيل">${esc(x.msg||'')}</td><td><span class="mono">${esc(x.code||'')}</span></td><td></td></tr>`;
-    return `<tr class="k-fail"><td data-l="الوقت">${tm(x.t)}</td><td data-l="النتيجة"><span class="chip used">✕ تعذّر</span></td><td colspan="4" data-l="التفاصيل">${esc(x.msg||'')}</td><td><span class="mono">${esc(x.code||'')}</span></td><td></td></tr>`;
+    if(x.kind==='added'){const p=piece(x.pid);return line(x,Object.assign(ofPiece(p),{res:chip('','✓ أُضيفت'),acts:`<button type="button" class="btn ghost" data-act="sessopen" data-id="${p.id}">تعديل</button> <button type="button" class="btn ghost" data-act="undoadd" data-id="${p.id}">تراجع</button>`}));}
+    if(x.kind==='dup'){const p=piece(x.pid);return line(x,Object.assign(p?ofPiece(p):{id:mono(x.code||'')},{res:chip('used','⚠ مكررة',x.msg),acts:(p?`<button type="button" class="btn ghost" data-act="sessopen" data-id="${p.id}">فتح</button>`:'')+(x.ext?` <button type="button" class="btn ghost" data-act="extnew2" data-code="${esc(x.ext)}">إدخال كقطعة جديدة</button>`:'')}));}
+    if(x.kind==='need'){const d=x.d||{};return line(x,{res:chip('gold','✎ للاستكمال',x.msg),cat:d.cat?esc(d.cat):'',karat:d.karat?esc(d.karat):'',weight:nz(d.weight,fmtW),wage:nz(d.wage,fmt),size:d.size?esc(d.size):'—',cost:nz(d.cost,money),id:mono(d.serial||x.code||'')});}
+    return line(x,{res:chip('used','✕ تعذّر',x.msg),id:mono(x.code||'')});
   };
   box.innerHTML=`<div class="panel sess"><div class="row" style="justify-content:space-between;align-items:center"><h3>القطع المُضافة في هذه الجلسة</h3><div class="row"><button type="button" class="btn ghost" data-act="sessprint">${ic('print')}<span>طباعة ملصقات الجلسة</span></button><button type="button" class="btn" data-act="sessgo">عرض في المخزون</button><button type="button" class="btn ghost" data-act="sessclear">مسح القائمة</button></div></div>
     <div class="sum"><span class="chip">${added.length} قطعة</span><span class="chip">${fmtW(tw)} جم</span><span class="chip gold">${money(tc)}</span></div>
-    <div class="tablewrap"><table class="rt"><thead><tr><th>الوقت</th><th>النتيجة</th><th>الصنف</th><th>العيار</th><th>الوزن</th><th>التكلفة</th><th>الرقم</th><th></th></tr></thead><tbody>${sess.map(row).join('')}</tbody></table></div></div>`;
+    <div class="tablewrap"><table class="sesst"><thead><tr><th>الوقت</th><th>النتيجة</th><th>الصنف</th><th>العيار</th><th>الوزن</th><th>الأجرة</th><th>المقاس</th><th>التكلفة</th><th>الرقم</th><th></th></tr></thead><tbody>${sess.map(row).join('')}</tbody></table></div></div>`;
 }
 function autoBlock(d,code){
   const dec=d._dec;
@@ -1309,7 +1318,7 @@ function intakeScan(code,p){
   beep(false);
   draft=d;editingExisting=false;renderDraft();
   scanResult('warn','يحتاج استكمالًا: '+why);
-  sessAdd('need',{code,msg:why});
+  sessAdd('need',{code,msg:why,d:{karat:d.karat,cat:pathOf(d.nodeId),weight:d.weight,wage:d.wage,size:d.size,cost:d.cost,serial:d.serial}});
 }
 
 function explicitKV(code){
@@ -3128,7 +3137,7 @@ function submitPiece(f,p,mode){
   if(mode==='intake'&&newSaved&&(S.settings.label.autoPrint||pr_||bulk))setTimeout(()=>printLabels([newSaved],1),bulk?30:50);
   if(bulk){if(newSaved)sessAdd('added',{pid:newSaved.id,code:newSaved.barcode});draft=nextBulkDraft(newSaved);editingExisting=false;renderDraft();renderRecent();toast('تم الحفظ والطباعة · '+(newSaved.serial||newSaved.barcode));}
   else if(mode==='intake'){
-    if(newSaved){sessAdd('added',{pid:newSaved.id,code:newSaved.extCode||newSaved.barcode});scanResult('ok','✓ حُفظت: '+dname(newSaved)+' · '+fmtW(newSaved.weight)+' جم · '+money(newSaved.cost));}
+    if(newSaved){sess=sess.filter(x=>!(x.kind==='need'&&x.code&&(x.code===(p._extCode||'')||x.code===newSaved.barcode)));sessAdd('added',{pid:newSaved.id,code:newSaved.extCode||newSaved.barcode});scanResult('ok','✓ حُفظت: '+dname(newSaved)+' · '+fmtW(newSaved.weight)+' جم · '+money(newSaved.cost));}
     draft=null;editingExisting=false;
     if(imodeGet()==='manual'&&selDone()&&sel.karat)draft=genDraft();
     renderDraft();renderRecent();toast('تم حفظ القطعة');keepScanFocus();
@@ -4971,8 +4980,12 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.24.0';
+const APP_VERSION='2.25.0';
 const CHANGELOG=[
+ {v:'2.25.0',date:'2026-11-12',title:'كل بيانات الباركود الممسوح في سطر واحد',items:[
+  'قائمة جلسة الإدخال: كل باركود ممسوح صار سطرًا واحدًا فيه كل بياناته (الوقت، النتيجة، الصنف، العيار، الوزن، الأجرة، المقاس، التكلفة، الرقم) دون تفرّع كل بند في سطر، حتى على الجوال (يمرَّر الجدول أفقيًا).',
+  'السطر الذي ينتظر الاستكمال يعرض الآن ما فُهم من الباركود (مثل الوزن) وتظهر الأعمدة الناقصة بشرطة، ويتحول إلى سطر «أُضيفت» عند الحفظ بدل أن يبقى سطران.',
+  'القطع المحذوفة من المخزون تختفي تلقائيًا من القائمة بدل عبارة «قطعة حُذفت». وعلى الجوال تُخفى أعمدة الوقت والصنف والمقاس ليظهر الباقي في السطر.']},
  {v:'2.24.0',date:'2026-11-12',title:'ترتيب حقول القطعة',items:[
   'حقل «الأجرة» صار قبل «المقاس»: الوزن ← الأجرة ← المقاس ← سعر غرام الشراء ← التكلفة ← الرقم التسلسلي، ويتبع Enter هذا الترتيب في نموذج الإدخال ونافذة تعديل القطعة.',
   'بعد مسح باركود قديم يحمل الوزن فقط يقفز المؤشر مباشرة إلى حقل الأجرة (أول حقل ناقص) لتكتبه فورًا.']},
