@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.21.0">
+<meta name="app-version" content="2.23.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -676,10 +676,24 @@ h1{font-size:clamp(22px,3.4vw,30px)}
 @media (pointer:coarse){.pcalc input{min-height:48px}.pcx .pci input{min-height:44px}}
 .pcalc.pcst{margin-top:-4px;border-style:solid;background:transparent}
 .pcalc.pcst input{width:96px}
+.pcx .pco{display:flex;flex-direction:column;gap:4px;border-top:1px dashed var(--line);padding-top:6px;margin-top:2px}
+.pcx .pco:empty{display:none}
+.pcx .pco>div{display:flex;justify-content:space-between;gap:6px;color:var(--muted)}
+.pcx .pco b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.pcx .pco .up{color:#1f9d55}.pcx .pco .dn{color:#d63c3c}
+.pcx .pco small{display:block;color:var(--muted);font-weight:500}
 #pcnet{color:var(--muted);font-size:13px;margin-inline-start:auto}
 #pcnet b{color:var(--ink);font-variant-numeric:tabular-nums}
 #pcnet.warn{color:#d63c3c}
 @media (max-width:600px){.pcalc .segb{flex:1 1 100%}.pcalc.pcst label{flex:1 1 45%}.pcalc.pcst input{width:100%;min-width:0}#pcnet{flex:1 1 100%;margin:0}.pcalc .segb button{white-space:normal;font-size:13px;padding:4px 8px;line-height:1.3}.pcalc>b{flex:1 1 100%}}
+
+.pcalc.pcmain{display:flex;flex-direction:column;align-items:stretch;gap:10px}
+.pcfields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.pcfields label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:700;color:var(--muted)}
+.pcfields input{width:100%;min-height:46px;font-size:17px;font-weight:800;text-align:center;color:var(--ink)}
+.pctools{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.pcmain #pcnet{margin-inline-start:auto}
+@media (max-width:560px){.pcfields{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
@@ -2255,17 +2269,20 @@ const pcstGet=()=>{try{return localStorage.getItem('jard.pcst')||'';}catch(e){re
 const pcstSet=v=>{try{localStorage.setItem('jard.pcst',String(v||''));}catch(e){}};
 const pcsaGet=()=>{try{return localStorage.getItem('jard.pcsa')||'';}catch(e){return '';}};
 const pcsaSet=v=>{try{localStorage.setItem('jard.pcsa',String(v||''));}catch(e){}};
+const pcofGet=()=>{try{return localStorage.getItem('jard.pcof')||'';}catch(e){return '';}};
+const pcofSet=v=>{try{localStorage.setItem('jard.pcof',String(v||''));}catch(e){}};
 function pcalcBar(){
   const c=calcCfg();
-  return `<div class="pcalc" role="group" aria-label="حاسبة القيمة والربح"><b>حاسبة القيمة والربح</b><label>الوزن <input data-pc="w" inputmode="decimal" placeholder="جم" value="${esc(pcwGet())}" aria-label="الوزن بالجرام"></label><div class="segb" role="group" aria-label="طريقة إدخال سعر البيع"><button type="button" data-act="pcmode" data-v="price" aria-pressed="${c.mode==='price'}">سعر بيعي للجرام</button><button type="button" data-act="pcmode" data-v="margin" aria-pressed="${c.mode==='margin'}">هامش الربح للجرام</button></div><div class="segb" role="group" aria-label="سعر السوق المستخدم"><button type="button" data-act="pcbase" data-v="new" aria-pressed="${c.base==='new'}">جديد</button><button type="button" data-act="pcbase" data-v="used" aria-pressed="${c.base==='used'}">مستعمل</button></div><button type="button" class="btn ghost sm" data-act="pcclear">مسح</button></div>
-  <div class="pcalc pcst" role="group" aria-label="خصم الفصوص"><b>خصم الفصوص</b><label>وزن الفصوص <input data-pc="st" inputmode="decimal" placeholder="جم" value="${esc(pcstGet())}" aria-label="وزن الفصوص بالجرام"></label><label>خصم مبلغ <input data-pc="sa" inputmode="decimal" placeholder="${esc(cur())}" value="${esc(pcsaGet())}" aria-label="مبلغ خصم الفصوص"></label><span id="pcnet" aria-live="polite"></span></div>`;
+  return `<div class="pcalc pcmain" role="group" aria-label="حاسبة القيمة والربح"><b>حاسبة القيمة والربح</b>
+    <div class="pcfields"><label>الوزن (جم)<input data-pc="w" inputmode="decimal" placeholder="0" value="${esc(pcwGet())}" aria-label="الوزن بالجرام"></label><label>وزن الفصوص (جم)<input data-pc="st" inputmode="decimal" placeholder="0" value="${esc(pcstGet())}" aria-label="وزن الفصوص بالجرام"></label><label>خصم مبلغ (${esc(cur())})<input data-pc="sa" inputmode="decimal" placeholder="0" value="${esc(pcsaGet())}" aria-label="مبلغ خصم الفصوص"></label><label>المبلغ المساوَم به (${esc(cur())})<input data-pc="of" inputmode="decimal" placeholder="0" value="${esc(pcofGet())}" aria-label="المبلغ المساوم به"></label></div>
+    <div class="pctools"><div class="segb" role="group" aria-label="طريقة إدخال سعر البيع"><button type="button" data-act="pcmode" data-v="price" aria-pressed="${c.mode==='price'}">سعر بيعي للجرام</button><button type="button" data-act="pcmode" data-v="margin" aria-pressed="${c.mode==='margin'}">هامش الربح للجرام</button></div><div class="segb" role="group" aria-label="سعر السوق المستخدم"><button type="button" data-act="pcbase" data-v="new" aria-pressed="${c.base==='new'}">جديد</button><button type="button" data-act="pcbase" data-v="used" aria-pressed="${c.base==='used'}">مستعمل</button></div><button type="button" class="btn ghost sm" data-act="pcclear">مسح</button><span id="pcnet" aria-live="polite"></span></div></div>`;
 }
 function pcalcCard(k){
   const c=calcCfg(),v=c.mode==='margin'?c.margin[k]:c.sell[k];
-  return `<div class="pcx"><div class="pcv" data-role="val" data-k="${esc(k)}"></div><label class="pci"><span>${c.mode==='margin'?'هامش/جم':'سعر بيعي/جم'}</span><input data-pck="${esc(k)}" inputmode="decimal" value="${v==null?'':esc(v)}" placeholder="${c.mode==='margin'?'+ هامش':'سعرك'}" aria-label="${c.mode==='margin'?'هامش الربح للجرام':'سعر البيع للجرام'} عيار ${esc(k)}"></label><div class="pcr" data-role="res" data-k="${esc(k)}"></div></div>`;
+  return `<div class="pcx"><div class="pcv" data-role="val" data-k="${esc(k)}"></div><label class="pci"><span>${c.mode==='margin'?'هامش/جم':'سعر بيعي/جم'}</span><input data-pck="${esc(k)}" inputmode="decimal" value="${v==null?'':esc(v)}" placeholder="${c.mode==='margin'?'+ هامش':'سعرك'}" aria-label="${c.mode==='margin'?'هامش الربح للجرام':'سعر البيع للجرام'} عيار ${esc(k)}"></label><div class="pcr" data-role="res" data-k="${esc(k)}"></div><div class="pco" data-role="ofr" data-k="${esc(k)}"></div></div>`;
 }
 function pcalcApply(){
-  const s=S.settings,c=calcCfg(),w0=num(pcwGet()),st=num(pcstGet()),sa=Math.max(0,num(pcsaGet())),w=Math.max(0,w0-st),src=(c.base==='used'?s.pricesUsed:s.prices)||{};
+  const s=S.settings,c=calcCfg(),w0=num(pcwGet()),st=num(pcstGet()),sa=Math.max(0,num(pcsaGet())),of=Math.max(0,num(pcofGet())),w=Math.max(0,w0-st),src=(c.base==='used'?s.pricesUsed:s.prices)||{};
   {const nt=document.querySelector('#pcnet');if(nt){if(w0>0&&st>0){nt.className=st>w0?'warn':'';nt.innerHTML=st>w0?'وزن الفصوص أكبر من الوزن الكلي':'الوزن الصافي للذهب: <b>'+fmtW(w)+' جم</b> ('+fmtW(w0)+' − '+fmtW(st)+')';}else if(w0>0&&sa>0){nt.className='';nt.innerHTML='يُخصم <b>'+fmt(sa)+' '+esc(cur())+'</b> من القيمة والبيع';}else{nt.className='';nt.textContent='';}}}
   s.karats.forEach(k=>{
     const val=document.querySelector('[data-role="val"][data-k="'+k+'"]'),res=document.querySelector('[data-role="res"][data-k="'+k+'"]');
@@ -2273,6 +2290,14 @@ function pcalcApply(){
     const mk=num(src[k]);
     val.innerHTML=(w>0&&mk>0)?`<span>قيمة ${fmtW(w)} جم${st>0?' صافي':''}${sa>0?' − خصم':''}</span><b>${fmt(Math.max(0,w*mk-sa))} ${esc(cur())}</b>`:'';
     const raw=c.mode==='margin'?c.margin[k]:c.sell[k],has=raw!=null&&String(raw).trim()!=='';
+    {const of_=document.querySelector('[data-role="ofr"][data-k="'+k+'"]');
+      if(of_){
+        const price=has?(c.mode==='margin'?mk+num(raw):num(raw)):mk;
+        if(of>0&&w0>0&&price>0){
+          const eq=of/price,ded=w0-eq,dv=w0*price-of,cl=ded>0.0005?'up':ded<-0.0005?'dn':'',sg=n=>(n>0.0005?'+':'')+fmtW(n);
+          of_.innerHTML=`<div><span>المبلغ ÷ ${fmt(price)} (${has?'سعرك':'السوق'})</span><b>${fmtW(eq)} جم</b></div>`+(ded>=-0.0005?`<div><span>خصم الفصوص المحسوب</span><b class="${cl}">${fmtW(Math.max(0,ded))} جم</b></div><div><span>فرق القيمة المخصوم</span><b>${fmt(dv)} ${esc(cur())}</b></div>`:`<div><span>المبلغ أكبر من قيمة القطعة بـ</span><b class="dn">${fmt(-dv)} ${esc(cur())}</b></div>`)+(st>0&&ded>=-0.0005?`<div><span>فرق عن وزن الفصوص المدخل</span><b class="${ded-st>0.0005?'up':ded-st<-0.0005?'dn':''}">${sg(ded-st)} جم</b></div>`:'');
+        }else of_.innerHTML='';
+      }}
     if(!has||!(mk>0)){res.innerHTML='';return;}
     const x=num(raw),sp=c.mode==='margin'?mk+x:x,diff=sp-mk,cl=diff>0.004?'up':diff<-0.004?'dn':'',sg=n=>(n>0.004?'+':'')+fmt(n),pct=mk>0?(diff/mk*100):0;
     res.innerHTML=(c.mode==='margin'?`<div><span>سعر البيع للجرام</span><b>${fmt(sp)}</b></div>`:'')+`<div><span>الفرق للجرام</span><b class="${cl}">${sg(diff)} <small>(${sg(pct)}%)</small></b></div>`+(w>0?`<div><span>إجمالي البيع${sa>0?' بعد الخصم':''}</span><b>${fmt(Math.max(0,sp*w-sa))}</b></div><div><span>الربح</span><b class="${cl}">${sg(diff*w)} ${esc(cur())}</b></div>`:'');
@@ -2283,6 +2308,7 @@ document.addEventListener('input',e=>{
   if(t.dataset.pc==='w'){pcwSet(t.value);pcalcApply();}
   else if(t.dataset.pc==='st'){pcstSet(t.value);pcalcApply();}
   else if(t.dataset.pc==='sa'){pcsaSet(t.value);pcalcApply();}
+  else if(t.dataset.pc==='of'){pcofSet(t.value);pcalcApply();}
   else if(t.dataset.pck!==undefined){const c=calcCfg();(c.mode==='margin'?c.margin:c.sell)[t.dataset.pck]=t.value;pcalcApply();}
 });
 document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.pck!==undefined)save();});
@@ -2296,7 +2322,7 @@ function priceBoardHTML(){
   const grid=`<div class="pgrid">${ks.map(k=>`<div class="pcard ${k==='24'?'gold':''}"><div class="pl"><span>ذهب عيار ${esc(k)}</span><small>${esc(cur())}</small></div><div class="pv">${cell(pn[k])}</div><div class="pf"><span>للجرام</span>${pdelta(pn[k],op['g'+k])}</div>${pcalcCard(k)}</div>`).join('')}</div>`;
   const used=`<details style="margin-top:12px"><summary>الجديد والمستعمل</summary><div class="tablewrap" style="margin-top:8px"><table class="mini"><thead><tr><th></th>${ks.map(k=>`<th>عيار ${esc(k)}</th>`).join('')}</tr></thead><tbody><tr><td><b>جديد</b></td>${ks.map(k=>`<td>${cell(pn[k])}</td>`).join('')}</tr><tr><td><b>مستعمل</b></td>${ks.map(k=>`<td>${cell(pu[k])}</td>`).join('')}</tr></tbody></table></div><small class="muted">${s.priceSrc==='auto'?'سعر الصرف '+s.fx+' · علاوة السوق: جديد '+(num(s.premium)||0)+'% ومستعمل '+(num(s.premiumUsed)||0)+'%':s.priceSrc==='feed'?'أسعار الجرام مأخوذة من الرابط المخصص':'أسعار أُدخلت يدويًا'}</small></details>`;
   const acts=`<div class="row" style="margin-top:12px"><button class="btn ghost sm" data-act="refreshPrices">${ic('refresh')||''}<span>تحديث الآن</span></button><button class="btn ghost sm" data-act="prices">إدخال يدوي</button><button class="btn ghost sm" data-act="pgosrc">مصدر الأسعار</button><button class="btn ghost sm" data-act="applyPrices">تطبيق على القطع المتوفرة</button><button class="btn ghost sm" data-act="phide">${hide?'إظهار الأسعار':'إخفاء الأسعار'}</button>${premEditorHTML()}</div>`;
-  return `<div class="pboard">${head}${hide?'':msg+big+pcalcBar()+grid+used}${acts}</div>`;
+  return `<div class="pboard" data-enter>${head}${hide?'':msg+big+pcalcBar()+grid+used}${acts}</div>`;
 }
 function priceStripHTML(){return priceBoardHTML();}
 function priceMiniHTML(){
@@ -3972,6 +3998,19 @@ new MutationObserver(ms=>{ms.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType==
 fixNumberInputs(document);
 
 window.addEventListener('scroll',()=>{document.body.classList.toggle('scrolled',(window.scrollY||document.documentElement.scrollTop)>70);},{passive:true});
+
+/* clicking or tabbing into a field selects its text so typing replaces it */
+(function(){
+  const skip=new Set(['checkbox','radio','button','submit','file','hidden','range','color','date','time','datetime-local','month','week','image','reset']);
+  let fresh=null;
+  document.addEventListener('mousedown',e=>{const t=e.target;fresh=(t&&t.tagName==='INPUT'&&!skip.has(t.type)&&document.activeElement!==t)?t:null;},true);
+  document.addEventListener('mouseup',e=>{if(fresh&&e.target===fresh&&fresh.value){e.preventDefault();}fresh=null;},true);
+  document.addEventListener('focusin',e=>{
+    const t=e.target;
+    if(!t||t.tagName!=='INPUT'||skip.has(t.type)||t.readOnly||t.disabled||t.hasAttribute('data-nosel'))return;
+    setTimeout(()=>{try{if(document.activeElement===t&&t.value)t.select();}catch(err){}},0);
+  });
+})();
 /* on-screen keyboard helper bar for touch devices */
 (function(){
   if(!window.matchMedia||!matchMedia('(pointer:coarse)').matches)return;
@@ -4709,7 +4748,7 @@ document.addEventListener('click',async e=>{
     case 'imode':setIntakeMode(b.dataset.v);break;
     case 'pcmode':{calcCfg().mode=b.dataset.v;save();paintPrices();break;}
     case 'pcbase':{calcCfg().base=b.dataset.v;save();paintPrices();break;}
-    case 'pcclear':{const c=calcCfg();c.sell={};c.margin={};pcwSet('');pcstSet('');pcsaSet('');save();paintPrices();break;}
+    case 'pcclear':{const c=calcCfg();c.sell={};c.margin={};pcwSet('');pcstSet('');pcsaSet('');pcofSet('');save();paintPrices();break;}
     case 'lkpick':linkAlias(id);break;
     case 'lkexisting':{const c0=draft&&draft._extCode;if(c0)openLinkOld(c0,pp=>{draft=null;editingExisting=false;renderDraft();sessAdd('dup',{pid:pp.id,code:c0,msg:'رُبط الباركود القديم بالقطعة '+(pp.serial||pp.barcode)});scanResult('ok','✓ رُبط الباركود القديم بالقطعة '+(pp.serial||pp.barcode));keepScanFocus();});break;}
     case 'catedit':catEdit=!catEdit;renderWizard();break;
@@ -4930,8 +4969,16 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.21.0';
+const APP_VERSION='2.23.0';
 const CHANGELOG=[
+ {v:'2.23.0',date:'2026-11-11',title:'حقول أسرع للكتابة وحاسبة في سطر واحد',items:[
+  'عند الضغط على أي حقل فيه نص يُحدَّد النص كله، فتكتب فوقه مباشرة. والضغطة الثانية داخل الحقل تضع المؤشر لتعديل جزء منه.',
+  'حقول الحاسبة (الوزن، وزن الفصوص، خصم المبلغ، المبلغ المساوَم به) صارت في سطر واحد، وتحتها أزرار طريقة السعر والجديد/المستعمل ومسح. وعلى الجوال تُرتّب اثنين في كل سطر.',
+  'زر Enter ينتقل بين حقول الحاسبة بنفس الترتيب ثم إلى أسعارك لكل عيار.']},
+ {v:'2.22.0',date:'2026-11-11',title:'المبلغ المساوَم به وخصم الفصوص المحسوب',items:[
+  'حقل «المبلغ المساوَم به» في الحاسبة: يُقسم المبلغ على سعر الجرام (سعرك إن أدخلته وإلا سعر السوق) لكل عيار، فيظهر الوزن الذي يعادله المبلغ.',
+  'وبمقارنته بالوزن الكلي يظهر خصم الفصوص المحسوب بالجرام، وفرق القيمة المخصوم بالريال، والفرق عن وزن الفصوص المدخل إن كتبته.',
+  'زر Enter ينتقل بين حقول الحاسبة بالترتيب: الوزن ← وزن الفصوص ← خصم المبلغ ← المبلغ المساوَم به ← أسعارك لكل عيار.']},
  {v:'2.21.0',date:'2026-11-11',title:'خصم الفصوص في حاسبة القيمة والربح',items:[
   'قسم «خصم الفصوص» تحت الحاسبة: اكتب وزن الفصوص فيُخصم من الوزن الكلي ويظهر الوزن الصافي للذهب، وتُحسب عليه القيمة والبيع والربح لكل عيار.',
   'وحقل «خصم مبلغ» اختياري بالريال يُخصم من قيمة السلعة وإجمالي البيع (فلا يتأثر الربح).',
@@ -5563,4 +5610,3 @@ setInterval(()=>{const s=S.settings;if(s.priceSrc==='manual')return;const m=(s.p
 </script>
 </body>
 </html>
-  
