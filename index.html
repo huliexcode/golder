@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.23.0">
+<meta name="app-version" content="2.24.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -2931,8 +2931,8 @@ function pieceFormHTML(p,mode){
       ${p._gen?`<div class="span3 row" style="gap:10px"><label class="chip gold" style="display:inline-flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" data-bcman ${genBulk?'disabled':''}>تعديل الباركود يدويًا</label><label class="chip gold" style="display:inline-flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" data-bulk ${genBulk?'checked':''}>طباعة جماعية</label><label class="chip gold" style="display:inline-flex;gap:8px;align-items:center;cursor:pointer" title="يُطبع الملصق تلقائيًا عند اكتمال الحقول وحفظ القطعة (Enter في آخر حقل)"><input type="checkbox" data-autoprint ${S.settings.label.autoPrint?'checked':''}>طباعة عند اكتمال الحقول</label></div><small class="span3 muted" id="bulkHint">${genBulk?'الطباعة الجماعية مفعّلة: اكتب الوزن واضغط Enter ليُحفظ ويُطبع الملصق، ويبقى باقي البيانات كما هو والرقم التسلسلي يتقدم تلقائيًا. ألغِ التأشير للتوقف.':'عند تفعيل الطباعة الجماعية يصبح Enter حفظًا وطباعةً للقطعة، ثم يُحدَّد حقل الوزن للقطعة التالية.'}</small>`:''}
     </div><div class="frow">
       <label class="f">الوزن<div class="ig"><input name="weight" type="number" step="any" min="0" inputmode="decimal" value="${v(p.weight,3)}"><span>جم</span></div></label>
-      <label class="f">المقاس<input name="size" value="${esc(p.size||'')}"></label>
       <label class="f">الأجرة / جم<div class="ig"><input name="wage" type="number" step="any" min="0" inputmode="decimal" value="${v(p.wage)}"><span>${C}</span></div><small id="wageTot" class="muted"></small></label>
+      <label class="f">المقاس<input name="size" value="${esc(p.size||'')}"></label>
       <label class="f">سعر غرام الشراء<div class="ig"><input name="buyPpg" type="number" step="any" min="0" inputmode="decimal" value="${v(p.buyPpg)}"><span>${C}</span></div></label>
       <label class="f">إجمالي التكلفة<div class="ig"><input name="cost" type="number" step="any" min="0" inputmode="decimal" value="${v(p.cost)}"><span>${C}</span></div></label>
       <label class="f">الرقم التسلسلي<input name="serial" dir="ltr" value="${esc(p.serial||'')}"></label>
@@ -3277,7 +3277,9 @@ function renderDraft(){
   if(!draft){box.innerHTML='';return;}
   box.innerHTML=`<div class="panel"><h2 style="margin-bottom:12px">${editingExisting?'تعديل قطعة مسجّلة':(draft._fromScan?'استكمال بيانات القطعة الممسوحة':(draft._gen?'إدخال يدوي':'بيانات القطعة'))}</h2>${pieceFormHTML(draft,'intake')}</div>`;
   bindPieceForm($('#pf'),draft,'intake');
-  const w=$('#pf [name="weight"]');if(w){w.focus();try{w.select();}catch(er){}box.scrollIntoView({block:'nearest'});}
+  let w=$('#pf [name="weight"]');
+  if(w&&draft._fromScan&&!editingExisting&&num(draft.weight)>0){const nx=['wage','size'].map(n=>$('#pf [name="'+n+'"]')).find(el=>el&&!String(el.value).trim());if(nx)w=nx;}
+  if(w){w.focus();try{w.select();}catch(er){}box.scrollIntoView({block:'nearest'});}
 }
 function renderRecent(){
   const box=$('#recent');if(!box)return;
@@ -4969,8 +4971,11 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.23.0';
+const APP_VERSION='2.24.0';
 const CHANGELOG=[
+ {v:'2.24.0',date:'2026-11-12',title:'ترتيب حقول القطعة',items:[
+  'حقل «الأجرة» صار قبل «المقاس»: الوزن ← الأجرة ← المقاس ← سعر غرام الشراء ← التكلفة ← الرقم التسلسلي، ويتبع Enter هذا الترتيب في نموذج الإدخال ونافذة تعديل القطعة.',
+  'بعد مسح باركود قديم يحمل الوزن فقط يقفز المؤشر مباشرة إلى حقل الأجرة (أول حقل ناقص) لتكتبه فورًا.']},
  {v:'2.23.0',date:'2026-11-11',title:'حقول أسرع للكتابة وحاسبة في سطر واحد',items:[
   'عند الضغط على أي حقل فيه نص يُحدَّد النص كله، فتكتب فوقه مباشرة. والضغطة الثانية داخل الحقل تضع المؤشر لتعديل جزء منه.',
   'حقول الحاسبة (الوزن، وزن الفصوص، خصم المبلغ، المبلغ المساوَم به) صارت في سطر واحد، وتحتها أزرار طريقة السعر والجديد/المستعمل ومسح. وعلى الجوال تُرتّب اثنين في كل سطر.',
