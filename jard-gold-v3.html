@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.30.1">
+<meta name="app-version" content="2.30.2">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -1627,7 +1627,7 @@ function encEPL(cv,L,PS,n){
   const b=canvasBits(cv,PS.invert,L.thr);
   const gapD=PS.media==='cont'?0:Math.round(PS.gap*PS.dpi/25.4),wDots=b.bpr*8,spd=Math.max(1,Math.min(4,Math.ceil(PS.speed/2.5)));
   const dir=PS.eplDir==='T'?'ZT\n':PS.eplDir==='B'?'ZB\n':'';
-  const qcmd=(PS.eplAuto!==false&&PS.media!=='cont')?'':`Q${b.h},${gapD}\n`;
+  const qcmd=(PS.eplAuto!==false&&PS.media!=='cont'&&!PS.calH)?'':`Q${b.h},${gapD}\n`;
   const head=_te.encode(`\nN\n${dir}q${wDots}\n${qcmd}S${spd}\nD${PS.density}\nR0,0\nGW0,0,${b.bpr},${b.h},`);
   return catBytes(head,b.bits,_te.encode(`\nP${n}\n`));
 }
@@ -1799,8 +1799,9 @@ function calPanelHTML(PS){
       <button type="button" class="btn accent" data-act="prcalprint">2) طباعة نموذج المعايرة</button>
       <button type="button" class="btn lg accent" data-act="prcalfull">معايرة تلقائية كاملة (قياس ثم طباعة النموذج)</button></div>
     <div class="grid3">${q('calL','أول رقم ظاهر على اليسار (أعلى المسطرة)')}${q('calT','أول رقم ظاهر في الأعلى (يسار المسطرة)')}${q('calR','آخر رقم ظاهر على اليمين')}${q('calB','آخر رقم ظاهر في الأسفل')}</div>
+    <div class="row" style="gap:8px;flex-wrap:wrap;margin:8px 0"><b>تقصير/تطويل المسافة بين الملصقات:</b><button type="button" class="btn" data-act="prcalh" data-d="-5">−5</button><button type="button" class="btn" data-act="prcalh" data-d="-1">−1</button><button type="button" class="btn" data-act="prcalh" data-d="-0.5">−0.5</button><button type="button" class="btn" data-act="prcalh" data-d="0.5">+0.5</button><button type="button" class="btn" data-act="prcalh" data-d="1">+1</button><button type="button" class="btn" data-act="prcalh" data-d="5">+5</button><button type="button" class="btn accent" data-act="prtest">طباعة تجريبية</button></div>
     <div class="row" style="gap:8px;flex-wrap:wrap;margin:8px 0"><button type="button" class="btn accent" data-act="prcalapply">3) احسب وطبّق</button><button type="button" class="btn ghost" data-act="prcalreset">تصفير المعايرة</button></div>
-    <div class="grid3">${f('calX','إزاحة أفقية (مم)','موجب = يتحرك المحتوى لليمين')}${f('calY','إزاحة رأسية (مم)','موجب = يتحرك المحتوى للأسفل')}${f('calW','عرض الملصق الفعلي (مم)','0 = حسب التصميم')}${f('calH','ارتفاع الملصق الفعلي (مم)','0 = حسب التصميم؛ يمنع الملصقات الفارغة')}</div>
+    <div class="grid3">${f('calX','إزاحة أفقية (مم)','موجب = يتحرك المحتوى لليمين')}${f('calY','إزاحة رأسية (مم)','موجب = يتحرك المحتوى للأسفل')}${f('calW','عرض الملصق الفعلي (مم)','0 = حسب التصميم')}${f('calH','طول الملصق الفعلي بالمليمتر (خطوة التغذية)','قِس طول ملصق واحد بالمسطرة. إن طُبع كود ثم تخطّى ملصقين فالرقم هنا أكبر من الحقيقي: قصّره. 0 = حسب التصميم')}</div>
     <p class="hint" id="calmsg" role="status">${PS.calAt?'آخر معايرة: '+esc(PS.calAt):'لم تُجرَ معايرة بعد.'}</p></section>`;
 }
 function rawPrintLabels(items,n,L){
@@ -4874,6 +4875,7 @@ document.addEventListener('click',async e=>{
     case 'prcalapply':{const PS=S.settings.printer,m=$('#calmsg'),g=id=>($(id)||{}).value;const r=calCompute({left:g('#calL'),top:g('#calT'),right:g('#calR'),bottom:g('#calB')},PS,S.settings.label);
       Object.assign(PS,{calX:r.calX,calY:r.calY,calW:r.calW,calH:r.calH,calAt:new Date().toLocaleString('en-GB')});S.settings.printer=normPrinter(PS);save();render();
       const m2=$('#calmsg');if(m2){m2.className='hint pos';m2.textContent=(r.notes.length?'طُبّقت: '+r.notes.join('، ')+'. ':'لا تغيير مطلوب. ')+'أعد طباعة النموذج للتأكد.';}break;}
+    case 'prcalh':{const PS=S.settings.printer,L=S.settings.label,d=parseFloat(b.dataset.d)||0;PS.calH=Math.max(8,Math.round(((PS.calH||L.h)+d)*10)/10);PS.calAt=new Date().toLocaleString('en-GB');S.settings.printer=normPrinter(PS);save();render();const m=$('#calmsg');if(m){m.className='hint pos';m.textContent='طول الملصق المعتمد الآن '+S.settings.printer.calH+' مم. اضغط «طباعة تجريبية» وراقب الطابعة.';}break;}
     case 'prcalreset':{const PS=S.settings.printer;Object.assign(PS,{calX:0,calY:0,calW:0,calH:0,calAt:''});S.settings.printer=normPrinter(PS);save();render();break;}
     case 'prtest':{const m=$('#prmsg');if(m)m.textContent='';printLabels([sampleForLabel()],1);break;}
     case 'prping':{const m=$('#prmsg'),PS=S.settings.printer;try{const r=await fetch(PS.bridgeUrl.replace(/\/$/,'')+'/ping');const j=await r.json();if(m){m.className='hint';m.textContent='الوسيط يعمل (إصدار '+j.bridge+' على '+j.os+').';}}catch(er){if(m){m.className='err';m.textContent='لا يمكن الوصول للوسيط على '+PS.bridgeUrl+'. شغّله ثم أعد الفحص.';}}break;}
@@ -5129,8 +5131,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.30.1';
+const APP_VERSION='2.30.2';
 const CHANGELOG=[
+ {v:'2.30.2',date:'2026-11-17',title:'ضبط طول الملصق لمنع تخطي الملصقات',items:['حقل «طول الملصق الفعلي» وأزرار تقصير/تطويل (−5 −1 −0.5 +0.5 +1 +5 مم) مع طباعة تجريبية، لحل مشكلة طباعة ملصق ثم تخطي ملصقين.','عند تحديد الطول تُرسله المنصة للطابعة (EPL) بدل الاعتماد على قياسها، ويُقصّ المحتوى على هذا الطول.']},
  {v:'2.30.1',date:'2026-11-17',title:'رسالة اتصال واضحة لأجهزة ماك',items:['عند تعذّر حجز الطابعة على ماك تظهر الآن خطوات الحل: حذف الطابعة من إعدادات النظام ثم إعادة التوصيل، أو استخدام الوسيط.']},
  {v:'2.30.0',date:'2026-11-17',title:'معايرة تلقائية كاملة بزر واحد',items:[
   'زر «معايرة تلقائية كاملة»: يجعل الطابعة تقيس طول الملصق والفاصل بنفسها ثم يطبع نموذج المعايرة تلقائيًا.',
