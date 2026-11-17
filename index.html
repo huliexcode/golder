@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.30.0">
+<meta name="app-version" content="2.30.1">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -1666,7 +1666,7 @@ async function usbAttach(dev,PS){
   let pick=null;
   for(const itf of dev.configuration.interfaces)for(const alt of itf.alternates){const ep=alt.endpoints.find(e=>e.direction==='out'&&e.type==='bulk');if(ep&&(!pick||alt.interfaceClass===7))pick={itf,alt,ep};}
   if(!pick)throw new Error('لم يُعثر على قناة إرسال في هذا الجهاز.');
-  try{await dev.claimInterface(pick.itf.interfaceNumber);}catch(e){throw new Error('تعذّر حجز الجهاز. على ويندوز استخدم «طابعة النظام عبر الوسيط» (تدعم EPL أيضًا) أو ثبّت تعريف WinUSB للطابعة، وأغلق أي برنامج آخر يستخدمها.');}
+  try{await dev.claimInterface(pick.itf.interfaceNumber);}catch(e){throw new Error(/Mac/i.test(navigator.platform||navigator.userAgent||'')?'تعذّر حجز الجهاز لأن ماك يحجز الطابعة عبر نظام الطباعة. افتح إعدادات النظام ← الطابعات والماسحات، احذف طابعة Zebra من القائمة (زر −)، افصل كابل USB وأعد توصيله، ثم اضغط «اختيار الطابعة / اتصال» وأغلق أي برنامج آخر يستخدمها. وإن أردت إبقاءها مثبّتة فاستخدم «طابعة النظام عبر الوسيط».':'تعذّر حجز الجهاز. على ويندوز استخدم «طابعة النظام عبر الوسيط» (تدعم EPL أيضًا) أو ثبّت تعريف WinUSB للطابعة، وأغلق أي برنامج آخر يستخدمها.');}
   if(pick.alt.alternateSetting)await dev.selectAlternateInterface(pick.itf.interfaceNumber,pick.alt.alternateSetting);
   PRN.usb={dev,ep:pick.ep.endpointNumber};
   PRN.name=[dev.manufacturerName,dev.productName].filter(Boolean).join(' ')||('USB '+dev.vendorId.toString(16));
@@ -5129,8 +5129,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.30.0';
+const APP_VERSION='2.30.1';
 const CHANGELOG=[
+ {v:'2.30.1',date:'2026-11-17',title:'رسالة اتصال واضحة لأجهزة ماك',items:['عند تعذّر حجز الطابعة على ماك تظهر الآن خطوات الحل: حذف الطابعة من إعدادات النظام ثم إعادة التوصيل، أو استخدام الوسيط.']},
  {v:'2.30.0',date:'2026-11-17',title:'معايرة تلقائية كاملة بزر واحد',items:[
   'زر «معايرة تلقائية كاملة»: يجعل الطابعة تقيس طول الملصق والفاصل بنفسها ثم يطبع نموذج المعايرة تلقائيًا.',
   'في EPL (Zebra TLP 2844) لم تعد المنصة ترسل طولًا ثابتًا للملصق، بل تعتمد ما قاسته الطابعة، وهذا يمنع انزلاق الطباعة بين الملصقات والملصقات الفارغة والمتداخلة. يمكن إيقافه من خيار «طول الملصق تلقائيًا من الطابعة».',
