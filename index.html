@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.28.0">
+<meta name="app-version" content="2.30.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -1483,7 +1483,7 @@ $('#scanDlg').addEventListener('close',()=>{clearInterval(scanTimer);if(scanStre
 
 
 /* ================= direct printing (USB / serial / BLE / network bridge) ================= */
-const PR_DEF=()=>({mode:'browser',lang:'tspl',dpi:203,media:'gap',gap:2,density:8,speed:4,invert:false,baud:115200,bridgeUrl:'http://localhost:9101',ip:'',port:9100,queue:'',token:'',usbId:'',eplDir:''});
+const PR_DEF=()=>({mode:'browser',lang:'tspl',dpi:203,media:'gap',gap:2,density:8,speed:4,invert:false,baud:115200,bridgeUrl:'http://localhost:9101',ip:'',port:9100,queue:'',token:'',usbId:'',eplDir:'',calX:0,calY:0,calW:0,calH:0,calAt:'',eplAuto:true});
 function normPrinter(p){
   const o=Object.assign(PR_DEF(),p&&typeof p==='object'?p:{});
   const cl=(v,a,b,d)=>{v=parseFloat(v);return isNaN(v)?d:Math.min(b,Math.max(a,v));};
@@ -1494,6 +1494,8 @@ function normPrinter(p){
   o.gap=cl(o.gap,0,20,2);o.density=Math.round(cl(o.density,0,15,8));o.speed=Math.round(cl(o.speed,1,10,4));
   o.baud=[9600,19200,38400,57600,115200,230400].includes(+o.baud)?+o.baud:115200;
   o.port=Math.round(cl(o.port,1,65535,9100));o.invert=!!o.invert;
+  o.calX=Math.round(cl(o.calX,-20,20,0)*10)/10;o.calY=Math.round(cl(o.calY,-20,20,0)*10)/10;
+  o.calW=o.calW?Math.round(cl(o.calW,10,200,0)*10)/10:0;o.calH=o.calH?Math.round(cl(o.calH,8,200,0)*10)/10:0;o.calAt=String(o.calAt||'').slice(0,30);o.eplAuto=o.eplAuto!==false;
   ['bridgeUrl','ip','queue','token','usbId'].forEach(k=>{o[k]=String(o[k]==null?'':o[k]).trim().slice(0,120);});
   if(!o.bridgeUrl)o.bridgeUrl='http://localhost:9101';
   return o;
@@ -1625,7 +1627,8 @@ function encEPL(cv,L,PS,n){
   const b=canvasBits(cv,PS.invert,L.thr);
   const gapD=PS.media==='cont'?0:Math.round(PS.gap*PS.dpi/25.4),wDots=b.bpr*8,spd=Math.max(1,Math.min(4,Math.ceil(PS.speed/2.5)));
   const dir=PS.eplDir==='T'?'ZT\n':PS.eplDir==='B'?'ZB\n':'';
-  const head=_te.encode(`\nN\n${dir}q${wDots}\nQ${b.h},${gapD}\nS${spd}\nD${PS.density}\nR0,0\nGW0,0,${b.bpr},${b.h},`);
+  const qcmd=(PS.eplAuto!==false&&PS.media!=='cont')?'':`Q${b.h},${gapD}\n`;
+  const head=_te.encode(`\nN\n${dir}q${wDots}\n${qcmd}S${spd}\nD${PS.density}\nR0,0\nGW0,0,${b.bpr},${b.h},`);
   return catBytes(head,b.bits,_te.encode(`\nP${n}\n`));
 }
 const encodeJob=(cv,L,PS,n)=>({tspl:encTSPL,zpl:encZPL,escpos:encESC,epl:encEPL}[PS.lang]||encTSPL)(cv,L,PS,n);
@@ -1730,12 +1733,83 @@ async function prnAutoReconnect(){
     }
   }catch(e){}
 }
+
+/* ================= automatic print calibration ================= */
+const calActive=PS=>!!(PS&&(PS.calX||PS.calY||PS.calW||PS.calH));
+function calL(L,PS){return Object.assign({},L,{w:PS.calW||L.w,h:PS.calH||L.h});}
+function calCanvas(cv,PS){
+  if(!calActive(PS))return cv;
+  const k=PS.dpi/25.4,W=Math.max(8,Math.round((PS.calW||cv.width/k)*k)),H=Math.max(8,Math.round((PS.calH||cv.height/k)*k));
+  const o=document.createElement('canvas');o.width=W;o.height=H;
+  const x=o.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,H);
+  x.drawImage(cv,Math.round(PS.calX*k),Math.round(PS.calY*k));
+  return o;
+}
+function calAutoBytes(PS){
+  if(PS.lang==='epl')return _te.encode('\nxa\n');
+  if(PS.lang==='zpl')return _te.encode('~JC\n');
+  if(PS.lang==='tspl')return _te.encode('AUTODETECT\r\n');
+  return null;
+}
+/* test pattern: border at the true label edges + numbered ruler (mm) on the top row and left column */
+function calPattern(L,PS){
+  const k=PS.dpi/25.4,Wm=PS.calW||L.w,Hm=PS.calH||L.h,W=Math.round(Wm*k),H=Math.round(Hm*k);
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  const x=cv.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,H);x.fillStyle='#000';x.strokeStyle='#000';
+  x.lineWidth=2;x.strokeRect(1,1,W-2,H-2);
+  const fs=Math.max(9,Math.round(1.6*k));x.font='bold '+fs+'px sans-serif';x.textBaseline='top';
+  for(let m=0;m<=Math.floor(Wm);m++){const px=Math.round(m*k),big=m%2===0;x.fillRect(px,0,1,Math.round((big?2:1)*k));if(big&&m>0&&m<Wm-2){x.textAlign='left';x.fillText(String(m),px+1,Math.round(2.1*k));}}
+  for(let m=0;m<=Math.floor(Hm);m++){const py=Math.round(m*k),big=m%2===0;x.fillRect(0,py,Math.round((big?2:1)*k),1);if(big&&m>0&&m<Hm-2){x.textAlign='left';x.fillText(String(m),Math.round(2.1*k),py+1);}}
+  x.beginPath();x.moveTo(0,0);x.lineTo(W,H);x.moveTo(W,0);x.lineTo(0,H);x.lineWidth=1;x.stroke();
+  x.textAlign='center';x.font='bold '+Math.round(fs*1.2)+'px sans-serif';
+  x.fillStyle='#fff';x.fillRect(W/2-fs*4.2,H/2-fs*1.3,fs*8.4,fs*2.6);x.fillStyle='#000';
+  x.fillText(Wm+' × '+Hm+' mm',W/2,H/2-fs*0.6);
+  return cv;
+}
+async function calSend(kind){
+  const PS=S.settings.printer,L=S.settings.label;
+  if(PS.mode==='browser')throw new Error('المعايرة تعمل مع الطباعة المباشرة فقط. اختر وضع اتصال غير «المتصفح».');
+  if(!prnReady())await ensurePrinter();
+  if(kind==='sense'){const b=calAutoBytes(PS);if(!b)throw new Error('هذه اللغة لا تدعم المعايرة الذاتية للورق.');await prnSend(b,PS);return;}
+  const raw=Object.assign({},PS,{calX:0,calY:0});   // pattern is printed without offsets so the result shows the real drift
+  await prnSend(encodeJob(calPattern(L,PS),calL(L,PS),raw,1),PS);
+}
+/* the user types the first/last ruler numbers that are visible on the printed pattern; blank = edge visible */
+function calCompute(a,PS,L){
+  const num=v=>{v=parseFloat(String(v==null?'':v).replace(',','.'));return isNaN(v)?null:v;};
+  const fl=num(a.left),ft=num(a.top),lr=num(a.right),lb=num(a.bottom);
+  const Wm=PS.calW||L.w,Hm=PS.calH||L.h,o={calX:PS.calX,calY:PS.calY,calW:PS.calW,calH:PS.calH,notes:[]};
+  if(fl!==null&&fl>0){o.calX=Math.round((PS.calX+Math.max(0,fl-1))*10)/10;o.notes.push('إزاحة أفقية '+o.calX+' مم');}
+  if(ft!==null&&ft>0){o.calY=Math.round((PS.calY+Math.max(0,ft-1))*10)/10;o.notes.push('إزاحة رأسية '+o.calY+' مم');}
+  if(lr!==null&&lr<Wm-2){o.calW=Math.round(Math.max(10,lr+2-(fl&&fl>0?fl-1:0))*10)/10;o.notes.push('العرض الفعلي المقروء ≈ '+o.calW+' مم (أصغر من تصميم الملصق، عدّل مقاسه من المصمم)');}
+  if(lb!==null&&lb<Hm-2){o.calH=Math.round(Math.max(8,lb+2-(ft&&ft>0?ft-1:0))*10)/10;o.notes.push('الارتفاع الفعلي المقروء ≈ '+o.calH+' مم (أصغر من تصميم الملصق، عدّل مقاسه من المصمم)');}
+  return o;
+}
+function calPanelHTML(PS){
+  const f=(k,l,h)=>`<label class="f">${l}<input data-pr="${k}" dir="ltr" inputmode="decimal" value="${PS[k]||0}"><small class="muted">${h}</small></label>`;
+  const q=(id,l)=>`<label class="f">${l}<input id="${id}" dir="ltr" inputmode="decimal" placeholder="اتركه فارغًا"></label>`;
+  return `<section class="panel" id="calpanel"><h3>المعايرة التلقائية للطباعة على الملصق</h3>
+    <p class="muted">إن ظهر المحتوى مقصوصًا أو مزاحًا أو خرجت ملصقات فارغة: اتبع الخطوات. تُحفظ النتيجة وتُطبَّق على كل طباعة تلقائيًا.</p>
+    <ol class="muted" style="line-height:1.9;margin:6px 18px">
+      <li><b>معايرة الورق:</b> تجعل الطابعة تقيس طول الملصق والفاصل بنفسها (يتحرك الورق قليلًا).</li>
+      <li><b>طباعة نموذج المعايرة:</b> إطار على حدود الملصق ومسطرة بالمليمتر على أعلاه ويساره.</li>
+      <li>اكتب أول رقم يظهر كاملًا على المسطرة من كل جهة (واترك الحقل فارغًا إن ظهر الإطار كاملًا) ثم <b>احسب وطبّق</b>، وأعد طباعة النموذج للتأكد.</li></ol>
+    <div class="row" style="gap:8px;flex-wrap:wrap;margin:8px 0">
+      <button type="button" class="btn" data-act="prcalsense">1) معايرة الورق (Autosense)</button>
+      <button type="button" class="btn accent" data-act="prcalprint">2) طباعة نموذج المعايرة</button>
+      <button type="button" class="btn lg accent" data-act="prcalfull">معايرة تلقائية كاملة (قياس ثم طباعة النموذج)</button></div>
+    <div class="grid3">${q('calL','أول رقم ظاهر على اليسار (أعلى المسطرة)')}${q('calT','أول رقم ظاهر في الأعلى (يسار المسطرة)')}${q('calR','آخر رقم ظاهر على اليمين')}${q('calB','آخر رقم ظاهر في الأسفل')}</div>
+    <div class="row" style="gap:8px;flex-wrap:wrap;margin:8px 0"><button type="button" class="btn accent" data-act="prcalapply">3) احسب وطبّق</button><button type="button" class="btn ghost" data-act="prcalreset">تصفير المعايرة</button></div>
+    <div class="grid3">${f('calX','إزاحة أفقية (مم)','موجب = يتحرك المحتوى لليمين')}${f('calY','إزاحة رأسية (مم)','موجب = يتحرك المحتوى للأسفل')}${f('calW','عرض الملصق الفعلي (مم)','0 = حسب التصميم')}${f('calH','ارتفاع الملصق الفعلي (مم)','0 = حسب التصميم؛ يمنع الملصقات الفارغة')}</div>
+    <p class="hint" id="calmsg" role="status">${PS.calAt?'آخر معايرة: '+esc(PS.calAt):'لم تُجرَ معايرة بعد.'}</p></section>`;
+}
 function rawPrintLabels(items,n,L){
   const PS=S.settings.printer;
   const job=PRN.q.then(async()=>{
+    const Lc=calL(L,PS);
     for(const p of items){
-      const cv=await renderLabelCanvas(p,L,PS.dpi);
-      await prnSend(encodeJob(cv,L,PS,n),PS);
+      const cv=calCanvas(await renderLabelCanvas(p,L,PS.dpi),PS);
+      await prnSend(encodeJob(cv,Lc,PS,n),PS);
     }
   });
   PRN.q=job.catch(()=>{});
@@ -1789,11 +1863,13 @@ function prefPrinter(body){
       ${viaBridge?`<button class="btn ghost" data-act="prping">فحص الوسيط</button>`:''}
       <button class="btn accent" data-act="prtest">${ic('print')}<span>طباعة تجريبية</span></button></div>
     <p class="err" id="prmsg" role="status"></p></section>
+  ${PS.mode==='browser'?'':calPanelHTML(PS)}
   ${PS.mode==='browser'?`<section class="panel"><h3>طباعة المتصفح الصامتة</h3><p class="muted">لإلغاء نافذة الطباعة في كل مرة: شغّل Chrome بالخيار <span class="mono">--kiosk-printing</span> وعيّن طابعة الملصقات كطابعة افتراضية في النظام وحجم الورق نفسه حجم الملصق.</p></section>`:`
   <section class="panel"><h3>لغة الطابعة وإعدادات الملصق</h3>
     <div class="grid3" style="margin-top:10px">
       <label class="f">لغة الطابعة${sel('lang',[['tspl','TSPL (TSC / Xprinter / Gprinter / معظم الطابعات الصينية)'],['zpl','ZPL (Zebra الحديثة)'],['epl','EPL2 (Zebra TLP/LP 2844 وما شابهها)'],['escpos','ESC/POS (طابعات الإيصالات)']])}</label>
       ${PS.lang==='epl'?`<label class="f">اتجاه الطباعة (EPL)${sel('eplDir',[['','حسب الطابعة (الافتراضي)'],['T','من الأعلى ZT'],['B','من الأسفل ZB']])}<small class="muted">إن خرجت الطباعة مقلوبة غيّر هذا الخيار أو دوّر الملصق 180° من تبويب الطباعة.</small></label>`:''}
+      ${PS.lang==='epl'?`<label class="f"><span><input type="checkbox" data-pr="eplAuto" ${PS.eplAuto!==false?'checked':''}> طول الملصق والفاصل تلقائيًا من الطابعة (موصى به)</span><small class="muted">لا ترسل المنصة طولًا ثابتًا، فتستخدم الطابعة ما قاسته بنفسها في «المعايرة التلقائية الكاملة». يمنع انزلاق الطباعة والملصقات الفارغة والمتداخلة.</small></label>`:''}
       <label class="f">الدقة (DPI)${sel('dpi',[[203,'203 (8 نقطة/مم)'],[300,'300'],[600,'600']])}</label>
       <label class="f">نوع الورق${sel('media',[['gap','ملصقات بفواصل (Gap)'],['mark','علامة سوداء (Black mark)'],['cont','متصل']])}</label>
       <label class="f">الفاصل بين الملصقات (مم)<input data-pr="gap" type="number" step="0.5" min="0" max="20" value="${PS.gap}"></label>
@@ -4787,6 +4863,18 @@ document.addEventListener('click',async e=>{
       try{await prnConnect();toast('تم ربط الطابعة وضبطها');}catch(er){render();const m2=$('#prmsg');if(m2)m2.textContent=(er&&er.name==='NotFoundError')?'لم تختر أي جهاز. أُعدّ الإعداد فقط، اضغط «اختيار الطابعة / اتصال» عند جاهزيتك.':((er&&er.message)||String(er));break;}
       render();break;}
     case 'prdisc':await prnDisconnect();render();break;
+    case 'prcalsense':case 'prcalprint':{const m=$('#calmsg');try{await calSend(a==='prcalsense'?'sense':'print');if(m){m.className='hint pos';m.textContent=a==='prcalsense'?'أُرسل أمر معايرة الورق. انتظر توقف الطابعة ثم اطبع النموذج.':'طُبع نموذج المعايرة. اقرأ الأرقام الظاهرة وأدخلها أدناه.';}}catch(er){if(m){m.className='err';m.textContent=(er&&er.name==='NotFoundError')?'لم تختر طابعة.':((er&&er.message)||String(er));}}break;}
+    case 'prcalfull':{const m=$('#calmsg');try{
+      if(m){m.className='hint';m.textContent='جارٍ قياس الورق… لا تفتح غطاء الطابعة.';}
+      await calSend('sense');await new Promise(r=>setTimeout(r,9000));
+      if(m)m.textContent='جارٍ طباعة نموذج المعايرة…';
+      await calSend('print');
+      if(m){m.className='hint pos';m.textContent='تمّ القياس وطُبع النموذج. إن ظهر الإطار كاملًا فالمعايرة سليمة، وإلا أدخل الأرقام الظاهرة ثم «احسب وطبّق».';}
+    }catch(er){if(m){m.className='err';m.textContent=(er&&er.name==='NotFoundError')?'لم تختر طابعة.':((er&&er.message)||String(er));}}break;}
+    case 'prcalapply':{const PS=S.settings.printer,m=$('#calmsg'),g=id=>($(id)||{}).value;const r=calCompute({left:g('#calL'),top:g('#calT'),right:g('#calR'),bottom:g('#calB')},PS,S.settings.label);
+      Object.assign(PS,{calX:r.calX,calY:r.calY,calW:r.calW,calH:r.calH,calAt:new Date().toLocaleString('en-GB')});S.settings.printer=normPrinter(PS);save();render();
+      const m2=$('#calmsg');if(m2){m2.className='hint pos';m2.textContent=(r.notes.length?'طُبّقت: '+r.notes.join('، ')+'. ':'لا تغيير مطلوب. ')+'أعد طباعة النموذج للتأكد.';}break;}
+    case 'prcalreset':{const PS=S.settings.printer;Object.assign(PS,{calX:0,calY:0,calW:0,calH:0,calAt:''});S.settings.printer=normPrinter(PS);save();render();break;}
     case 'prtest':{const m=$('#prmsg');if(m)m.textContent='';printLabels([sampleForLabel()],1);break;}
     case 'prping':{const m=$('#prmsg'),PS=S.settings.printer;try{const r=await fetch(PS.bridgeUrl.replace(/\/$/,'')+'/ping');const j=await r.json();if(m){m.className='hint';m.textContent='الوسيط يعمل (إصدار '+j.bridge+' على '+j.os+').';}}catch(er){if(m){m.className='err';m.textContent='لا يمكن الوصول للوسيط على '+PS.bridgeUrl+'. شغّله ثم أعد الفحص.';}}break;}
     case 'prbridge':saveTextFile('jard-print-bridge.py',BRIDGE_PY,'text/x-python;charset=utf-8');break;
@@ -5041,8 +5129,17 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.28.0';
+const APP_VERSION='2.30.0';
 const CHANGELOG=[
+ {v:'2.30.0',date:'2026-11-17',title:'معايرة تلقائية كاملة بزر واحد',items:[
+  'زر «معايرة تلقائية كاملة»: يجعل الطابعة تقيس طول الملصق والفاصل بنفسها ثم يطبع نموذج المعايرة تلقائيًا.',
+  'في EPL (Zebra TLP 2844) لم تعد المنصة ترسل طولًا ثابتًا للملصق، بل تعتمد ما قاسته الطابعة، وهذا يمنع انزلاق الطباعة بين الملصقات والملصقات الفارغة والمتداخلة. يمكن إيقافه من خيار «طول الملصق تلقائيًا من الطابعة».',
+ ]},
+ {v:'2.29.0',date:'2026-11-17',title:'معايرة تلقائية للطباعة على الملصق',items:[
+  'قسم جديد في الإعدادات ← الطابعة: «المعايرة التلقائية»، يعمل مع Zebra TLP 2844 (EPL) وTSPL وZPL.',
+  'زر «معايرة الورق» يرسل أمر الطابعة لقياس طول الملصق والفاصل بنفسها، فيمنع الملصقات الفارغة الناتجة عن اختلاف الطول.',
+  'زر «طباعة نموذج المعايرة»: إطار على حدود الملصق ومسطرة بالمليمتر؛ تكتب أول رقم يظهر من كل جهة فتحسب المنصة الإزاحة الأفقية والرأسية والمقاس الفعلي وتطبّقها على كل طباعة تلقائيًا.',
+  'يمكن تعديل الإزاحة والمقاس الفعلي يدويًا بدقة 0.1 مم، أو تصفير المعايرة.']},
  {v:'2.28.0',date:'2026-11-12',title:'قراءة كاملة للباركود وتفسير بالضغط على الأرقام',items:[
   'إصلاح: تحديد النص عند الدخول إلى الحقل كان يمحو أول أرقام الباركود إذا بدأ الماسح الكتابة فور انتقال المؤشر، فيظهر الباركود ناقصًا وتتغير البيانات. لم يعد يعمل في حقول المسح والباركود، ولا يمسّ نصًا بدأت كتابته.',
   'تفسير الباركود: يظهر الباركود أرقامًا ملوّنة، واضغط على الفاصل بين رقمين لقصّ الباركود هناك، ثم اختر لكل جزء الحقل الذي يخصه (الوزن، الأجرة، سعر الغرام، الرقم التسلسلي...). وتُحدَّث القيم أسفل فورًا.',
