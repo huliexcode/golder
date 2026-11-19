@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.31.0">
+<meta name="app-version" content="2.31.1">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -716,6 +716,18 @@ h1{font-size:clamp(22px,3.4vw,30px)}
 .cgap.on::before{border-left:3px solid #b8860b;inset:0 6px}
 .cgap:hover::before{border-left-color:#b8860b}
 @media (pointer:coarse){.cgap{width:20px;height:52px}}
+
+.oldgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.oldgrid .full{grid-column:1/-1}
+.oldgrid input[id=o-total]{font-size:20px;font-weight:800;min-height:54px;text-align:center}
+.oldsave{flex:1;min-width:160px}
+.olist{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin-top:10px}
+.ocard{border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px;background:var(--surface)}
+.ocard .oh{display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:16px}
+.ocard .od{display:flex;justify-content:space-between;gap:8px;font-size:14px;border-top:1px dashed var(--line);padding-top:5px}
+.ocard .od span{color:var(--muted)}
+.ocard .orow{display:flex;justify-content:flex-end}
+@media (max-width:600px){.oldgrid{grid-template-columns:1fr 1fr}.seg{display:flex;width:100%}.seg button{flex:1;padding:8px 6px}}
 </style>
 </head>
 <body>
@@ -1219,8 +1231,8 @@ function oldCalc(){
 const oldDiscDef=m=>num(S.settings[m==='sell'?'oldDiscSell':'oldDiscBuy']);
 function oldToday(k){return priceFor(k,true)||priceFor(k,false)||0;}
 function oldRecalc(src){
-  const F=OLDF,net=Math.max(0,r3(num(F.gross)-num(F.stone))),td=oldToday(F.k);
-  if(F.disc==null)F.disc=oldDiscDef(F.mode);
+  const F=OLDF,sell=F.mode==='sell',net=Math.max(0,r3(num(F.gross)-(sell?0:num(F.stone)))),td=oldToday(F.k);
+  if(sell)F.disc=0;else if(F.disc==null)F.disc=oldDiscDef(F.mode);
   if(src==='total'){const t=num(F.total);F.ppg=net>0&&t>0?String(r2(t/net)):F.ppg;}
   else{
     if(src==='k'||src==='disc'||src==='mode'||(src!=='ppg'&&!num(F.ppg)&&td>0))F.ppg=td>0?String(r2(td*(1-num(F.disc)/100))):'';
@@ -1251,7 +1263,7 @@ function vOld(m){
   const prof=sum(Object.values(calc.sells),x=>x.profit);
   const list=oldTxs().slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,40);
   const C=esc(cur()),buy=F.mode==='buy';
-  const fl=(id,lab,val,extra)=>`<label class="f">${lab}<input id="${id}" data-old="${id}" type="text" inputmode="decimal" dir="ltr" autocomplete="off" value="${esc(val)}" ${extra||''}></label>`;
+  const fl=(id,lab,val,extra)=>`<label class="f${extra&&extra.includes('big')?' full':''}">${lab}<input id="${id}" data-old="${id}" type="text" inputmode="decimal" dir="ltr" autocomplete="off" value="${esc(val)}"></label>`;
   m.innerHTML=`<header class="head"><div><h1>الذهب المستعمل</h1><p class="muted">شراء الكسر والمستعمل من العملاء وبيعه، مع مخزون بالجرام لكل عيار وحساب الربح.</p></div></header>
   <div class="kpis one">
     <div class="kpi"><span>مخزون المستعمل (جم صافي)</span><b>${fmtW(stkG)}</b></div>
@@ -1261,27 +1273,25 @@ function vOld(m){
     <div class="kpi"><span>مبيعات اليوم</span><b>${money(sT)}</b></div>
     <div class="kpi net ${prof<0?'neg':''}"><span>الربح المحقق (كل الفترات)</span><b>${money(prof)}</b></div>
   </div>
-  <section class="panel" style="margin-top:14px"><div class="seg" role="group" aria-label="نوع الحركة"><button type="button" data-oldact="mode" data-v="buy" aria-pressed="${buy}">شراء من عميل</button><button type="button" data-oldact="mode" data-v="sell" aria-pressed="${!buy}">بيع (لتاجر أو مصهر)</button></div>
+  <section class="panel" style="margin-top:14px"><div class="seg" role="group" aria-label="نوع الحركة"><button type="button" data-oldact="mode" data-v="buy" aria-pressed="${buy}">شراء من عميل</button><button type="button" data-oldact="mode" data-v="sell" aria-pressed="${!buy}">بيع على عميل</button></div>
   <form id="oldForm" data-enter autocomplete="off" style="margin-top:12px">
-    <div class="frow" style="grid-template-columns:repeat(auto-fit,minmax(108px,1fr))">
+    <div class="oldgrid">
       <label class="f">العيار<select id="o-k" data-old="k">${ks.map(k=>`<option value="${esc(k)}" ${k===F.k?'selected':''}>${esc(k)}</option>`).join('')}</select></label>
-      ${fl('o-gross','الوزن الكلي (جم)',F.gross)}
-      ${fl('o-stone','خصم الفصوص (جم)',F.stone)}
-      <label class="f">الوزن الصافي (جم)<input id="o-net" readonly tabindex="-1" dir="ltr" value=""></label>
-      ${fl('o-disc',buy?'خصم عن سعر اليوم %':'خصم عن سعر اليوم %',F.disc==null?'':String(F.disc))}
+      ${fl('o-gross',buy?'الوزن الكلي (جم)':'الوزن (جم)',F.gross)}
+      ${buy?fl('o-stone','خصم الفصوص (جم)',F.stone):''}
+      ${buy?`<label class="f">الوزن الصافي (جم)<input id="o-net" readonly tabindex="-1" dir="ltr" value=""></label>`:`<input id="o-net" type="hidden">`}
+      ${buy?fl('o-disc','خصم عن سعر اليوم %',F.disc==null?'':String(F.disc)):''}
       ${fl('o-ppg','سعر الجرام ('+C+')',F.ppg)}
-      ${fl('o-total','الإجمالي ('+C+')',F.total)}
-    </div>
-    <div class="frow" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
-      <label class="f">${buy?'اسم العميل (اختياري)':'الجهة المشترية (اختياري)'}<input id="o-party" data-old="party" value="${esc(F.party)}"></label>
-      <label class="f">ملاحظات<input id="o-note" data-old="note" value="${esc(F.note)}"></label>
+      ${fl('o-total','الإجمالي ('+C+')',F.total,'class="big"')}
+      <label class="f full">اسم العميل (اختياري)<input id="o-party" data-old="party" value="${esc(F.party)}"></label>
+      <label class="f full">ملاحظات<input id="o-note" data-old="note" value="${esc(F.note)}"></label>
     </div>
     <p class="hint" id="oldInfo" role="status" style="margin-top:10px"></p>
     <p class="err" id="oldErr" role="alert"></p>
-    <div class="row"><button type="button" class="btn lg accent" data-oldact="save">${buy?'تسجيل الشراء':'تسجيل البيع'}</button><button type="button" class="btn ghost" data-oldact="clear">مسح الحقول</button></div>
+    <div class="row"><button type="button" class="btn lg accent oldsave" data-oldact="save">${buy?'تسجيل الشراء':'تسجيل البيع'}</button><button type="button" class="btn ghost" data-oldact="clear">مسح</button></div>
   </form></section>
-  <section class="panel"><h3>مخزون المستعمل حسب العيار</h3>${kk.length?`<div class="tablewrap" style="border:0;margin-top:8px"><table><thead><tr><th>العيار</th><th>الوزن الصافي (جم)</th><th>متوسط التكلفة/جم</th><th>التكلفة</th><th>سعر اليوم/جم</th><th>القيمة بسعر اليوم</th><th>الفرق</th></tr></thead><tbody>${kk.map(k=>{const r=calc.st[k],t=oldToday(k),v=r.g*t;return `<tr><td><b>${esc(k)}</b></td><td>${fmtW(r.g)}</td><td>${fmt(r.cost/r.g)}</td><td>${money(r.cost)}</td><td>${t?fmt(t):'—'}</td><td>${t?money(v):'—'}</td><td class="${t&&v-r.cost<0?'neg':'pos'}">${t?money(v-r.cost):'—'}</td></tr>`;}).join('')}</tbody></table></div>`:'<p class="muted" style="margin-top:8px">لا يوجد مخزون مستعمل بعد.</p>'}</section>
-  <section class="panel"><h3>آخر الحركات</h3>${list.length?`<div class="tablewrap" style="border:0;margin-top:8px"><table class="mini"><thead><tr><th>التاريخ</th><th>النوع</th><th>العيار</th><th>الوزن الصافي</th><th>سعر الجرام</th><th>الإجمالي</th><th>الربح</th><th>الجهة</th><th></th></tr></thead><tbody>${list.map(x=>{const s=calc.sells[x.id];return `<tr><td>${dtf(x.date)}</td><td>${x.type==='oldbuy'?'شراء':'بيع'}</td><td>${esc(x.karat)}</td><td>${fmtW(x.net)}${x.stone>0?` <small class="muted">(كلي ${fmtW(x.gross)})</small>`:''}</td><td>${fmt(x.ppg)}</td><td class="${x.type==='oldsell'?'pos':'neg'}">${x.type==='oldsell'?'+':'−'}${money(x.amount)}</td><td class="${s&&s.profit<0?'neg':'pos'}">${s?money(s.profit):'—'}</td><td>${esc(x.party||'')}</td><td><button class="btn danger sm" data-act="deltx" data-id="${x.id}">حذف</button></td></tr>`;}).join('')}</tbody></table></div>`:'<p class="muted" style="margin-top:8px">لا توجد حركات.</p>'}</section>`;
+  <section class="panel"><h3>مخزون المستعمل</h3>${kk.length?`<div class="olist">${kk.map(k=>{const r=calc.st[k],t=oldToday(k),v=r.g*t;return `<div class="ocard"><div class="oh"><b>عيار ${esc(k)}</b><span>${fmtW(r.g)} جم</span></div><div class="od"><span>متوسط التكلفة</span><b>${fmt(r.cost/r.g)}</b></div><div class="od"><span>التكلفة</span><b>${money(r.cost)}</b></div>${t?`<div class="od"><span>بسعر اليوم</span><b>${money(v)}</b></div><div class="od"><span>الفرق</span><b class="${v-r.cost<0?'neg':'pos'}">${money(v-r.cost)}</b></div>`:''}</div>`;}).join('')}</div>`:'<p class="muted" style="margin-top:8px">لا يوجد مخزون مستعمل بعد.</p>'}</section>
+  <section class="panel"><h3>آخر الحركات</h3>${list.length?`<div class="olist">${list.map(x=>{const s=calc.sells[x.id],b=x.type==='oldbuy';return `<div class="ocard"><div class="oh"><b>${b?'شراء':'بيع'} · عيار ${esc(x.karat)}</b><span class="${b?'neg':'pos'}">${b?'−':'+'}${money(x.amount)}</span></div><div class="od"><span>الوزن</span><b>${fmtW(x.net)} جم${x.stone>0?` <small class="muted">(كلي ${fmtW(x.gross)})</small>`:''}</b></div><div class="od"><span>سعر الجرام</span><b>${fmt(x.ppg)}</b></div>${s?`<div class="od"><span>الربح</span><b class="${s.profit<0?'neg':'pos'}">${money(s.profit)}</b></div>`:''}<div class="od"><span>${dtf(x.date)}</span><b>${esc(x.party||'')}</b></div><div class="orow"><button class="btn danger sm" data-act="deltx" data-id="${x.id}">حذف</button></div></div>`;}).join('')}</div>`:'<p class="muted" style="margin-top:8px">لا توجد حركات.</p>'}</section>`;
   oldSync('mode');
   const f=$('#oldForm');
   f.addEventListener('input',e=>{
@@ -1300,19 +1310,19 @@ function vOld(m){
 }
 async function oldSave(){
   const F=OLDF,err=$('#oldErr'),say=t=>{if(err)err.textContent=t;};
-  const net=Math.max(0,r3(num(F.gross)-num(F.stone)));
+  const sell0=F.mode==='sell',net=Math.max(0,r3(num(F.gross)-(sell0?0:num(F.stone))));
   const ppg=num(F.ppg),amt=r2(num(F.total)||net*ppg);
   if(!F.k)return say('اختر العيار.');
   if(num(F.gross)<=0)return say('اكتب الوزن الكلي.');
-  if(num(F.stone)<0||num(F.stone)>=num(F.gross))return say('خصم الفصوص يجب أن يكون أقل من الوزن الكلي.');
+  if(!sell0&&(num(F.stone)<0||num(F.stone)>=num(F.gross)))return say('خصم الفصوص يجب أن يكون أقل من الوزن الكلي.');
   if(net<=0)return say('الوزن الصافي صفر.');
   if(ppg<=0||amt<=0)return say('اكتب سعر الجرام أو الإجمالي.');
   const sell=F.mode==='sell',stk=(oldCalc().st[F.k]||{g:0}).g;
   if(sell&&net>stk+0.0005&&!await ask('المتوفر من عيار '+F.k+' هو '+fmtW(stk)+' جم فقط وأنت تبيع '+fmtW(net)+' جم. هل تسجّل البيع رغم ذلك؟','تسجيل'))return;
-  S.txs.push({id:uid(),date:new Date().toISOString(),type:sell?'oldsell':'oldbuy',items:[],karat:F.k,gross:r3(num(F.gross)),stone:r3(num(F.stone)),net,ppg:r2(amt/net),amount:amt,party:String(F.party||'').trim(),note:String(F.note||'').trim()});
-  S.settings[sell?'oldDiscSell':'oldDiscBuy']=num(F.disc);
+  S.txs.push({id:uid(),date:new Date().toISOString(),type:sell?'oldsell':'oldbuy',items:[],karat:F.k,gross:r3(num(F.gross)),stone:sell?0:r3(num(F.stone)),net,ppg:r2(amt/net),amount:amt,party:String(F.party||'').trim(),note:String(F.note||'').trim()});
+  if(!sell)S.settings.oldDiscBuy=num(F.disc);
   save();toast(sell?'تم تسجيل البيع':'تم تسجيل الشراء');
-  Object.assign(OLDF,{gross:'',stone:'',ppg:'',total:'',party:'',note:'',disc:num(F.disc)});
+  Object.assign(OLDF,{gross:'',stone:'',ppg:'',total:'',party:'',note:'',disc:sell?null:num(F.disc)});
   render();setTimeout(()=>{const g=$('#o-gross');if(g)g.focus();},30);
 }
 document.addEventListener('click',e=>{
@@ -5258,8 +5268,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.31.0';
+const APP_VERSION='2.31.1';
 const CHANGELOG=[
+ {v:'2.31.1',date:'2026-11-19',title:'تبسيط واجهة المستعمل',items:['«بيع (لتاجر أو مصهر)» أصبح «بيع على عميل»، وأُلغي منه حقلا خصم الفصوص وخصم سعر اليوم.','واجهة أبسط تناسب الجوال: حقلان في كل سطر، خانة إجمالي كبيرة، والمخزون والحركات بطاقات بدل الجداول.']},
  {v:'2.31.0',date:'2026-11-19',title:'قسم الذهب المستعمل',items:['تبويب جديد «مستعمل»: شراء الكسر والمستعمل من العملاء وبيعه، بالعيار والوزن الكلي وخصم الفصوص والشوائب والصافي، وسعر الجرام يُقترح من سعر اليوم مع نسبة خصم قابلة للتعديل.','يمكن كتابة الإجمالي فيحسب سعر الجرام، أو سعر الجرام فيحسب الإجمالي، والتنقل بين الحقول بزر Enter.','مخزون مستعمل بالجرام لكل عيار بمتوسط التكلفة وقيمته بسعر اليوم.','عند البيع يُحسب الربح من متوسط تكلفة الجرام، ويدخل في صافي ربح الحسابات، وتظهر الحركات في الحسابات مع تصفية بنوعها.']},
  {v:'2.30.2',date:'2026-11-17',title:'ضبط طول الملصق لمنع تخطي الملصقات',items:['حقل «طول الملصق الفعلي» وأزرار تقصير/تطويل (−5 −1 −0.5 +0.5 +1 +5 مم) مع طباعة تجريبية، لحل مشكلة طباعة ملصق ثم تخطي ملصقين.','عند تحديد الطول تُرسله المنصة للطابعة (EPL) بدل الاعتماد على قياسها، ويُقصّ المحتوى على هذا الطول.']},
  {v:'2.30.1',date:'2026-11-17',title:'رسالة اتصال واضحة لأجهزة ماك',items:['عند تعذّر حجز الطابعة على ماك تظهر الآن خطوات الحل: حذف الطابعة من إعدادات النظام ثم إعادة التوصيل، أو استخدام الوسيط.']},
