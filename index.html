@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.31.2">
+<meta name="app-version" content="2.32.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -1290,9 +1290,10 @@ function vOld(m){
     <p class="err" id="oldErr" role="alert"></p>
     <div class="row"><button type="button" class="btn lg accent oldsave" data-oldact="save">${buy?'تسجيل الشراء':'تسجيل البيع'}</button><button type="button" class="btn ghost" data-oldact="clear">مسح</button></div>
   </form></section>
+  <section class="panel" id="oldRepBox"></section>
   <section class="panel"><h3>مخزون المستعمل</h3>${kk.length?`<div class="olist">${kk.map(k=>{const r=calc.st[k],t=oldToday(k),v=r.g*t;return `<div class="ocard"><div class="oh"><b>عيار ${esc(k)}</b><span>${fmtW(r.g)} جم</span></div><div class="od"><span>متوسط التكلفة</span><b>${fmt(r.cost/r.g)}</b></div><div class="od"><span>التكلفة</span><b>${money(r.cost)}</b></div>${t?`<div class="od"><span>بسعر اليوم</span><b>${money(v)}</b></div><div class="od"><span>الفرق</span><b class="${v-r.cost<0?'neg':'pos'}">${money(v-r.cost)}</b></div>`:''}</div>`;}).join('')}</div>`:'<p class="muted" style="margin-top:8px">لا يوجد مخزون مستعمل بعد.</p>'}</section>
   <section class="panel"><h3>آخر الحركات</h3>${list.length?`<div class="olist">${list.map(x=>{const s=calc.sells[x.id],b=x.type==='oldbuy';return `<div class="ocard"><div class="oh"><b>${b?'شراء':'بيع'} · عيار ${esc(x.karat)}</b><span class="${b?'neg':'pos'}">${b?'−':'+'}${money(x.amount)}</span></div><div class="od"><span>الوزن</span><b>${fmtW(x.net)} جم${x.stone>0?` <small class="muted">(كلي ${fmtW(x.gross)})</small>`:''}</b></div><div class="od"><span>سعر الجرام</span><b>${fmt(x.ppg)}</b></div>${s?`<div class="od"><span>الربح</span><b class="${s.profit<0?'neg':'pos'}">${money(s.profit)}</b></div>`:''}<div class="od"><span>${dtf(x.date)}</span><b>${esc(x.party||'')}</b></div><div class="orow"><button class="btn danger sm" data-act="deltx" data-id="${x.id}">حذف</button></div></div>`;}).join('')}</div>`:'<p class="muted" style="margin-top:8px">لا توجد حركات.</p>'}</section>`;
-  oldSync('mode');
+  oldSync('mode');renderOldRep();
   const f=$('#oldForm');
   f.addEventListener('input',e=>{
     const t=e.target,k=t.dataset.old;if(!k)return;
@@ -1332,6 +1333,58 @@ document.addEventListener('click',e=>{
   else if(a==='save')oldSave();
   else if(a==='clear'){Object.assign(OLDF,{gross:'',stone:'',ppg:'',total:'',party:'',note:'',disc:null});render();}
 });
+
+/* ---- used gold reports ---- */
+const OLDR={p:'month',from:'',to:''};
+function oldRange(){
+  const t=new Date(),y=t.getFullYear(),m=t.getMonth(),T=todayStr(),R=OLDR;
+  if(R.p==='today')return[T,T,'اليوم'];
+  if(R.p==='week'){const a=new Date(t);a.setDate(t.getDate()-t.getDay());const b=new Date(a);b.setDate(a.getDate()+6);return[dstr(a),dstr(b),'هذا الأسبوع'];}
+  if(R.p==='month')return[y+'-'+p2(m+1)+'-01',y+'-'+p2(m+1)+'-31','هذا الشهر'];
+  if(R.p==='year')return[y+'-01-01',y+'-12-31','هذه السنة'];
+  if(R.p==='range'){const f=R.from||'0000-01-01',e=R.to||'9999-12-31';return[f,e,'من '+(R.from||'البداية')+' إلى '+(R.to||'اليوم')];}
+  return['0000-01-01','9999-12-31','كل الفترات'];
+}
+function oldReport(){
+  const [f,e,name]=oldRange(),calc=oldCalc(),rows=oldTxs().filter(x=>{const d=dstr(x.date);return d>=f&&d<=e;}).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  const agg=l=>({n:l.length,gross:sum(l,x=>x.gross||0),stone:sum(l,x=>x.stone||0),net:sum(l,x=>x.net||0),amt:sum(l,x=>x.amount||0)});
+  const bu=rows.filter(x=>x.type==='oldbuy'),se=rows.filter(x=>x.type==='oldsell');
+  const B=agg(bu),Sx=agg(se),profit=sum(se,x=>(calc.sells[x.id]||{}).profit||0);
+  const ks={};rows.forEach(x=>{const r=ks[x.karat]=ks[x.karat]||{bn:0,ba:0,sn:0,sa:0,pr:0};if(x.type==='oldbuy'){r.bn+=x.net;r.ba+=x.amount;}else{r.sn+=x.net;r.sa+=x.amount;r.pr+=(calc.sells[x.id]||{}).profit||0;}});
+  return{name,rows,B,S:Sx,profit,ks,calc};
+}
+function renderOldRep(){
+  const box=$('#oldRepBox');if(!box)return;
+  const R=OLDR,r=oldReport(),chip=(k,l)=>`<button type="button" data-oldact="rp" data-v="${k}" aria-pressed="${R.p===k}">${l}</button>`;
+  const kk=Object.keys(r.ks).sort((a,b)=>num(b)-num(a));
+  box.innerHTML=`<h3>تقارير المستعمل</h3>
+    <div class="chips">${chip('today','اليوم')}${chip('week','الأسبوع')}${chip('month','الشهر')}${chip('year','السنة')}${chip('all','الكل')}${chip('range','فترة محددة')}</div>
+    ${R.p==='range'?`<div class="oldgrid" style="margin-bottom:10px"><label class="f">من تاريخ<input type="date" data-oldr="from" value="${esc(R.from)}"></label><label class="f">إلى تاريخ<input type="date" data-oldr="to" value="${esc(R.to)}"></label></div>`:''}
+    <div class="olist" style="margin-top:0">
+      <div class="ocard"><div class="oh"><b>المشتريات</b><span>${r.B.n} عملية</span></div><div class="od"><span>الوزن الصافي</span><b>${fmtW(r.B.net)} جم</b></div><div class="od"><span>المبلغ المدفوع</span><b class="neg">${money(r.B.amt)}</b></div><div class="od"><span>متوسط الجرام</span><b>${r.B.net>0?fmt(r.B.amt/r.B.net):'—'}</b></div></div>
+      <div class="ocard"><div class="oh"><b>المبيعات</b><span>${r.S.n} عملية</span></div><div class="od"><span>الوزن</span><b>${fmtW(r.S.net)} جم</b></div><div class="od"><span>المبلغ المقبوض</span><b class="pos">${money(r.S.amt)}</b></div><div class="od"><span>متوسط الجرام</span><b>${r.S.net>0?fmt(r.S.amt/r.S.net):'—'}</b></div></div>
+      <div class="ocard"><div class="oh"><b>الربح</b><span class="${r.profit<0?'neg':'pos'}">${money(r.profit)}</span></div><div class="od"><span>الفرق النقدي (مقبوض − مدفوع)</span><b class="${r.S.amt-r.B.amt<0?'neg':'pos'}">${money(r.S.amt-r.B.amt)}</b></div></div>
+    </div>
+    <div class="row" style="margin-top:12px"><button type="button" class="btn accent" data-oldact="rpview">${ic('print')}<span>عرض التقرير وطباعته</span></button></div>`;
+}
+function oldReportHTML(){
+  const r=oldReport(),C=esc(cur()),kk=Object.keys(r.ks).sort((a,b)=>num(b)-num(a));
+  return `<div class="rpt"><div class="rhead"><h2>تقرير الذهب المستعمل</h2><small>${esc(S.settings.shop||'')} · ${esc(r.name)} · طُبع ${dfmt(new Date())}</small></div>
+  <table><thead><tr><th></th><th>عدد العمليات</th><th>الوزن الصافي (جم)</th><th>المبلغ (${C})</th><th>متوسط الجرام</th></tr></thead><tbody>
+    <tr><td><b>المشتريات</b></td><td>${r.B.n}</td><td>${fmtW(r.B.net)}</td><td>${fmt(r.B.amt)}</td><td>${r.B.net>0?fmt(r.B.amt/r.B.net):'—'}</td></tr>
+    <tr><td><b>المبيعات</b></td><td>${r.S.n}</td><td>${fmtW(r.S.net)}</td><td>${fmt(r.S.amt)}</td><td>${r.S.net>0?fmt(r.S.amt/r.S.net):'—'}</td></tr></tbody>
+    <tfoot><tr><td>الربح المحقق</td><td></td><td></td><td colspan="2">${fmt(r.profit)}</td></tr></tfoot></table>
+  <h3 style="margin:14px 0 6px">حسب العيار</h3>
+  <table><thead><tr><th>العيار</th><th>مشتريات (جم)</th><th>مشتريات (${C})</th><th>مبيعات (جم)</th><th>مبيعات (${C})</th><th>الربح</th></tr></thead><tbody>${kk.length?kk.map(k=>{const x=r.ks[k];return `<tr><td>${esc(k)}</td><td>${fmtW(x.bn)}</td><td>${fmt(x.ba)}</td><td>${fmtW(x.sn)}</td><td>${fmt(x.sa)}</td><td>${fmt(x.pr)}</td></tr>`;}).join(''):'<tr><td colspan="6">لا توجد حركات.</td></tr>'}</tbody></table>
+  <h3 style="margin:14px 0 6px">الحركات</h3>
+  <table><thead><tr><th>التاريخ</th><th>النوع</th><th>العيار</th><th>الكلي</th><th>الخصم</th><th>الصافي</th><th>سعر الجرام</th><th>المبلغ</th><th>الربح</th><th>العميل</th></tr></thead><tbody>${r.rows.length?r.rows.map(x=>{const s=r.calc.sells[x.id];return `<tr><td>${dtf(x.date)}</td><td>${x.type==='oldbuy'?'شراء':'بيع'}</td><td>${esc(x.karat)}</td><td>${fmtW(x.gross||x.net)}</td><td>${fmtW(x.stone||0)}</td><td>${fmtW(x.net)}</td><td>${fmt(x.ppg)}</td><td>${fmt(x.amount)}</td><td>${s?fmt(s.profit):''}</td><td>${esc(x.party||'')}</td></tr>`;}).join(''):'<tr><td colspan="10">لا توجد حركات في هذه الفترة.</td></tr>'}</tbody></table></div>`;
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest&&e.target.closest('[data-oldact="rp"],[data-oldact="rpview"]');if(!b)return;
+  if(b.dataset.oldact==='rp'){OLDR.p=b.dataset.v;renderOldRep();}
+  else{const d=dlg(`<div class="modal"><div class="row noprint" style="justify-content:space-between"><button class="btn ghost" data-act="closedlg">إغلاق</button><button class="btn accent" data-act="doprint">${ic('print')}<span>طباعة</span></button></div><div class="tablewrap" style="border:0">${oldReportHTML()}</div></div>`,'wide');d.showModal();}
+});
+document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.oldr){OLDR[t.dataset.oldr]=t.value;renderOldRep();}});
 
 /* ================= scan ================= */
 function scanBar(ctx,ph,hint){
@@ -5277,8 +5330,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.31.2';
+const APP_VERSION='2.32.0';
 const CHANGELOG=[
+ {v:'2.32.0',date:'2026-11-19',title:'تقارير الذهب المستعمل',items:['قسم «تقارير المستعمل» داخل تبويب مستعمل: اختيار الفترة (اليوم، الأسبوع، الشهر، السنة، الكل، أو فترة محددة) مع ملخص المشتريات والمبيعات والربح والفرق النقدي.','زر «عرض التقرير وطباعته»: تقرير كامل بالمجاميع وتفصيل حسب العيار وكل الحركات، جاهز للطباعة.']},
  {v:'2.31.2',date:'2026-11-19',title:'إظهار الحقل عند التنقل بزري التالي والسابق',items:['عند الضغط على «التالي» أو «السابق» في الجوال والآيباد تتحرك الصفحة تلقائيًا ليظهر الحقل الحالي فوق لوحة المفاتيح وفوق شريط التنقل.']},
  {v:'2.31.1',date:'2026-11-19',title:'تبسيط واجهة المستعمل',items:['«بيع (لتاجر أو مصهر)» أصبح «بيع على عميل»، وأُلغي منه حقلا خصم الفصوص وخصم سعر اليوم.','واجهة أبسط تناسب الجوال: حقلان في كل سطر، خانة إجمالي كبيرة، والمخزون والحركات بطاقات بدل الجداول.']},
  {v:'2.31.0',date:'2026-11-19',title:'قسم الذهب المستعمل',items:['تبويب جديد «مستعمل»: شراء الكسر والمستعمل من العملاء وبيعه، بالعيار والوزن الكلي وخصم الفصوص والشوائب والصافي، وسعر الجرام يُقترح من سعر اليوم مع نسبة خصم قابلة للتعديل.','يمكن كتابة الإجمالي فيحسب سعر الجرام، أو سعر الجرام فيحسب الإجمالي، والتنقل بين الحقول بزر Enter.','مخزون مستعمل بالجرام لكل عيار بمتوسط التكلفة وقيمته بسعر اليوم.','عند البيع يُحسب الربح من متوسط تكلفة الجرام، ويدخل في صافي ربح الحسابات، وتظهر الحركات في الحسابات مع تصفية بنوعها.']},
