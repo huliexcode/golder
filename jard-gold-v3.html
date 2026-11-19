@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.30.2">
+<meta name="app-version" content="2.31.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -1197,12 +1197,131 @@ function closeDlg(){const d=$('#dlg');if(d.open)d.close();}
 const fine=()=>window.matchMedia&&matchMedia('(pointer:fine)').matches;
 
 /* ================= navigation ================= */
-const TABS=[['dashboard','الرئيسية','home'],['intake','إدخال','intake'],['stock','المخزون','box'],['count','جرد','scan'],['sale','بيع','sale'],['ledger','الحسابات','ledger'],['prefs','الإعدادات','gear']];
+const TABS=[['dashboard','الرئيسية','home'],['intake','إدخال','intake'],['stock','المخزون','box'],['count','جرد','scan'],['sale','بيع','sale'],['old','مستعمل','refresh'],['ledger','الحسابات','ledger'],['prefs','الإعدادات','gear']];
 function renderNav(){$('#nav').innerHTML=TABS.map(([id,l,i])=>`<button type="button" data-act="nav" data-v="${id}" ${id===view?'aria-current="page"':''}>${ic(i)}<span>${l}</span></button>`).join('');}
 function go(v){if(location.hash==='#'+v){fromHash();render(true);}else location.hash=v;}
 function fromHash(){const h=location.hash.replace('#','');view=TABS.some(t=>t[0]===h)?h:'dashboard';}
 window.addEventListener('hashchange',()=>{fromHash();render(true);});
-function render(top){if(view!=='intake')genBulk=false;renderNav();const m=$('#main');({dashboard:vDash,intake:vIntake,stock:vStock,count:vCount,sale:vSale,ledger:vLedger,prefs:vPrefs}[view])(m);pcalcApply();if(top)window.scrollTo(0,0);}
+function render(top){if(view!=='intake')genBulk=false;renderNav();const m=$('#main');({dashboard:vDash,intake:vIntake,stock:vStock,count:vCount,sale:vSale,old:vOld,ledger:vLedger,prefs:vPrefs}[view])(m);pcalcApply();if(top)window.scrollTo(0,0);}
+
+/* ================= used gold (buy from customers / sell) ================= */
+const OLDF={mode:'buy',k:'',gross:'',stone:'',disc:null,ppg:'',total:'',party:'',note:''};
+const oldTxs=()=>S.txs.filter(x=>x.type==='oldbuy'||x.type==='oldsell');
+function oldCalc(){
+  const st={},sells={};
+  oldTxs().slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))).forEach(x=>{
+    const r=st[x.karat]=st[x.karat]||{g:0,cost:0},n=+x.net||0;
+    if(x.type==='oldbuy'){r.g=r3(r.g+n);r.cost+=+x.amount||0;}
+    else{const avg=r.g>0?r.cost/r.g:0,c=r2(avg*n);sells[x.id]={cost:c,profit:r2((+x.amount||0)-c)};r.cost=Math.max(0,r.cost-avg*n);r.g=Math.max(0,r3(r.g-n));}
+  });
+  return{st,sells};
+}
+const oldDiscDef=m=>num(S.settings[m==='sell'?'oldDiscSell':'oldDiscBuy']);
+function oldToday(k){return priceFor(k,true)||priceFor(k,false)||0;}
+function oldRecalc(src){
+  const F=OLDF,net=Math.max(0,r3(num(F.gross)-num(F.stone))),td=oldToday(F.k);
+  if(F.disc==null)F.disc=oldDiscDef(F.mode);
+  if(src==='total'){const t=num(F.total);F.ppg=net>0&&t>0?String(r2(t/net)):F.ppg;}
+  else{
+    if(src==='k'||src==='disc'||src==='mode'||(src!=='ppg'&&!num(F.ppg)&&td>0))F.ppg=td>0?String(r2(td*(1-num(F.disc)/100))):'';
+    F.total=num(F.ppg)>0&&net>0?String(r2(net*num(F.ppg))):'';
+  }
+  return net;
+}
+function oldSync(src){
+  const F=OLDF,net=oldRecalc(src),q=id=>document.getElementById(id);
+  if(q('o-net'))q('o-net').value=net>0?fmtW(net):'';
+  if(src!=='ppg'&&q('o-ppg'))q('o-ppg').value=F.ppg;
+  if(src!=='total'&&q('o-total'))q('o-total').value=F.total;
+  const calc=oldCalc(),stk=calc.st[F.k]||{g:0,cost:0},avg=stk.g>0?stk.cost/stk.g:0,box=q('oldInfo');
+  if(box){
+    const td=oldToday(F.k),tot=num(F.total);
+    box.innerHTML=F.mode==='buy'
+      ?(td>0?`سعر اليوم لعيار ${esc(F.k||'—')} (مستعمل): <b>${fmt(td)}</b> ${esc(cur())}/جم`:'لا يوجد سعر اليوم لهذا العيار، اكتب سعر الجرام يدويًا.')
+      :`المتوفر من عيار ${esc(F.k||'—')}: <b>${fmtW(stk.g)}</b> جم · متوسط التكلفة <b>${fmt(avg)}</b>/جم`+(net>0&&tot>0?` · الربح المتوقع <b class="${tot-avg*net<0?'neg':'pos'}">${money(tot-avg*net)}</b>`:'');
+  }
+}
+function vOld(m){
+  const F=OLDF,ks=S.settings.karats;
+  if(!F.k||!ks.includes(F.k))F.k=ks.includes('21')?'21':ks[0]||'';
+  const calc=oldCalc(),kk=Object.keys(calc.st).filter(k=>calc.st[k].g>0).sort((a,b)=>num(b)-num(a));
+  const stkG=sum(kk,k=>calc.st[k].g),stkV=sum(kk,k=>calc.st[k].g*oldToday(k)),stkC=sum(kk,k=>calc.st[k].cost);
+  const td=todayStr(),tdx=oldTxs().filter(x=>dstr(x.date)===td);
+  const bT=sum(tdx.filter(x=>x.type==='oldbuy'),x=>x.amount),sT=sum(tdx.filter(x=>x.type==='oldsell'),x=>x.amount);
+  const prof=sum(Object.values(calc.sells),x=>x.profit);
+  const list=oldTxs().slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,40);
+  const C=esc(cur()),buy=F.mode==='buy';
+  const fl=(id,lab,val,extra)=>`<label class="f">${lab}<input id="${id}" data-old="${id}" type="text" inputmode="decimal" dir="ltr" autocomplete="off" value="${esc(val)}" ${extra||''}></label>`;
+  m.innerHTML=`<header class="head"><div><h1>الذهب المستعمل</h1><p class="muted">شراء الكسر والمستعمل من العملاء وبيعه، مع مخزون بالجرام لكل عيار وحساب الربح.</p></div></header>
+  <div class="kpis one">
+    <div class="kpi"><span>مخزون المستعمل (جم صافي)</span><b>${fmtW(stkG)}</b></div>
+    <div class="kpi"><span>تكلفته</span><b>${money(stkC)}</b></div>
+    <div class="kpi"><span>قيمته بسعر اليوم</span><b>${money(stkV)}</b></div>
+    <div class="kpi"><span>مشتريات اليوم</span><b>${money(bT)}</b></div>
+    <div class="kpi"><span>مبيعات اليوم</span><b>${money(sT)}</b></div>
+    <div class="kpi net ${prof<0?'neg':''}"><span>الربح المحقق (كل الفترات)</span><b>${money(prof)}</b></div>
+  </div>
+  <section class="panel" style="margin-top:14px"><div class="seg" role="group" aria-label="نوع الحركة"><button type="button" data-oldact="mode" data-v="buy" aria-pressed="${buy}">شراء من عميل</button><button type="button" data-oldact="mode" data-v="sell" aria-pressed="${!buy}">بيع (لتاجر أو مصهر)</button></div>
+  <form id="oldForm" data-enter autocomplete="off" style="margin-top:12px">
+    <div class="frow" style="grid-template-columns:repeat(auto-fit,minmax(108px,1fr))">
+      <label class="f">العيار<select id="o-k" data-old="k">${ks.map(k=>`<option value="${esc(k)}" ${k===F.k?'selected':''}>${esc(k)}</option>`).join('')}</select></label>
+      ${fl('o-gross','الوزن الكلي (جم)',F.gross)}
+      ${fl('o-stone','خصم الفصوص (جم)',F.stone)}
+      <label class="f">الوزن الصافي (جم)<input id="o-net" readonly tabindex="-1" dir="ltr" value=""></label>
+      ${fl('o-disc',buy?'خصم عن سعر اليوم %':'خصم عن سعر اليوم %',F.disc==null?'':String(F.disc))}
+      ${fl('o-ppg','سعر الجرام ('+C+')',F.ppg)}
+      ${fl('o-total','الإجمالي ('+C+')',F.total)}
+    </div>
+    <div class="frow" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+      <label class="f">${buy?'اسم العميل (اختياري)':'الجهة المشترية (اختياري)'}<input id="o-party" data-old="party" value="${esc(F.party)}"></label>
+      <label class="f">ملاحظات<input id="o-note" data-old="note" value="${esc(F.note)}"></label>
+    </div>
+    <p class="hint" id="oldInfo" role="status" style="margin-top:10px"></p>
+    <p class="err" id="oldErr" role="alert"></p>
+    <div class="row"><button type="button" class="btn lg accent" data-oldact="save">${buy?'تسجيل الشراء':'تسجيل البيع'}</button><button type="button" class="btn ghost" data-oldact="clear">مسح الحقول</button></div>
+  </form></section>
+  <section class="panel"><h3>مخزون المستعمل حسب العيار</h3>${kk.length?`<div class="tablewrap" style="border:0;margin-top:8px"><table><thead><tr><th>العيار</th><th>الوزن الصافي (جم)</th><th>متوسط التكلفة/جم</th><th>التكلفة</th><th>سعر اليوم/جم</th><th>القيمة بسعر اليوم</th><th>الفرق</th></tr></thead><tbody>${kk.map(k=>{const r=calc.st[k],t=oldToday(k),v=r.g*t;return `<tr><td><b>${esc(k)}</b></td><td>${fmtW(r.g)}</td><td>${fmt(r.cost/r.g)}</td><td>${money(r.cost)}</td><td>${t?fmt(t):'—'}</td><td>${t?money(v):'—'}</td><td class="${t&&v-r.cost<0?'neg':'pos'}">${t?money(v-r.cost):'—'}</td></tr>`;}).join('')}</tbody></table></div>`:'<p class="muted" style="margin-top:8px">لا يوجد مخزون مستعمل بعد.</p>'}</section>
+  <section class="panel"><h3>آخر الحركات</h3>${list.length?`<div class="tablewrap" style="border:0;margin-top:8px"><table class="mini"><thead><tr><th>التاريخ</th><th>النوع</th><th>العيار</th><th>الوزن الصافي</th><th>سعر الجرام</th><th>الإجمالي</th><th>الربح</th><th>الجهة</th><th></th></tr></thead><tbody>${list.map(x=>{const s=calc.sells[x.id];return `<tr><td>${dtf(x.date)}</td><td>${x.type==='oldbuy'?'شراء':'بيع'}</td><td>${esc(x.karat)}</td><td>${fmtW(x.net)}${x.stone>0?` <small class="muted">(كلي ${fmtW(x.gross)})</small>`:''}</td><td>${fmt(x.ppg)}</td><td class="${x.type==='oldsell'?'pos':'neg'}">${x.type==='oldsell'?'+':'−'}${money(x.amount)}</td><td class="${s&&s.profit<0?'neg':'pos'}">${s?money(s.profit):'—'}</td><td>${esc(x.party||'')}</td><td><button class="btn danger sm" data-act="deltx" data-id="${x.id}">حذف</button></td></tr>`;}).join('')}</tbody></table></div>`:'<p class="muted" style="margin-top:8px">لا توجد حركات.</p>'}</section>`;
+  oldSync('mode');
+  const f=$('#oldForm');
+  f.addEventListener('input',e=>{
+    const t=e.target,k=t.dataset.old;if(!k)return;
+    if(k==='o-gross'){F.gross=t.value;oldSync('gross');}
+    else if(k==='o-stone'){F.stone=t.value;oldSync('stone');}
+    else if(k==='o-disc'){F.disc=t.value;oldSync('disc');}
+    else if(k==='o-ppg'){F.ppg=t.value;oldSync('ppg');}
+    else if(k==='o-total'){F.total=t.value;oldSync('total');}
+    else if(k==='k'){F.k=t.value;oldSync('k');}
+    else if(k==='party')F.party=t.value;
+    else if(k==='note')F.note=t.value;
+  });
+  f.addEventListener('focusout',e=>{const t=e.target;if(t&&t.tagName==='INPUT'&&/^o-(gross|stone|disc|ppg|total)$/.test(t.id))t.value=latin(t.value);});
+  f.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='o-note'){e.preventDefault();oldSave();}});
+}
+async function oldSave(){
+  const F=OLDF,err=$('#oldErr'),say=t=>{if(err)err.textContent=t;};
+  const net=Math.max(0,r3(num(F.gross)-num(F.stone)));
+  const ppg=num(F.ppg),amt=r2(num(F.total)||net*ppg);
+  if(!F.k)return say('اختر العيار.');
+  if(num(F.gross)<=0)return say('اكتب الوزن الكلي.');
+  if(num(F.stone)<0||num(F.stone)>=num(F.gross))return say('خصم الفصوص يجب أن يكون أقل من الوزن الكلي.');
+  if(net<=0)return say('الوزن الصافي صفر.');
+  if(ppg<=0||amt<=0)return say('اكتب سعر الجرام أو الإجمالي.');
+  const sell=F.mode==='sell',stk=(oldCalc().st[F.k]||{g:0}).g;
+  if(sell&&net>stk+0.0005&&!await ask('المتوفر من عيار '+F.k+' هو '+fmtW(stk)+' جم فقط وأنت تبيع '+fmtW(net)+' جم. هل تسجّل البيع رغم ذلك؟','تسجيل'))return;
+  S.txs.push({id:uid(),date:new Date().toISOString(),type:sell?'oldsell':'oldbuy',items:[],karat:F.k,gross:r3(num(F.gross)),stone:r3(num(F.stone)),net,ppg:r2(amt/net),amount:amt,party:String(F.party||'').trim(),note:String(F.note||'').trim()});
+  S.settings[sell?'oldDiscSell':'oldDiscBuy']=num(F.disc);
+  save();toast(sell?'تم تسجيل البيع':'تم تسجيل الشراء');
+  Object.assign(OLDF,{gross:'',stone:'',ppg:'',total:'',party:'',note:'',disc:num(F.disc)});
+  render();setTimeout(()=>{const g=$('#o-gross');if(g)g.focus();},30);
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest&&e.target.closest('[data-oldact]');if(!b)return;
+  const a=b.dataset.oldact;
+  if(a==='mode'){OLDF.mode=b.dataset.v;OLDF.disc=null;OLDF.ppg='';OLDF.total='';render();}
+  else if(a==='save')oldSave();
+  else if(a==='clear'){Object.assign(OLDF,{gross:'',stone:'',ppg:'',total:'',party:'',note:'',disc:null});render();}
+});
 
 /* ================= scan ================= */
 function scanBar(ctx,ph,hint){
@@ -2309,15 +2428,20 @@ function accounts(p,r){
   const rev=sum(sales,x=>x.subtotal),vat=sum(sales,x=>x.vat),cogs=sum(sales,x=>sum(x.items,i=>i.cost||0));
   const purchases=sum(t.filter(x=>x.type==='purchase'),x=>x.total);
   const expenses=sum(t.filter(x=>x.type==='expense'),x=>x.amount);
-  return{rev,vat,cogs,gross:rev-cogs,purchases,expenses,net:rev-cogs-expenses,grand:rev+vat};
+  const oc=oldCalc().sells,os=t.filter(x=>x.type==='oldsell'),ob=t.filter(x=>x.type==='oldbuy');
+  const oldProfit=sum(os,x=>(oc[x.id]||{}).profit||0),oldBuy=sum(ob,x=>x.amount),oldSell=sum(os,x=>x.amount);
+  return{rev,vat,cogs,gross:rev-cogs,purchases,expenses,oldProfit,oldBuy,oldSell,net:rev-cogs-expenses+oldProfit,grand:rev+vat};
 }
-const TNAME={sale:'بيع',purchase:'إدخال قطعة',expense:'مصروف'};
+const TNAME={sale:'بيع',purchase:'إدخال قطعة',expense:'مصروف',oldbuy:'شراء مستعمل',oldsell:'بيع مستعمل'};
 function txSummary(x){
   if(x.type==='expense')return esc(x.note||x.cat||'مصروف');
+  if(x.type==='oldbuy'||x.type==='oldsell')return fmtW(x.net)+' جم عيار '+esc(x.karat)+(x.party?' · '+esc(x.party):'');
   const names=x.items.slice(0,3).map(i=>esc(i.name||i.cat)+' '+esc(i.karat)+'ك').join('، ');
   return (x.invNo?'<b class="mono">'+esc(x.invNo)+'</b> · ':'')+names+(x.items.length>3?` و${x.items.length-3} أخرى`:'');
 }
 function txAmount(x){
+  if(x.type==='oldsell')return `<span class="pos">+${money(x.amount)}</span>`;
+  if(x.type==='oldbuy')return `<span class="neg">−${money(x.amount)}</span>`;
   if(x.type==='sale')return `<span class="pos">+${money(x.total)}</span>`;
   return `<span class="neg">−${money(x.type==='purchase'?x.total:x.amount)}</span>`;
 }
@@ -4370,11 +4494,14 @@ function vLedger(m){
     <div class="kpi"><span>المصروفات</span><b>${money(a.expenses)}</b></div>
     <div class="kpi net ${a.net<0?'neg':''}"><span>صافي الربح</span><b>${money(a.net)}</b></div>
     <div class="kpi"><span>قطع أُدخلت (تكلفة)</span><b>${money(a.purchases)}</b></div>
+    <div class="kpi ${a.oldProfit<0?'neg':''}"><span>ربح الذهب المستعمل</span><b>${money(a.oldProfit)}</b></div>
+    <div class="kpi"><span>مشتريات المستعمل</span><b>${money(a.oldBuy)}</b></div>
+    <div class="kpi"><span>مبيعات المستعمل</span><b>${money(a.oldSell)}</b></div>
   </div>
-  <p class="hint">صافي الربح = المبيعات قبل الضريبة − تكلفة القطع المباعة − المصروفات. الضريبة تظهر منفصلة ولا تدخل في الربح.</p>
-  <div class="chips">${[['all','الكل'],['sale','المبيعات'],['purchase','القطع المُدخلة'],['expense','المصروفات']].map(([k,l])=>`<button type="button" data-act="txf" data-k="${k}" aria-pressed="${txType===k}">${l}</button>`).join('')}</div>
+  <p class="hint">صافي الربح = المبيعات قبل الضريبة − تكلفة القطع المباعة − المصروفات + ربح الذهب المستعمل المباع (بمتوسط تكلفة الجرام). الضريبة تظهر منفصلة ولا تدخل في الربح.</p>
+  <div class="chips">${[['all','الكل'],['sale','المبيعات'],['purchase','القطع المُدخلة'],['oldbuy','شراء مستعمل'],['oldsell','بيع مستعمل'],['expense','المصروفات']].map(([k,l])=>`<button type="button" data-act="txf" data-k="${k}" aria-pressed="${txType===k}">${l}</button>`).join('')}</div>
   <div class="panel">${list.length?list.map(x=>`<details class="tx" style="border:0;padding:10px 0"><summary><span><b>${TNAME[x.type]}</b> <small>${txSummary(x)}</small><br><small>${txDate(x)}${x.party?' · '+esc(x.party):''}</small></span>${txAmount(x)}</summary>
-    <div class="lines">${x.type==='expense'?`<div>${esc(x.cat||'')} ${esc(x.note||'')}</div>`:x.type==='purchase'?itemsTable(x.items,'purchase'):itemsTable(x.items,'sale')+`<div style="margin-top:8px"><b>فاتورة ${esc(x.invNo||'—')} · ${dfmt(x.date)} · قبل الضريبة ${money(x.subtotal)} · الضريبة ${money(x.vat)} · الإجمالي ${money(x.total)}</b></div>`}${x.note&&x.type!=='expense'?`<div class="muted">${esc(x.note)}</div>`:''}</div>
+    <div class="lines">${x.type==='oldbuy'||x.type==='oldsell'?`<div>عيار ${esc(x.karat)} · الكلي ${fmtW(x.gross)} جم − خصم ${fmtW(x.stone||0)} = الصافي ${fmtW(x.net)} جم × ${fmt(x.ppg)} = ${money(x.amount)}</div>`:x.type==='expense'?`<div>${esc(x.cat||'')} ${esc(x.note||'')}</div>`:x.type==='purchase'?itemsTable(x.items,'purchase'):itemsTable(x.items,'sale')+`<div style="margin-top:8px"><b>فاتورة ${esc(x.invNo||'—')} · ${dfmt(x.date)} · قبل الضريبة ${money(x.subtotal)} · الضريبة ${money(x.vat)} · الإجمالي ${money(x.total)}</b></div>`}${x.note&&x.type!=='expense'?`<div class="muted">${esc(x.note)}</div>`:''}</div>
     ${x.type==='purchase'?'':`<div class="row end" style="margin-top:8px"><button class="btn danger sm" data-act="deltx" data-id="${x.id}">حذف الحركة${x.type==='sale'?' وإرجاع القطع للمخزون':''}</button></div>`}</details>`).join(''):'<p class="muted">لا توجد حركات في هذه الفترة.</p>'}</div>`;
 }
 function itemsTable(items,type){
@@ -4398,7 +4525,7 @@ function openExpense(){
 }
 async function deleteTx(id){
   const x=S.txs.find(t=>t.id===id);if(!x||x.type==='purchase')return;
-  if(!await ask(x.type==='sale'?'حذف فاتورة '+(x.invNo||'')+' وإرجاع قطعها إلى المخزون؟':'حذف هذا المصروف؟','حذف'))return;
+  if(!await ask(x.type==='sale'?'حذف فاتورة '+(x.invNo||'')+' وإرجاع قطعها إلى المخزون؟':x.type==='expense'?'حذف هذا المصروف؟':'حذف هذه الحركة؟','حذف'))return;
   if(x.type==='sale')x.items.forEach(i=>{const p=piece(i.pid);if(p){p.status='in';delete p.soldAt;delete p.soldTx;delete p.soldAmt;delete p.invNo;}});
   S.txs=S.txs.filter(t=>t.id!==id);save();
   if(x.type==='sale'){emitEvent('sale.deleted',saleOut(x));x.items.forEach(i=>{const pp=piece(i.pid);if(pp)emitEvent('piece.updated',pieceOut(pp));});}
@@ -5131,8 +5258,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.30.2';
+const APP_VERSION='2.31.0';
 const CHANGELOG=[
+ {v:'2.31.0',date:'2026-11-19',title:'قسم الذهب المستعمل',items:['تبويب جديد «مستعمل»: شراء الكسر والمستعمل من العملاء وبيعه، بالعيار والوزن الكلي وخصم الفصوص والشوائب والصافي، وسعر الجرام يُقترح من سعر اليوم مع نسبة خصم قابلة للتعديل.','يمكن كتابة الإجمالي فيحسب سعر الجرام، أو سعر الجرام فيحسب الإجمالي، والتنقل بين الحقول بزر Enter.','مخزون مستعمل بالجرام لكل عيار بمتوسط التكلفة وقيمته بسعر اليوم.','عند البيع يُحسب الربح من متوسط تكلفة الجرام، ويدخل في صافي ربح الحسابات، وتظهر الحركات في الحسابات مع تصفية بنوعها.']},
  {v:'2.30.2',date:'2026-11-17',title:'ضبط طول الملصق لمنع تخطي الملصقات',items:['حقل «طول الملصق الفعلي» وأزرار تقصير/تطويل (−5 −1 −0.5 +0.5 +1 +5 مم) مع طباعة تجريبية، لحل مشكلة طباعة ملصق ثم تخطي ملصقين.','عند تحديد الطول تُرسله المنصة للطابعة (EPL) بدل الاعتماد على قياسها، ويُقصّ المحتوى على هذا الطول.']},
  {v:'2.30.1',date:'2026-11-17',title:'رسالة اتصال واضحة لأجهزة ماك',items:['عند تعذّر حجز الطابعة على ماك تظهر الآن خطوات الحل: حذف الطابعة من إعدادات النظام ثم إعادة التوصيل، أو استخدام الوسيط.']},
  {v:'2.30.0',date:'2026-11-17',title:'معايرة تلقائية كاملة بزر واحد',items:[
