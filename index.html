@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.31.1">
+<meta name="app-version" content="2.31.2">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -4303,15 +4303,24 @@ document.addEventListener('input',e=>{
     const sv=bar.querySelector('[data-kb="save"]'),f=t.closest('form');
     sv.hidden=!(f&&f.id==='pf');
   };
-  document.addEventListener('focusin',()=>setTimeout(upd,30));
+  const reveal=el=>{
+    if(!el||!el.getBoundingClientRect)return;
+    const vv=window.visualViewport,vh=vv?vv.height:window.innerHeight,top0=vv?vv.offsetTop:0,bh=bar.classList.contains('on')?bar.offsetHeight:0;
+    const r=el.getBoundingClientRect(),lo=top0+70,hi=top0+vh-bh-24;
+    if(r.top>=lo&&r.bottom<=hi)return;
+    const lab=el.closest('label'),rr=lab?lab.getBoundingClientRect():r;
+    window.scrollBy({top:rr.top-top0-vh*0.28,behavior:'smooth'});
+  };
+  window.__reveal=reveal;
+  document.addEventListener('focusin',e=>{setTimeout(upd,30);const t=e.target;setTimeout(()=>reveal(t),260);});
   document.addEventListener('focusout',()=>setTimeout(upd,120));
   if(window.visualViewport){visualViewport.addEventListener('resize',place);visualViewport.addEventListener('scroll',place);}
   bar.addEventListener('pointerdown',e=>e.preventDefault());
   bar.addEventListener('click',e=>{
     const b=e.target.closest('button');if(!b||!cur)return;
     const list=fields(),i=list.indexOf(cur);
-    if(b.dataset.kb==='next'){cur.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true}));setTimeout(upd,60);}
-    else if(b.dataset.kb==='prev'){const p=list[i-1];if(p){p.focus();try{p.select();}catch(err){}}}
+    if(b.dataset.kb==='next'){cur.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true}));setTimeout(upd,60);setTimeout(()=>reveal(document.activeElement),320);}
+    else if(b.dataset.kb==='prev'){const p=list[i-1];if(p){p.focus();try{p.select();}catch(err){}setTimeout(()=>reveal(p),320);}}
     else if(b.dataset.kb==='save'){const f=cur.closest('form');if(f){cur.blur();f.dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}));}}
   });
 })();
@@ -5268,8 +5277,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.31.1';
+const APP_VERSION='2.31.2';
 const CHANGELOG=[
+ {v:'2.31.2',date:'2026-11-19',title:'إظهار الحقل عند التنقل بزري التالي والسابق',items:['عند الضغط على «التالي» أو «السابق» في الجوال والآيباد تتحرك الصفحة تلقائيًا ليظهر الحقل الحالي فوق لوحة المفاتيح وفوق شريط التنقل.']},
  {v:'2.31.1',date:'2026-11-19',title:'تبسيط واجهة المستعمل',items:['«بيع (لتاجر أو مصهر)» أصبح «بيع على عميل»، وأُلغي منه حقلا خصم الفصوص وخصم سعر اليوم.','واجهة أبسط تناسب الجوال: حقلان في كل سطر، خانة إجمالي كبيرة، والمخزون والحركات بطاقات بدل الجداول.']},
  {v:'2.31.0',date:'2026-11-19',title:'قسم الذهب المستعمل',items:['تبويب جديد «مستعمل»: شراء الكسر والمستعمل من العملاء وبيعه، بالعيار والوزن الكلي وخصم الفصوص والشوائب والصافي، وسعر الجرام يُقترح من سعر اليوم مع نسبة خصم قابلة للتعديل.','يمكن كتابة الإجمالي فيحسب سعر الجرام، أو سعر الجرام فيحسب الإجمالي، والتنقل بين الحقول بزر Enter.','مخزون مستعمل بالجرام لكل عيار بمتوسط التكلفة وقيمته بسعر اليوم.','عند البيع يُحسب الربح من متوسط تكلفة الجرام، ويدخل في صافي ربح الحسابات، وتظهر الحركات في الحسابات مع تصفية بنوعها.']},
  {v:'2.30.2',date:'2026-11-17',title:'ضبط طول الملصق لمنع تخطي الملصقات',items:['حقل «طول الملصق الفعلي» وأزرار تقصير/تطويل (−5 −1 −0.5 +0.5 +1 +5 مم) مع طباعة تجريبية، لحل مشكلة طباعة ملصق ثم تخطي ملصقين.','عند تحديد الطول تُرسله المنصة للطابعة (EPL) بدل الاعتماد على قياسها، ويُقصّ المحتوى على هذا الطول.']},
