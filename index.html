@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="3.2.0">
+<meta name="app-version" content="3.2.1">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -992,6 +992,30 @@ dialog::backdrop{background:rgba(40,28,6,.55);backdrop-filter:blur(3px)}
 @media (min-width:900px){.calc{max-width:480px}}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ckeys button{background:var(--surface)}}
 :root[data-theme="dark"] .ckeys button{background:var(--surface)}
+
+.cclr{min-height:40px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--soft);font-weight:700;font-size:14px;color:var(--muted);cursor:pointer;font-family:inherit}
+@media (max-width:899px){
+ body.v-calc{overflow:hidden;height:100dvh}
+ body.v-calc .main{height:100dvh;box-sizing:border-box;display:flex;flex-direction:column;padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))!important;overflow:hidden}
+ body.v-calc .chead{margin:0 0 6px}
+ body.v-calc .chead h1{font-size:26px;margin:0}
+ body.v-calc .chead p{font-size:13px;margin:2px 0 0}
+ body.v-calc .panel.calc{flex:1;min-height:0;display:flex!important;flex-direction:column;padding:10px;margin:0}
+ body.v-calc .calc .seg{flex:none}
+ body.v-calc .calc .seg button{min-height:40px;font-size:14px}
+ body.v-calc .cdisp{flex:none;margin:8px 0;min-height:60px;padding:6px 10px}
+ body.v-calc .cdisp output{font-size:32px}
+ body.v-calc .cres{flex:none;margin-bottom:8px}
+ body.v-calc .cres>div{padding:8px}
+ body.v-calc .cres b{font-size:14px;margin-bottom:4px}
+ body.v-calc .cres em{font-size:21px}
+ body.v-calc .ckeys{flex:1;min-height:0;grid-template-rows:repeat(4,1fr);gap:8px}
+ body.v-calc .ckeys button{min-height:0;height:100%;font-size:26px}
+}
+@media (max-width:899px) and (max-height:640px){
+ body.v-calc .chead p{display:none}
+ body.v-calc .cres span.hint{display:none}
+}
 </style>
 </head>
 <body>
@@ -1505,7 +1529,7 @@ document.addEventListener('click',e=>{
 function go(v){if(location.hash==='#'+v){fromHash();render(true);}else location.hash=v;}
 function fromHash(){const h=location.hash.replace('#','');view=TABS.some(t=>t[0]===h)?h:'dashboard';}
 window.addEventListener('hashchange',()=>{fromHash();render(true);});
-function render(top){if(view!=='intake')genBulk=false;renderNav();const m=$('#main');({dashboard:vDash,intake:vIntake,stock:vStock,count:vCount,sale:vSale,old:vOld,calc:vCalc,ledger:vLedger,prefs:vPrefs}[view])(m);pcalcApply();if(top)window.scrollTo(0,0);}
+function render(top){if(view!=='intake')genBulk=false;document.body.classList.toggle('v-calc',view==='calc');renderNav();const m=$('#main');({dashboard:vDash,intake:vIntake,stock:vStock,count:vCount,sale:vSale,old:vOld,calc:vCalc,ledger:vLedger,prefs:vPrefs}[view])(m);pcalcApply();if(top)window.scrollTo(0,0);}
 
 /* ================= used gold (buy from customers / sell) ================= */
 const OLDF={mode:'buy',k:'',gross:'',stone:'',disc:null,ppg:'',total:'',party:'',note:''};
@@ -1690,14 +1714,13 @@ function calcRes(){
 }
 function vCalc(m){
   const ks=S.settings.karats;
-  m.innerHTML=`<header class="head"><h1>حاسبة الجملة</h1><p>${CALC.mode==='g'?'تحويل الجرام إلى مبلغ':'تحويل المبلغ إلى جرام'} حسب العيار</p></header>
+  m.innerHTML=`<header class="head chead"><h1>حاسبة الجملة</h1><p>${CALC.mode==='g'?'تحويل الجرام إلى مبلغ':'تحويل المبلغ إلى جرام'} حسب العيار</p></header>
   <div class="panel calc" data-calc-root>
     <div class="seg" role="tablist" aria-label="العيار">${ks.map(k=>`<button type="button" data-calc="k" data-v="${esc(k)}" aria-pressed="${calcRes()&&CALC.k===k}">عيار ${esc(k)}</button>`).join('')}</div>
-    <div class="cdisp"><button type="button" class="cunit" data-calc="mode" aria-label="عكس العملية">${ic('refresh')}<span id="cunit"></span></button><output id="cval" dir="ltr"></output></div>
+    <div class="cdisp"><button type="button" class="cunit" data-calc="mode" aria-label="عكس العملية">${ic('refresh')}<span id="cunit"></span></button><output id="cval" dir="ltr"></output><button type="button" class="cclr" data-calc="clr" aria-label="مسح">مسح</button></div>
     <div class="cres"><div class="cbuy"><b>نشتري منك</b><div><em id="crb"></em> <small id="cub"></small></div><span class="hint" id="cpb"></span></div><div class="csell"><b>نبيع لك</b><div><em id="crs"></em> <small id="cus"></small></div><span class="hint" id="cps"></span></div></div>
     <div class="ckeys" dir="ltr">${['1','2','3','4','5','6','7','8','9','.','0','del'].map(k=>`<button type="button" data-calc="key" data-v="${k}" aria-label="${k==='del'?'حذف':k}">${k==='del'?ic('bksp'):k}</button>`).join('')}</div>
-    <button type="button" class="btn ghost" data-calc="clr" style="width:100%;margin-top:10px">مسح</button>
-  </div>`;
+      </div>`;
   calcUpd();
 }
 function calcUpd(){
@@ -5678,8 +5701,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='3.2.0';
+const APP_VERSION='3.2.1';
 const CHANGELOG=[
+ {v:'3.2.1',date:'2026-11-20',title:'حاسبة بملء الشاشة',items:['الحاسبة تملأ شاشة الجوال كاملة دون تمرير: لوحة الأرقام تتمدد وتتقلص حسب ارتفاع الشاشة.','زر «مسح» صار داخل شاشة العرض.'],},
  {v:'3.2.0',date:'2026-11-20',title:'حاسبة الجملة',items:['قسم «حاسبة» جديد: اختر العيار واكتب الوزن لتظهر قيمة «نبيع لك» و«نشتري منك» فورًا.','زر العكس يحوّل من المبلغ إلى الجرام.','لوحة أرقام كبيرة للجوال، ويعمل لوحة مفاتيح الجهاز على الحاسوب أيضًا.'],},
  {v:'3.1.1',date:'2026-11-20',title:'تنظيم الحقول والأزرار',items:['علاوة السوق: حقول متطابقة ومرتبة (الاسم ثم القيمة ثم النوع).','المخزون: الفلاتر في سطر واحد وكل فلتر قائمة منسدلة.','تقارير المستعمل: الأزرار بشبكة ثابتة ولا تقفز الشاشة عند الضغط.','الإعدادات: أقسام الإعدادات بشبكة كاملة الأسماء وأزرار موحدة الحجم.'],},
  {v:'3.1.0',date:'2026-11-20',title:'تثبيت التطبيق على أندرويد',items:['يمكن الآن تثبيت «جرد الذهب» كتطبيق على أندرويد من زر «تثبيت التطبيق» في قائمة المزيد أو من قائمة متصفح كروم.','يعمل بملء الشاشة وبأيقونة خاصة، ويفتح دون اتصال بعد أول تشغيل.'],},
