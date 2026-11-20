@@ -1,11 +1,12 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="2.32.0">
+<meta name="app-version" content="3.0.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#F1EAD3">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
 <style>
 :root{
@@ -728,6 +729,216 @@ h1{font-size:clamp(22px,3.4vw,30px)}
 .ocard .od span{color:var(--muted)}
 .ocard .orow{display:flex;justify-content:flex-end}
 @media (max-width:600px){.oldgrid{grid-template-columns:1fr 1fr}.seg{display:flex;width:100%}.seg button{flex:1;padding:8px 6px}}
+
+/* ===================================================================
+   v3 THEME — warm cream & gold, big rounded cards, calculator-style UI
+   =================================================================== */
+:root{
+  --bg:#F1EAD3; --surface:#FBF8EE; --ink:#1C1810; --muted:#7B6E50; --line:#E2D4A6; --soft:#EEE5C8;
+  --accent:#CDAE4B; --accent-ink:#1C1810; --accent-text:#8A6A14; --ok:#2E7D50; --bad:#B3322B;
+  --okbg:#DDEFD9; --badbg:#F8DCD8; --goldbg:#F5E9BE; --focus:#B58F1F;
+  --r:24px; --r2:18px; --sh:0 8px 22px rgba(120,92,26,.13),0 1px 2px rgba(120,92,26,.10); --sh2:0 3px 10px rgba(120,92,26,.14);
+  --gold-grad:linear-gradient(180deg,#DDC067 0%,#CDAE4B 100%);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#16120A; --surface:#231D11; --ink:#F4ECD3; --muted:#B5A77F; --line:#3B3220; --soft:#2C2517;
+    --accent:#D9B64E; --accent-ink:#1C1810; --accent-text:#E8CB74; --ok:#58C98A; --bad:#FF8379;
+    --okbg:#173A28; --badbg:#432622; --goldbg:#3D3413; --focus:#E8CB74;
+    --sh:0 8px 22px rgba(0,0,0,.45),0 1px 2px rgba(0,0,0,.4); --sh2:0 3px 10px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16120A; --surface:#231D11; --ink:#F4ECD3; --muted:#B5A77F; --line:#3B3220; --soft:#2C2517;
+  --accent:#D9B64E; --accent-ink:#1C1810; --accent-text:#E8CB74; --ok:#58C98A; --bad:#FF8379;
+  --okbg:#173A28; --badbg:#432622; --goldbg:#3D3413; --focus:#E8CB74;
+  --sh:0 8px 22px rgba(0,0,0,.45),0 1px 2px rgba(0,0,0,.4); --sh2:0 3px 10px rgba(0,0,0,.4);
+}
+html{background:var(--bg)}
+body{font-family:'Tajawal','IBM Plex Sans Arabic','Segoe UI',Tahoma,system-ui,sans-serif;font-size:16px;background:linear-gradient(180deg,#F4EDD9 0%,#EADFC0 55%,#E3D6B2 100%) fixed;min-height:100vh;letter-spacing:0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body{background:linear-gradient(180deg,#1B160C 0%,#120F08 100%) fixed}}
+:root[data-theme="dark"] body{background:linear-gradient(180deg,#1B160C 0%,#120F08 100%) fixed}
+h1{font-size:clamp(28px,5.4vw,40px);font-weight:800;line-height:1.15;color:var(--ink)}
+h2{font-size:21px;font-weight:800}
+h3{font-size:17px;font-weight:800}
+.head{align-items:flex-start;margin-bottom:20px}
+.head p,.head .muted{color:var(--accent-text);font-size:clamp(15px,2.4vw,19px);font-weight:500;margin-top:4px}
+small,.muted{color:var(--muted)}
+.hint{color:var(--muted);font-size:14px}
+
+/* surfaces */
+.panel,.kpi,.pcard,.icard,.tablewrap,.fg,.hook,.dec,.lblock,.tgrp,.prmode,.pmini,.authcard,.pcalc,.ocard{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh)}
+.panel{padding:20px}
+.panel + .panel,.panel + .tablewrap,.tablewrap + .panel{margin-top:16px}
+.tablewrap{overflow-x:auto}
+.pcalc{border-style:solid}
+.pcard.gold,.kpi.net{background:linear-gradient(180deg,#FBF1CC 0%,var(--surface) 70%);border-color:#DCC37A}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pcard.gold,:root:not([data-theme="light"]) .kpi.net{background:linear-gradient(180deg,#3F3513 0%,var(--surface) 75%);border-color:#6B5A22}}
+:root[data-theme="dark"] .pcard.gold,:root[data-theme="dark"] .kpi.net{background:linear-gradient(180deg,#3F3513 0%,var(--surface) 75%);border-color:#6B5A22}
+.kpi{padding:14px 16px}
+.kpi span{font-size:13.5px;color:var(--muted);font-weight:500}
+.kpi b{font-size:clamp(20px,3vw,28px);font-weight:800;color:var(--ink)}
+.kpi.neg b{color:var(--bad)}
+.pcard .pv{font-weight:800;font-size:clamp(26px,5vw,34px)}
+.pgrid.big .pcard .pv{font-size:clamp(30px,6vw,44px)}
+.pcard .pl{font-weight:700}
+.pbadge{background:var(--goldbg);color:var(--accent-text);font-weight:800}
+details{background:var(--surface);border:1px solid var(--line);border-radius:var(--r2)}
+
+/* inputs */
+input,select,textarea{background:#FFFDF6;border:1.5px solid var(--line);border-radius:var(--r2);min-height:52px;padding:10px 16px;font-size:17px;font-weight:600;box-shadow:inset 0 1px 2px rgba(120,92,26,.06)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) input,:root:not([data-theme="light"]) select,:root:not([data-theme="light"]) textarea{background:#1B160C}}
+:root[data-theme="dark"] input,:root[data-theme="dark"] select,:root[data-theme="dark"] textarea{background:#1B160C}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px rgba(205,174,75,.28)}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+input[readonly]{background:var(--soft);color:var(--muted)}
+input::placeholder{color:#B1A47E;font-weight:500}
+label.f{font-size:14.5px;font-weight:700;color:var(--ink);gap:7px}
+label.f small{font-weight:500;color:var(--muted)}
+input[type=checkbox],input[type=radio]{accent-color:var(--accent);width:22px;height:22px}
+.td input,td input{min-height:44px}
+
+/* buttons */
+.btn{border-radius:var(--r2);min-height:52px;padding:10px 22px;font-size:16.5px;font-weight:800;background:var(--ink);color:#F6F0DC;border:0;box-shadow:var(--sh2);transition:transform .08s,filter .15s}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn{background:#F4ECD3;color:#1C1810}}
+:root[data-theme="dark"] .btn{background:#F4ECD3;color:#1C1810}
+.btn:active{transform:scale(.97)}
+.btn.accent{background:var(--gold-grad);color:#1C1810;box-shadow:0 6px 16px rgba(205,174,75,.45)}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1.5px solid var(--line);box-shadow:var(--sh2)}
+.btn.ghost:hover{background:var(--goldbg);filter:none}
+.btn.danger{background:var(--surface);color:var(--bad);border:1.5px solid var(--line);box-shadow:none}
+.btn.sm{min-height:42px;border-radius:14px;padding:6px 14px;font-size:14.5px}
+.btn.lg{min-height:58px;border-radius:20px;font-size:18px}
+.btn svg{width:20px;height:20px}
+
+/* segmented controls & chips — gold active like the calculator toggle */
+.seg,.segb{background:var(--soft);border:1.5px solid var(--line);border-radius:22px;padding:5px;gap:4px;overflow:visible}
+.seg button,.segb button{border:0!important;border-radius:17px!important;background:transparent;min-height:46px;font-weight:800;font-size:15.5px;color:var(--ink);box-shadow:none}
+.segb button+button{border:0}
+.seg button[aria-pressed="true"],.segb button[aria-pressed="true"]{background:var(--gold-grad);color:#1C1810;box-shadow:0 4px 12px rgba(205,174,75,.5)}
+.seg button:hover,.segb button:hover{background:rgba(205,174,75,.18)}
+.chips{gap:8px}
+.chips button{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;min-height:42px;padding:6px 18px;font-weight:700;font-size:15px;box-shadow:var(--sh2)}
+.chips button[aria-pressed="true"]{background:var(--gold-grad);border-color:#C9A53E;color:#1C1810}
+.pill{background:var(--goldbg);color:var(--accent-text);font-weight:700}
+.chip{background:var(--okbg);color:var(--ok);font-weight:800}
+.chip.gold,.chip.used{background:var(--goldbg);color:var(--accent-text)}
+.crumb{background:var(--goldbg);color:var(--accent-text);border:1px solid #E0C97F;font-weight:800;min-height:40px}
+
+/* wizard tiles = calculator keys */
+.tiles{gap:12px;grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
+.tile{background:linear-gradient(180deg,#FFFFFF 0%,#F5F1E6 100%);border:1px solid #E7DDBE;border-radius:22px;min-height:84px;font-size:19px;font-weight:800;box-shadow:0 5px 12px rgba(120,92,26,.14);color:var(--ink)}
+.tile.karat b{font-size:34px;font-weight:800}
+.tile:hover{border-color:var(--accent);background:var(--goldbg)}
+.tile:active{transform:scale(.96)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tile{background:linear-gradient(180deg,#2D2617,#241E12);border-color:#3B3220}}
+:root[data-theme="dark"] .tile{background:linear-gradient(180deg,#2D2617,#241E12);border-color:#3B3220}
+.tile.add,.tile.skip{background:transparent;border:2px dashed var(--line);box-shadow:none}
+.okbox{background:var(--okbg);border-radius:var(--r2);font-weight:700}
+.stepper li i{height:6px;border-radius:3px;background:var(--line)}
+.stepper li.done i{background:var(--accent)}.stepper li.cur i{background:var(--ink)}
+.stepper li{font-size:13px;font-weight:700}
+
+/* scan bar */
+.scan{background:var(--surface);border:2px solid var(--accent);border-radius:24px;box-shadow:var(--sh);padding:7px 8px 7px 12px}
+.scan:focus-within{box-shadow:0 0 0 5px rgba(205,174,75,.3),var(--sh)}
+.scan input{border:0;background:transparent;box-shadow:none;font-size:19px;min-height:52px}
+.scan input:focus{box-shadow:none}
+.scan-ico{color:var(--accent-text)}
+
+/* tables */
+table{border-collapse:separate;border-spacing:0}
+th{background:var(--soft);color:var(--muted);font-weight:800;font-size:13.5px;border-bottom:1px solid var(--line)}
+td{border-bottom:1px solid var(--line);font-weight:600}
+tfoot td{background:var(--soft);font-weight:800}
+.tablewrap th:first-child{border-start-start-radius:var(--r)}.tablewrap th:last-child{border-start-end-radius:var(--r)}
+.pos{color:var(--ok);font-weight:800}.neg{font-weight:800}
+.warn{background:var(--goldbg);color:var(--accent-text);border-radius:var(--r2);font-weight:700}
+.tx .lines{background:var(--soft);border-radius:var(--r2)}
+.calc{background:var(--soft);border-radius:var(--r2)}
+.total{border-top:2px solid var(--accent)}
+
+/* dialogs */
+dialog{border:1px solid var(--line);border-radius:28px;box-shadow:0 24px 60px rgba(60,44,8,.35);background:var(--surface)}
+dialog::backdrop{background:rgba(40,28,6,.55);backdrop-filter:blur(3px)}
+.toast{background:var(--ink);color:var(--surface);border-radius:18px;font-weight:700;box-shadow:var(--sh);padding:12px 22px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .toast{background:#F4ECD3;color:#1C1810}}
+.toast.bad{background:var(--bad);color:#fff}
+
+/* settings tabs */
+.ptab{background:var(--surface);border:1.5px solid var(--line);border-radius:22px;box-shadow:var(--sh2);font-weight:800;min-height:92px}
+.ptab[aria-selected="true"]{background:var(--gold-grad);border-color:#C9A53E;box-shadow:0 6px 16px rgba(205,174,75,.5)}
+.ltabs button{font-weight:800}
+.ltabs button[aria-selected="true"]{border-bottom-color:var(--accent)}
+
+/* old-gold cards reuse */
+.olist{gap:12px}
+.ocard{padding:14px 16px}
+.ocard .od{border-top-color:var(--line)}
+.oldgrid input[id=o-total]{background:var(--goldbg);border-color:#DCC37A;font-size:24px;min-height:62px}
+
+/* ---------- SIDEBAR (desktop / tablet landscape) ---------- */
+.app .side{background:var(--surface);color:var(--ink);margin:14px;height:calc(100vh - 28px);border:1px solid var(--line);border-radius:30px;box-shadow:var(--sh);padding:22px 14px}
+@supports (height:100dvh){.app .side{height:calc(100dvh - 28px)}}
+.brand b{color:var(--accent-text);font-size:24px;font-weight:800}
+.bars rect,.bars path{fill:var(--accent-text)}
+.nav{gap:6px}
+.nav button{border-radius:18px;padding:13px 14px;font-weight:700;font-size:16px;opacity:1;color:var(--ink);gap:12px}
+.nav button:hover{background:var(--goldbg)}
+.nav button[aria-current="page"]{background:var(--gold-grad);color:#1C1810;box-shadow:0 6px 16px rgba(205,174,75,.45)}
+.nav svg{width:22px;height:22px}
+.nav .morebtn,.moresheet{display:none}
+.syncpill{background:var(--soft)!important;color:var(--ink)!important;border:1px solid var(--line);border-radius:16px;font-weight:700}
+.syncpill[data-st="idle"]{color:var(--ok)!important}
+.verbtn{color:var(--muted)!important;font-weight:600}
+.main{padding:28px 30px 56px}
+
+/* ---------- PHONE / TABLET PORTRAIT: bottom bar like the calculator ---------- */
+@media (max-width:899px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .app .side{position:fixed;inset-inline:0;bottom:0;top:auto;margin:0;height:auto;border-radius:28px 28px 0 0;border:0;border-top:1px solid var(--line);box-shadow:0 -8px 28px rgba(90,66,14,.18);padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));flex-direction:row;gap:0;background:var(--surface)}
+  .nav{flex-direction:row;width:100%;gap:2px;justify-content:space-between}
+  .nav button{flex:1;flex-direction:column;gap:4px;padding:8px 2px 6px;min-height:64px;font-size:12.5px;font-weight:700;border-radius:18px;justify-content:center;align-items:center;text-align:center;color:var(--muted)}
+  .nav button svg{width:26px;height:26px}
+  .nav button[aria-current="page"]{background:transparent;box-shadow:none;color:var(--accent-text)}
+  .nav button[aria-current="page"] svg{background:var(--gold-grad);color:#1C1810;border-radius:12px;padding:4px;width:36px;height:30px;box-shadow:0 4px 10px rgba(205,174,75,.5)}
+  .nav .sec{display:none}
+  .nav .morebtn{display:flex}
+  .moresheet{display:none;position:fixed;inset-inline:12px;bottom:calc(86px + env(safe-area-inset-bottom,0px));background:var(--surface);border:1px solid var(--line);border-radius:26px;box-shadow:0 18px 44px rgba(60,44,8,.35);padding:10px;z-index:30;flex-direction:column;gap:6px}
+  body.moreopen .moresheet{display:flex}
+  .moresheet button{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:18px;font-weight:800;font-size:17px;cursor:pointer;color:var(--ink)}
+  .moresheet button svg{width:24px;height:24px;color:var(--accent-text)}
+  .moresheet button[aria-current="page"]{background:var(--goldbg)}
+  .moresheet button:active{background:var(--goldbg)}
+  .main{padding:calc(70px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right)) 130px max(16px,env(safe-area-inset-left))}
+  #toasts,#toasts[popover]{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+  .panel{padding:16px;border-radius:22px}
+  .head h1{font-size:34px}
+  .btn{min-height:54px}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kpis.one{grid-template-columns:none}
+  #pf>.row:last-child{bottom:calc(88px + env(safe-area-inset-bottom,0px));background:var(--surface);border-radius:20px;box-shadow:var(--sh)}
+}
+@media (max-width:899px){.sidefoot{top:calc(12px + env(safe-area-inset-top,0px))}.verbtn{background:var(--surface)!important;border:1px solid var(--line)}}
+/* tablet landscape compact rail keeps the cream look */
+@media (min-width:900px) and (max-width:1180px){
+  .app{grid-template-columns:104px minmax(0,1fr)}
+  .app .side{margin:12px;padding:16px 6px;border-radius:28px}
+  .nav button{flex-direction:column;gap:5px;font-size:12px;min-height:68px;justify-content:center;align-items:center;text-align:center}
+}
+@media (pointer:coarse){.btn{min-height:54px}input,select,textarea{min-height:54px}.btn.sm{min-height:46px}.tile{min-height:88px}}
+@media (min-width:1500px){.main{max-width:1280px;margin-inline:auto}}
+
+/* header band on phones: sync + version in one compact row */
+@media (max-width:899px){
+  .sidefoot{flex-direction:row!important;align-items:center;gap:8px;inset-inline-start:max(14px,env(safe-area-inset-left));max-width:calc(100vw - 28px)}
+  .sidefoot .syncpill{font-size:12.5px;padding:6px 12px;min-height:34px;border-radius:999px;white-space:nowrap}
+  .sidefoot .verbtn{font-size:12px;padding:5px 12px;min-height:34px;align-self:center;border-radius:999px;white-space:nowrap}
+  .main{padding-top:calc(66px + env(safe-area-inset-top,0px))}
+  .head p{font-size:15px;line-height:1.7;color:var(--muted);font-weight:500}
+}
+.head p{font-size:clamp(14px,1.6vw,16px);color:var(--muted);font-weight:500}
 </style>
 </head>
 <body>
@@ -1172,6 +1383,7 @@ function recomputePrices(){
 const ICON={
   trend:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
   refresh:'<path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/>',
+  more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
   home:'<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>',
   box:'<path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/>',
   sale:'<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
@@ -1210,7 +1422,20 @@ const fine=()=>window.matchMedia&&matchMedia('(pointer:fine)').matches;
 
 /* ================= navigation ================= */
 const TABS=[['dashboard','الرئيسية','home'],['intake','إدخال','intake'],['stock','المخزون','box'],['count','جرد','scan'],['sale','بيع','sale'],['old','مستعمل','refresh'],['ledger','الحسابات','ledger'],['prefs','الإعدادات','gear']];
-function renderNav(){$('#nav').innerHTML=TABS.map(([id,l,i])=>`<button type="button" data-act="nav" data-v="${id}" ${id===view?'aria-current="page"':''}>${ic(i)}<span>${l}</span></button>`).join('');}
+const NAV_SEC=['count','ledger','prefs'];
+function renderNav(){
+  const b=(id,l,i,x)=>`<button type="button" data-act="nav" data-v="${id}" class="${x||''}" ${id===view?'aria-current="page"':''}>${ic(i)}<span>${l}</span></button>`;
+  const sec=TABS.filter(t=>NAV_SEC.includes(t[0])),inSec=NAV_SEC.includes(view);
+  $('#nav').innerHTML=TABS.map(([id,l,i])=>b(id,l,i,NAV_SEC.includes(id)?'sec':'')).join('')+
+    `<button type="button" class="morebtn" data-more="1" ${inSec?'aria-current="page"':''} aria-label="المزيد">${ic('more')}<span>المزيد</span></button>`+
+    `<div class="moresheet" role="menu">${sec.map(([id,l,i])=>b(id,l,i)).join('')}</div>`;
+  document.body.classList.remove('moreopen');
+}
+document.addEventListener('click',e=>{
+  const m=e.target.closest&&e.target.closest('[data-more]');
+  if(m){document.body.classList.toggle('moreopen');return;}
+  if(document.body.classList.contains('moreopen')&&!(e.target.closest&&e.target.closest('.moresheet')))document.body.classList.remove('moreopen');
+});
 function go(v){if(location.hash==='#'+v){fromHash();render(true);}else location.hash=v;}
 function fromHash(){const h=location.hash.replace('#','');view=TABS.some(t=>t[0]===h)?h:'dashboard';}
 window.addEventListener('hashchange',()=>{fromHash();render(true);});
@@ -5330,8 +5555,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='2.32.0';
+const APP_VERSION='3.0.0';
 const CHANGELOG=[
+ {v:'3.0.0',date:'2026-11-20',title:'تصميم جديد بالكامل',items:['هوية بصرية جديدة بالكامل بألوان الكريم والذهب: خلفية متدرجة، بطاقات كبيرة مستديرة بظلال ناعمة، أزرار وحقول أكبر، وخط تجوال الجديد.','أزرار التبديل والتصفية بتدرج ذهبي عند التحديد، ومفاتيح الاختيار على شكل مفاتيح حاسبة.','شريط تنقل سفلي على الجوال والآيباد العمودي بخمسة أقسام رئيسية وزر «المزيد» للجرد والحسابات والإعدادات.','قائمة جانبية عائمة بالكريم على الشاشات الكبيرة، ودعم كامل للوضع الداكن.']},
  {v:'2.32.0',date:'2026-11-19',title:'تقارير الذهب المستعمل',items:['قسم «تقارير المستعمل» داخل تبويب مستعمل: اختيار الفترة (اليوم، الأسبوع، الشهر، السنة، الكل، أو فترة محددة) مع ملخص المشتريات والمبيعات والربح والفرق النقدي.','زر «عرض التقرير وطباعته»: تقرير كامل بالمجاميع وتفصيل حسب العيار وكل الحركات، جاهز للطباعة.']},
  {v:'2.31.2',date:'2026-11-19',title:'إظهار الحقل عند التنقل بزري التالي والسابق',items:['عند الضغط على «التالي» أو «السابق» في الجوال والآيباد تتحرك الصفحة تلقائيًا ليظهر الحقل الحالي فوق لوحة المفاتيح وفوق شريط التنقل.']},
  {v:'2.31.1',date:'2026-11-19',title:'تبسيط واجهة المستعمل',items:['«بيع (لتاجر أو مصهر)» أصبح «بيع على عميل»، وأُلغي منه حقلا خصم الفصوص وخصم سعر اليوم.','واجهة أبسط تناسب الجوال: حقلان في كل سطر، خانة إجمالي كبيرة، والمخزون والحركات بطاقات بدل الجداول.']},
