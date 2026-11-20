@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="3.0.0">
+<meta name="app-version" content="3.1.1">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -945,6 +945,33 @@ dialog::backdrop{background:rgba(40,28,6,.55);backdrop-filter:blur(3px)}
   .head p{font-size:15px;line-height:1.7;color:var(--muted);font-weight:500}
 }
 .head p{font-size:clamp(14px,1.6vw,16px);color:var(--muted);font-weight:500}
+
+/* v3.1.1 تنظيم */
+.prem{display:grid!important;grid-template-columns:1fr;gap:8px;width:100%;max-width:460px;padding:10px 12px!important;border-radius:18px!important}
+.prem>span{font-size:14px!important;color:var(--ink)!important}
+.prem label{display:grid!important;grid-template-columns:62px minmax(0,1fr) 92px;gap:8px;align-items:center;font-size:14px!important;font-weight:700}
+.prem input,.prem select{width:100%!important;min-height:44px!important;border-radius:14px!important;text-align:center;padding:0 8px}
+.fone .frow{display:flex;gap:6px;flex-wrap:nowrap}
+.fone .frow .fg{flex:1 1 0;min-width:0;padding:6px 6px 8px;border-radius:16px}
+.fone .fl{font-size:11.5px;margin-bottom:4px;text-align:center}
+.fone .frow select{min-height:42px;padding:0 6px;font-size:13.5px;border-radius:12px}
+.fone{display:flex!important;flex-direction:column;gap:8px}
+.chips:has([data-oldact="rp"]){display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.chips:has([data-oldact="rp"]) button{width:100%;padding:0 6px;white-space:nowrap}
+#oldRepBox{overflow-anchor:none}
+@media (max-width:899px){
+ .ptabs{grid-auto-flow:row!important;grid-template-columns:repeat(3,1fr)!important;grid-auto-columns:unset!important;overflow:visible!important;gap:8px}
+ .ptab{min-height:62px!important;font-size:12.5px!important;padding:6px 4px!important;white-space:normal;line-height:1.25}
+ #prefBody .row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ #prefBody .row>.btn,#prefBody .row>button{width:100%;min-width:0;padding:0 8px;font-size:14px;white-space:nowrap;justify-content:center}
+ #prefBody .row>:only-child{grid-column:1/-1}
+ #prefBody .row>:nth-child(odd):last-child{grid-column:1/-1}
+}
+.pacts{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.pacts>.btn{width:100%;min-width:0;padding:0 4px;font-size:13px;white-space:nowrap;justify-content:center}
+.pacts>.prem{grid-column:1/-1;max-width:none}
+.pacts>.btn:last-of-type:nth-of-type(odd){grid-column:1/-1}
+@media (min-width:900px){.pacts{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}}
 </style>
 </head>
 <body>
@@ -1597,6 +1624,7 @@ function oldReport(){
 }
 function renderOldRep(){
   const box=$('#oldRepBox');if(!box)return;
+  const _y=window.scrollY,_h=box.offsetHeight;box.style.minHeight=_h+'px';
   const R=OLDR,r=oldReport(),chip=(k,l)=>`<button type="button" data-oldact="rp" data-v="${k}" aria-pressed="${R.p===k}">${l}</button>`;
   const kk=Object.keys(r.ks).sort((a,b)=>num(b)-num(a));
   box.innerHTML=`<h3>تقارير المستعمل</h3>
@@ -1608,6 +1636,7 @@ function renderOldRep(){
       <div class="ocard"><div class="oh"><b>الربح</b><span class="${r.profit<0?'neg':'pos'}">${money(r.profit)}</span></div><div class="od"><span>الفرق النقدي (مقبوض − مدفوع)</span><b class="${r.S.amt-r.B.amt<0?'neg':'pos'}">${money(r.S.amt-r.B.amt)}</b></div></div>
     </div>
     <div class="row" style="margin-top:12px"><button type="button" class="btn accent" data-oldact="rpview">${ic('print')}<span>عرض التقرير وطباعته</span></button></div>`;
+  window.scrollTo(0,_y);requestAnimationFrame(()=>{window.scrollTo(0,_y);box.style.minHeight=''});
 }
 function oldReportHTML(){
   const r=oldReport(),C=esc(cur()),kk=Object.keys(r.ks).sort((a,b)=>num(b)-num(a));
@@ -1626,7 +1655,7 @@ document.addEventListener('click',e=>{
   if(b.dataset.oldact==='rp'){OLDR.p=b.dataset.v;renderOldRep();}
   else{const d=dlg(`<div class="modal"><div class="row noprint" style="justify-content:space-between"><button class="btn ghost" data-act="closedlg">إغلاق</button><button class="btn accent" data-act="doprint">${ic('print')}<span>طباعة</span></button></div><div class="tablewrap" style="border:0">${oldReportHTML()}</div></div>`,'wide');d.showModal();}
 });
-document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.oldr){OLDR[t.dataset.oldr]=t.value;renderOldRep();}});
+document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.stsel){stF[t.dataset.stsel]=t.value;renderList();return}if(t&&t.dataset&&t.dataset.oldr){OLDR[t.dataset.oldr]=t.value;renderOldRep();}});
 
 /* ================= scan ================= */
 function scanBar(ctx,ph,hint){
@@ -2855,7 +2884,7 @@ function priceBoardHTML(){
   const big=`<div class="pgrid big"><div class="pcard gold"><div class="pl"><span>أونصة الذهب</span><small>USD</small></div><div class="pv">${cell(s.usd)}</div><div class="pf"><span>سعر عالمي</span>${pdelta(s.usd,op.xau)}</div></div><div class="pcard"><div class="pl"><span>أونصة الفضة</span><small>USD</small></div><div class="pv">${cell(s.xag)}</div><div class="pf"><span>سعر عالمي</span>${pdelta(s.xag,op.xag)}</div></div></div>`;
   const grid=`<div class="pgrid">${ks.map(k=>`<div class="pcard ${k==='24'?'gold':''}"><div class="pl"><span>ذهب عيار ${esc(k)}</span><small>${esc(cur())}</small></div><div class="pv">${cell(pn[k])}</div><div class="pf"><span>للجرام</span>${pdelta(pn[k],op['g'+k])}</div>${pcalcCard(k)}</div>`).join('')}</div>`;
   const used=`<details style="margin-top:12px"><summary>الجديد والمستعمل</summary><div class="tablewrap" style="margin-top:8px"><table class="mini"><thead><tr><th></th>${ks.map(k=>`<th>عيار ${esc(k)}</th>`).join('')}</tr></thead><tbody><tr><td><b>جديد</b></td>${ks.map(k=>`<td>${cell(pn[k])}</td>`).join('')}</tr><tr><td><b>مستعمل</b></td>${ks.map(k=>`<td>${cell(pu[k])}</td>`).join('')}</tr></tbody></table></div><small class="muted">${s.priceSrc==='auto'?'سعر الصرف '+s.fx+' · علاوة السوق: جديد '+(num(s.premium)||0)+'% ومستعمل '+(num(s.premiumUsed)||0)+'%':s.priceSrc==='feed'?'أسعار الجرام مأخوذة من الرابط المخصص':'أسعار أُدخلت يدويًا'}</small></details>`;
-  const acts=`<div class="row" style="margin-top:12px"><button class="btn ghost sm" data-act="refreshPrices">${ic('refresh')||''}<span>تحديث الآن</span></button><button class="btn ghost sm" data-act="prices">إدخال يدوي</button><button class="btn ghost sm" data-act="pgosrc">مصدر الأسعار</button><button class="btn ghost sm" data-act="applyPrices">تطبيق على القطع المتوفرة</button><button class="btn ghost sm" data-act="phide">${hide?'إظهار الأسعار':'إخفاء الأسعار'}</button>${premEditorHTML()}</div>`;
+  const acts=`<div class="row pacts" style="margin-top:12px"><button class="btn ghost sm" data-act="refreshPrices">${ic('refresh')||''}<span>تحديث الآن</span></button><button class="btn ghost sm" data-act="prices">إدخال يدوي</button><button class="btn ghost sm" data-act="pgosrc">مصدر الأسعار</button><button class="btn ghost sm" data-act="applyPrices">تطبيق على القطع المتوفرة</button><button class="btn ghost sm" data-act="phide">${hide?'إظهار الأسعار':'إخفاء الأسعار'}</button>${premEditorHTML()}</div>`;
   return `<div class="pboard" data-enter>${head}${hide?'':msg+big+pcalcBar()+grid+used}${acts}</div>`;
 }
 function priceStripHTML(){return priceBoardHTML();}
@@ -3857,11 +3886,14 @@ function renderStFilters(){
   const el=$('#stfilters');if(!el)return;
   const sb=(g,v,l)=>`<button type="button" data-act="stf" data-g="${g}" data-k="${esc(v)}" aria-pressed="${stF[g]===v}">${esc(l)}</button>`;
   const grp=(title,inner)=>`<div class="fg"><span class="fl">${title}</span>${inner}</div>`;
-  el.innerHTML=`<div class="fbar">
-    ${grp('المخزون',`<div class="segb">${sb('status','in','متوفر')}${sb('status','sold','مباع')}${sb('status','all','الكل')}</div>`)}
-    ${grp('الحالة',`<div class="segb">${sb('cond','all','الكل')}${sb('cond','new','جديد')}${sb('cond','used','مستعمل')}</div>`)}
-    ${S.settings.audiences.length?grp('الفئة',`<div class="segb">${sb('aud','all','الكل')}${S.settings.audiences.map(a=>sb('aud',a,a)).join('')}</div>`):''}
-    ${grp('العيار',`<div class="segb">${sb('karat','all','الكل')}${S.settings.karats.map(k=>sb('karat',k,k)).join('')}</div>`)}
+  const so=(g,opts)=>`<div class="fg"><span class="fl">${{status:'المخزون',cond:'الحالة',aud:'الفئة',karat:'العيار'}[g]}</span><select data-stsel="${g}" aria-label="${{status:'المخزون',cond:'الحالة',aud:'الفئة',karat:'العيار'}[g]}">${opts.map(([v,l])=>`<option value="${esc(v)}" ${stF[g]===v?'selected':''}>${esc(l)}</option>`).join('')}</select></div>`;
+  el.innerHTML=`<div class="fbar fone">
+    <div class="frow">
+    ${so('status',[['in','متوفر'],['sold','مباع'],['all','الكل']])}
+    ${so('cond',[['all','الكل'],['new','جديد'],['used','مستعمل']])}
+    ${S.settings.audiences.length?so('aud',[['all','الكل'],...S.settings.audiences.map(a=>[a,a])]):''}
+    ${so('karat',[['all','الكل'],...S.settings.karats.map(k=>[k,k])])}
+    </div>
     ${grp('الصنف',`<select id="nodeSel" aria-label="الصنف"><option value="all">كل الأصناف</option>${S.settings.nodes.map(n=>`<option value="${n.id}" ${stF.node===n.id?'selected':''}>${esc(pathOf(n.id))}</option>`).join('')}</select>`)}
   </div>`;
 }
@@ -5572,8 +5604,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='3.1.0';
+const APP_VERSION='3.1.1';
 const CHANGELOG=[
+ {v:'3.1.1',date:'2026-11-20',title:'تنظيم الحقول والأزرار',items:['علاوة السوق: حقول متطابقة ومرتبة (الاسم ثم القيمة ثم النوع).','المخزون: الفلاتر في سطر واحد وكل فلتر قائمة منسدلة.','تقارير المستعمل: الأزرار بشبكة ثابتة ولا تقفز الشاشة عند الضغط.','الإعدادات: أقسام الإعدادات بشبكة كاملة الأسماء وأزرار موحدة الحجم.'],},
  {v:'3.1.0',date:'2026-11-20',title:'تثبيت التطبيق على أندرويد',items:['يمكن الآن تثبيت «جرد الذهب» كتطبيق على أندرويد من زر «تثبيت التطبيق» في قائمة المزيد أو من قائمة متصفح كروم.','يعمل بملء الشاشة وبأيقونة خاصة، ويفتح دون اتصال بعد أول تشغيل.'],},
  {v:'3.0.0',date:'2026-11-20',title:'تصميم جديد بالكامل',items:['هوية بصرية جديدة بالكامل بألوان الكريم والذهب: خلفية متدرجة، بطاقات كبيرة مستديرة بظلال ناعمة، أزرار وحقول أكبر، وخط تجوال الجديد.','أزرار التبديل والتصفية بتدرج ذهبي عند التحديد، ومفاتيح الاختيار على شكل مفاتيح حاسبة.','شريط تنقل سفلي على الجوال والآيباد العمودي بخمسة أقسام رئيسية وزر «المزيد» للجرد والحسابات والإعدادات.','قائمة جانبية عائمة بالكريم على الشاشات الكبيرة، ودعم كامل للوضع الداكن.']},
  {v:'2.32.0',date:'2026-11-19',title:'تقارير الذهب المستعمل',items:['قسم «تقارير المستعمل» داخل تبويب مستعمل: اختيار الفترة (اليوم، الأسبوع، الشهر، السنة، الكل، أو فترة محددة) مع ملخص المشتريات والمبيعات والربح والفرق النقدي.','زر «عرض التقرير وطباعته»: تقرير كامل بالمجاميع وتفصيل حسب العيار وكل الحركات، جاهز للطباعة.']},
