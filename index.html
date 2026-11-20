@@ -7,6 +7,12 @@
 <title>جرد الذهب — المخزون والحسابات</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <meta name="theme-color" content="#F1EAD3">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="جرد الذهب">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
 <style>
 :root{
@@ -1384,6 +1390,7 @@ const ICON={
   trend:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
   refresh:'<path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/>',
   more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+  dl:'<path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/>',
   home:'<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>',
   box:'<path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/>',
   sale:'<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
@@ -1423,12 +1430,22 @@ const fine=()=>window.matchMedia&&matchMedia('(pointer:fine)').matches;
 /* ================= navigation ================= */
 const TABS=[['dashboard','الرئيسية','home'],['intake','إدخال','intake'],['stock','المخزون','box'],['count','جرد','scan'],['sale','بيع','sale'],['old','مستعمل','refresh'],['ledger','الحسابات','ledger'],['prefs','الإعدادات','gear']];
 const NAV_SEC=['count','ledger','prefs'];
+let DEFERRED=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFERRED=e;try{renderNav()}catch(_){}});
+window.addEventListener('appinstalled',()=>{DEFERRED=null;try{renderNav()}catch(_){}toast('تم تثبيت التطبيق')});
+const STANDALONE=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone}catch(_){return false}};
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){window.addEventListener('load',()=>{try{navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(_){}})}
+document.addEventListener('click',async e=>{
+  if(!e.target.closest('[data-install]'))return;
+  if(DEFERRED){DEFERRED.prompt();try{await DEFERRED.userChoice}catch(_){}DEFERRED=null;renderNav()}
+  else toast('من قائمة كروم ⋮ اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية»');
+});
 function renderNav(){
   const b=(id,l,i,x)=>`<button type="button" data-act="nav" data-v="${id}" class="${x||''}" ${id===view?'aria-current="page"':''}>${ic(i)}<span>${l}</span></button>`;
   const sec=TABS.filter(t=>NAV_SEC.includes(t[0])),inSec=NAV_SEC.includes(view);
   $('#nav').innerHTML=TABS.map(([id,l,i])=>b(id,l,i,NAV_SEC.includes(id)?'sec':'')).join('')+
     `<button type="button" class="morebtn" data-more="1" ${inSec?'aria-current="page"':''} aria-label="المزيد">${ic('more')}<span>المزيد</span></button>`+
-    `<div class="moresheet" role="menu">${sec.map(([id,l,i])=>b(id,l,i)).join('')}</div>`;
+    `<div class="moresheet" role="menu">${sec.map(([id,l,i])=>b(id,l,i)).join('')}${STANDALONE()?'':`<button type="button" data-install="1">${ic('dl')}<span>تثبيت التطبيق</span></button>`}</div>`;
   document.body.classList.remove('moreopen');
 }
 document.addEventListener('click',e=>{
@@ -5555,8 +5572,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='3.0.0';
+const APP_VERSION='3.1.0';
 const CHANGELOG=[
+ {v:'3.1.0',date:'2026-11-20',title:'تثبيت التطبيق على أندرويد',items:['يمكن الآن تثبيت «جرد الذهب» كتطبيق على أندرويد من زر «تثبيت التطبيق» في قائمة المزيد أو من قائمة متصفح كروم.','يعمل بملء الشاشة وبأيقونة خاصة، ويفتح دون اتصال بعد أول تشغيل.'],},
  {v:'3.0.0',date:'2026-11-20',title:'تصميم جديد بالكامل',items:['هوية بصرية جديدة بالكامل بألوان الكريم والذهب: خلفية متدرجة، بطاقات كبيرة مستديرة بظلال ناعمة، أزرار وحقول أكبر، وخط تجوال الجديد.','أزرار التبديل والتصفية بتدرج ذهبي عند التحديد، ومفاتيح الاختيار على شكل مفاتيح حاسبة.','شريط تنقل سفلي على الجوال والآيباد العمودي بخمسة أقسام رئيسية وزر «المزيد» للجرد والحسابات والإعدادات.','قائمة جانبية عائمة بالكريم على الشاشات الكبيرة، ودعم كامل للوضع الداكن.']},
  {v:'2.32.0',date:'2026-11-19',title:'تقارير الذهب المستعمل',items:['قسم «تقارير المستعمل» داخل تبويب مستعمل: اختيار الفترة (اليوم، الأسبوع، الشهر، السنة، الكل، أو فترة محددة) مع ملخص المشتريات والمبيعات والربح والفرق النقدي.','زر «عرض التقرير وطباعته»: تقرير كامل بالمجاميع وتفصيل حسب العيار وكل الحركات، جاهز للطباعة.']},
  {v:'2.31.2',date:'2026-11-19',title:'إظهار الحقل عند التنقل بزري التالي والسابق',items:['عند الضغط على «التالي» أو «السابق» في الجوال والآيباد تتحرك الصفحة تلقائيًا ليظهر الحقل الحالي فوق لوحة المفاتيح وفوق شريط التنقل.']},
