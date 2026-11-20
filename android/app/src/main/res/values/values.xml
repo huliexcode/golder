@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="jard_bg">#F1EAD3</color>
+    <string name="asset_statements">[{\"relation\":[\"delegate_permission/common.handle_all_urls\"],\"target\":{\"namespace\":\"web\",\"site\":\"https://huliexcode.github.io\"}}]</string>
+    <style name="Theme.Jard" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/jard_bg</item>
+    </style>
+</resources>

@@ -1,0 +1,30 @@
+name: Build Android APK
+on:
+  workflow_dispatch:
+  push:
+    paths: ['android/**', '.github/workflows/android.yml']
+permissions:
+  contents: write
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.7' }
+      - name: Build release APK
+        working-directory: android
+        run: gradle --no-daemon assembleRelease
+      - name: Rename
+        run: cp android/app/build/outputs/apk/release/app-release.apk jard-gold.apk
+      - uses: actions/upload-artifact@v4
+        with: { name: jard-gold-apk, path: jard-gold.apk }
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-latest
+          name: جرد الذهب - ملف التطبيق (APK)
+          body: حمّل jard-gold.apk وثبّته على أندرويد.
+          files: jard-gold.apk
