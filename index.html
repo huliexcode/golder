@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="3.1.1">
+<meta name="app-version" content="3.2.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -972,6 +972,26 @@ dialog::backdrop{background:rgba(40,28,6,.55);backdrop-filter:blur(3px)}
 .pacts>.prem{grid-column:1/-1;max-width:none}
 .pacts>.btn:last-of-type:nth-of-type(odd){grid-column:1/-1}
 @media (min-width:900px){.pacts{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}}
+
+.panel.calc{display:block!important}
+.calc .seg{display:grid;width:100%;grid-template-columns:repeat(auto-fit,minmax(0,1fr))}
+.cdisp{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:0 6px 18px rgba(138,106,20,.12);min-height:76px}
+.cdisp output{font-size:38px;font-weight:800;flex:1;text-align:start;direction:ltr;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+.cunit{display:inline-flex;align-items:center;gap:6px;min-height:46px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--soft);font-weight:700;font-size:16px;color:var(--ink);cursor:pointer}
+.cunit svg{width:18px;height:18px}
+.cres{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.cres>div{border-radius:22px;padding:14px 12px;border:1px solid var(--line);text-align:center;min-width:0}
+.cbuy{background:var(--soft)}.csell{background:var(--goldbg)}
+.cres b{display:block;font-size:15px;margin-bottom:8px}
+.cres em{font-style:normal;font-size:24px;font-weight:800;color:var(--accent-text);word-break:break-all}
+.cres small{font-size:14px;color:var(--accent-text);font-weight:700}
+.ckeys{direction:ltr!important;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.ckeys button{min-height:62px;border-radius:20px;border:1px solid var(--line);background:#fff;font-size:28px;font-weight:700;color:var(--ink);box-shadow:0 3px 8px rgba(138,106,20,.12);cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit}
+.ckeys button:active{background:var(--goldbg);transform:scale(.97)}
+.ckeys svg{width:26px;height:26px}
+@media (min-width:900px){.calc{max-width:480px}}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ckeys button{background:var(--surface)}}
+:root[data-theme="dark"] .ckeys button{background:var(--surface)}
 </style>
 </head>
 <body>
@@ -1416,6 +1436,8 @@ function recomputePrices(){
 const ICON={
   trend:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
   refresh:'<path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/>',
+  bksp:'<path d="M9 5h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6-7z"/><path d="m12 10 4 4M16 10l-4 4"/>',
+  calc:'<rect x="5" y="3" width="14" height="18" rx="3"/><path d="M8 7h8"/><path d="M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 16h.01M12 16h.01M15.5 16h.01"/>',
   more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
   dl:'<path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/>',
   home:'<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>',
@@ -1455,8 +1477,8 @@ function closeDlg(){const d=$('#dlg');if(d.open)d.close();}
 const fine=()=>window.matchMedia&&matchMedia('(pointer:fine)').matches;
 
 /* ================= navigation ================= */
-const TABS=[['dashboard','الرئيسية','home'],['intake','إدخال','intake'],['stock','المخزون','box'],['count','جرد','scan'],['sale','بيع','sale'],['old','مستعمل','refresh'],['ledger','الحسابات','ledger'],['prefs','الإعدادات','gear']];
-const NAV_SEC=['count','ledger','prefs'];
+const TABS=[['dashboard','الرئيسية','home'],['intake','إدخال','intake'],['stock','المخزون','box'],['count','جرد','scan'],['sale','بيع','sale'],['old','مستعمل','refresh'],['calc','حاسبة','calc'],['ledger','الحسابات','ledger'],['prefs','الإعدادات','gear']];
+const NAV_SEC=['calc','count','ledger','prefs'];
 let DEFERRED=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFERRED=e;try{renderNav()}catch(_){}});
 window.addEventListener('appinstalled',()=>{DEFERRED=null;try{renderNav()}catch(_){}toast('تم تثبيت التطبيق')});
@@ -1483,7 +1505,7 @@ document.addEventListener('click',e=>{
 function go(v){if(location.hash==='#'+v){fromHash();render(true);}else location.hash=v;}
 function fromHash(){const h=location.hash.replace('#','');view=TABS.some(t=>t[0]===h)?h:'dashboard';}
 window.addEventListener('hashchange',()=>{fromHash();render(true);});
-function render(top){if(view!=='intake')genBulk=false;renderNav();const m=$('#main');({dashboard:vDash,intake:vIntake,stock:vStock,count:vCount,sale:vSale,old:vOld,ledger:vLedger,prefs:vPrefs}[view])(m);pcalcApply();if(top)window.scrollTo(0,0);}
+function render(top){if(view!=='intake')genBulk=false;renderNav();const m=$('#main');({dashboard:vDash,intake:vIntake,stock:vStock,count:vCount,sale:vSale,old:vOld,calc:vCalc,ledger:vLedger,prefs:vPrefs}[view])(m);pcalcApply();if(top)window.scrollTo(0,0);}
 
 /* ================= used gold (buy from customers / sell) ================= */
 const OLDF={mode:'buy',k:'',gross:'',stone:'',disc:null,ppg:'',total:'',party:'',note:''};
@@ -1656,6 +1678,58 @@ document.addEventListener('click',e=>{
   else{const d=dlg(`<div class="modal"><div class="row noprint" style="justify-content:space-between"><button class="btn ghost" data-act="closedlg">إغلاق</button><button class="btn accent" data-act="doprint">${ic('print')}<span>طباعة</span></button></div><div class="tablewrap" style="border:0">${oldReportHTML()}</div></div>`,'wide');d.showModal();}
 });
 document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.stsel){stF[t.dataset.stsel]=t.value;renderList();return}if(t&&t.dataset&&t.dataset.oldr){OLDR[t.dataset.oldr]=t.value;renderOldRep();}});
+
+
+/* ================= حاسبة العيار ================= */
+const CALC={k:null,mode:'g',v:''};
+function calcRes(){
+  const ks=S.settings.karats;if(!CALC.k||!ks.includes(CALC.k))CALC.k=ks.includes('21')?'21':ks[0];
+  const sell=priceFor(CALC.k,false),buy=buyAuto(CALC.k,true)||priceFor(CALC.k,true)||0,x=num(CALC.v)||0;
+  const f=(pr)=>CALC.mode==='g'?(x*pr):(pr>0?x/pr:0);
+  return{sell,buy,rs:f(sell),rb:f(buy)};
+}
+function vCalc(m){
+  const ks=S.settings.karats;
+  m.innerHTML=`<header class="head"><h1>حاسبة الجملة</h1><p>${CALC.mode==='g'?'تحويل الجرام إلى مبلغ':'تحويل المبلغ إلى جرام'} حسب العيار</p></header>
+  <div class="panel calc" data-calc-root>
+    <div class="seg" role="tablist" aria-label="العيار">${ks.map(k=>`<button type="button" data-calc="k" data-v="${esc(k)}" aria-pressed="${calcRes()&&CALC.k===k}">عيار ${esc(k)}</button>`).join('')}</div>
+    <div class="cdisp"><button type="button" class="cunit" data-calc="mode" aria-label="عكس العملية">${ic('refresh')}<span id="cunit"></span></button><output id="cval" dir="ltr"></output></div>
+    <div class="cres"><div class="cbuy"><b>نشتري منك</b><div><em id="crb"></em> <small id="cub"></small></div><span class="hint" id="cpb"></span></div><div class="csell"><b>نبيع لك</b><div><em id="crs"></em> <small id="cus"></small></div><span class="hint" id="cps"></span></div></div>
+    <div class="ckeys" dir="ltr">${['1','2','3','4','5','6','7','8','9','.','0','del'].map(k=>`<button type="button" data-calc="key" data-v="${k}" aria-label="${k==='del'?'حذف':k}">${k==='del'?ic('bksp'):k}</button>`).join('')}</div>
+    <button type="button" class="btn ghost" data-calc="clr" style="width:100%;margin-top:10px">مسح</button>
+  </div>`;
+  calcUpd();
+}
+function calcUpd(){
+  const r=calcRes(),C=cur(),g=CALC.mode==='g',set=(i,t)=>{const e=$('#'+i);if(e)e.textContent=t};
+  set('cunit',g?'جرام':C);set('cval',CALC.v===''?'0':CALC.v);
+  set('crs',g?fmt(r.rs):fmtW(r.rs));set('crb',g?fmt(r.rb):fmtW(r.rb));
+  set('cus',g?C:'جرام');set('cub',g?C:'جرام');
+  set('cps','سعر الجرام '+(r.sell?fmt(r.sell):'—'));set('cpb','سعر الجرام '+(r.buy?fmt(r.buy):'—'));
+  document.querySelectorAll('[data-calc="k"]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===CALC.k));
+}
+function calcKey(k){
+  if(k==='del')CALC.v=CALC.v.slice(0,-1);
+  else if(k==='.'){if(!CALC.v.includes('.'))CALC.v=(CALC.v||'0')+'.';}
+  else if(CALC.v.length<12)CALC.v=(CALC.v==='0'?'':CALC.v)+k;
+  calcUpd();
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest&&e.target.closest('[data-calc]');if(!b)return;
+  const a=b.dataset.calc;
+  if(a==='key')calcKey(b.dataset.v);
+  else if(a==='k'){CALC.k=b.dataset.v;calcUpd();}
+  else if(a==='clr'){CALC.v='';calcUpd();}
+  else if(a==='mode'){CALC.mode=CALC.mode==='g'?'m':'g';CALC.v='';vCalc($('#main'));}
+});
+document.addEventListener('keydown',e=>{
+  if(view!=='calc'||e.ctrlKey||e.metaKey||e.altKey)return;
+  const t=e.target;if(t&&/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))return;
+  const k=latin(e.key);
+  if(/^[0-9]$/.test(k)||k==='.'){calcKey(k);e.preventDefault();}
+  else if(e.key==='Backspace'){calcKey('del');e.preventDefault();}
+  else if(e.key==='Escape'){CALC.v='';calcUpd();}
+});
 
 /* ================= scan ================= */
 function scanBar(ctx,ph,hint){
@@ -5604,8 +5678,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='3.1.1';
+const APP_VERSION='3.2.0';
 const CHANGELOG=[
+ {v:'3.2.0',date:'2026-11-20',title:'حاسبة الجملة',items:['قسم «حاسبة» جديد: اختر العيار واكتب الوزن لتظهر قيمة «نبيع لك» و«نشتري منك» فورًا.','زر العكس يحوّل من المبلغ إلى الجرام.','لوحة أرقام كبيرة للجوال، ويعمل لوحة مفاتيح الجهاز على الحاسوب أيضًا.'],},
  {v:'3.1.1',date:'2026-11-20',title:'تنظيم الحقول والأزرار',items:['علاوة السوق: حقول متطابقة ومرتبة (الاسم ثم القيمة ثم النوع).','المخزون: الفلاتر في سطر واحد وكل فلتر قائمة منسدلة.','تقارير المستعمل: الأزرار بشبكة ثابتة ولا تقفز الشاشة عند الضغط.','الإعدادات: أقسام الإعدادات بشبكة كاملة الأسماء وأزرار موحدة الحجم.'],},
  {v:'3.1.0',date:'2026-11-20',title:'تثبيت التطبيق على أندرويد',items:['يمكن الآن تثبيت «جرد الذهب» كتطبيق على أندرويد من زر «تثبيت التطبيق» في قائمة المزيد أو من قائمة متصفح كروم.','يعمل بملء الشاشة وبأيقونة خاصة، ويفتح دون اتصال بعد أول تشغيل.'],},
  {v:'3.0.0',date:'2026-11-20',title:'تصميم جديد بالكامل',items:['هوية بصرية جديدة بالكامل بألوان الكريم والذهب: خلفية متدرجة، بطاقات كبيرة مستديرة بظلال ناعمة، أزرار وحقول أكبر، وخط تجوال الجديد.','أزرار التبديل والتصفية بتدرج ذهبي عند التحديد، ومفاتيح الاختيار على شكل مفاتيح حاسبة.','شريط تنقل سفلي على الجوال والآيباد العمودي بخمسة أقسام رئيسية وزر «المزيد» للجرد والحسابات والإعدادات.','قائمة جانبية عائمة بالكريم على الشاشات الكبيرة، ودعم كامل للوضع الداكن.']},
