@@ -530,6 +530,7 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .pd{display:inline-flex;align-items:center;gap:4px;font-weight:700;font-size:12.5px;direction:ltr}
 .pd.up{color:#1f9d55}.pd.dn{color:#d63c3c}.pd.flat{color:var(--muted)}
 .pd i{font-style:normal}
+.pd.big{font-size:inherit;gap:10px;font-weight:800}
 .pcard.gold{border-color:rgba(201,162,39,.45);background:linear-gradient(180deg,rgba(201,162,39,.10),transparent)}
 .pbadge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700;background:rgba(201,162,39,.16);color:var(--accent-text,#8a6d00)}
 .pbadge.live::before{content:'';width:7px;height:7px;border-radius:50%;background:#1f9d55;box-shadow:0 0 0 3px rgba(31,157,85,.2)}
@@ -2908,6 +2909,11 @@ function pdelta(cur,open){
   const d=cur-open,cls=d>0.004?'up':d<-0.004?'dn':'flat';
   return `<span class="pd ${cls}"><i>${d>0.004?'↗':d<-0.004?'↘':'•'}</i>${d>0.004?'+':''}${fmt(d)}</span>`;
 }
+function pind(cur,open){
+  if(!(cur>0)||!(open>0))return '<span class="pd flat">—</span>';
+  const d=cur-open,cls=d>0.004?'up':d<-0.004?'dn':'flat';
+  return `<span class="pd big ${cls}"><i>${d>0.004?'▲':d<-0.004?'▼':'●'}</i>${d>0.004?'صعود':d<-0.004?'نزول':'ثابت'}</span>`;
+}
 function priceSrcBadge(){
   const s=S.settings;
   if(pstate.st==='loading')return '<span class="pbadge warn">جارٍ التحديث…</span>';
@@ -2988,7 +2994,7 @@ function priceBoardHTML(){
   const cell=v=>v>0?fmt(v):'—';
   const head=`<div class="phead"><h3>${ic('trend')}<span>أسعار الذهب والفضة</span> ${priceSrcBadge()}</h3><div class="pmeta">${pd.lo>0&&pd.hi>0?'نطاق اليوم: <b dir="ltr">'+fmt(pd.lo)+' – '+fmt(pd.hi)+'</b> · ':''}${s.pricesAt?'آخر تحديث: '+dtf(s.pricesAt)+' · ':'لم تُحدَّد أسعار بعد · '}يتحدّث كل ${s.priceEvery||5} دقائق</div></div>`;
   const msg=pstate.st==='fail'?`<p class="hint warn" style="margin:0 0 10px">تعذّر التحديث التلقائي${s.pricesAt?'، وتُعرض آخر أسعار محفوظة':''}.${pstate.err?' '+esc(pstate.err):''}</p>`:'';
-  const big=`<div class="pgrid big"><div class="pcard gold"><div class="pl"><span>أونصة الذهب</span><small>USD</small></div><div class="pv">${cell(s.usd)}</div><div class="pf"><span>سعر عالمي</span>${pdelta(s.usd,op.xau)}</div></div><div class="pcard"><div class="pl"><span>أونصة الفضة</span><small>USD</small></div><div class="pv">${cell(s.xag)}</div><div class="pf"><span>سعر عالمي</span>${pdelta(s.xag,op.xag)}</div></div></div>`;
+  const big=`<div class="pgrid big"><div class="pcard gold"><div class="pl"><span>أونصة الذهب</span><small>USD</small></div><div class="pv">${cell(s.usd)}</div><div class="pf"><span>سعر عالمي</span>${pdelta(s.usd,op.xau)}</div></div><div class="pcard"><div class="pl"><span>الفضة</span><small>الاتجاه</small></div><div class="pv ind">${pind(s.xag,op.xag)}</div><div class="pf"><span>مقارنة بافتتاح اليوم</span>${pdelta(s.xag,op.xag)}</div></div></div>`;
   const grid=`<div class="pgrid">${ks.map(k=>`<div class="pcard ${k==='24'?'gold':''}"><div class="pl"><span>ذهب عيار ${esc(k)}</span><small>${esc(cur())}</small></div><div class="pv">${cell(pn[k])}</div><div class="pf"><span>للجرام</span>${pdelta(pn[k],op['g'+k])}</div>${pcalcCard(k)}</div>`).join('')}</div>`;
   const used=`<details style="margin-top:12px"><summary>الجديد والمستعمل</summary><div class="tablewrap" style="margin-top:8px"><table class="mini"><thead><tr><th></th>${ks.map(k=>`<th>عيار ${esc(k)}</th>`).join('')}</tr></thead><tbody><tr><td><b>جديد</b></td>${ks.map(k=>`<td>${cell(pn[k])}</td>`).join('')}</tr><tr><td><b>مستعمل</b></td>${ks.map(k=>`<td>${cell(pu[k])}</td>`).join('')}</tr></tbody></table></div><small class="muted">${s.priceSrc==='auto'?'سعر الصرف '+s.fx+' · علاوة السوق: جديد '+(num(s.premium)||0)+'% ومستعمل '+(num(s.premiumUsed)||0)+'%':s.priceSrc==='feed'?'أسعار الجرام مأخوذة من الرابط المخصص':'أسعار أُدخلت يدويًا'}</small></details>`;
   const acts=`<div class="row pacts" style="margin-top:12px"><button class="btn ghost sm" data-act="refreshPrices">${ic('refresh')||''}<span>تحديث الآن</span></button><button class="btn ghost sm" data-act="prices">إدخال يدوي</button><button class="btn ghost sm" data-act="pgosrc">مصدر الأسعار</button><button class="btn ghost sm" data-act="applyPrices">تطبيق على القطع المتوفرة</button><button class="btn ghost sm" data-act="phide">${hide?'إظهار الأسعار':'إخفاء الأسعار'}</button>${premEditorHTML()}</div>`;
@@ -3026,7 +3032,7 @@ async function pfeedTest(){
     const raw=await fetchFeedRaw(url.trim(),f.proxy),r=feedParse(raw,null);
     if(!r||!(r.vals.g24>0))throw Object.assign(new Error('nodata'),{code:'nodata'});
     pfeedLast={url:url.trim(),proxy:f.proxy,map:r.paths,vals:r.vals};
-    const v=r.vals,rows=[['xau','أونصة الذهب (USD)'],['xag','أونصة الفضة (USD)'],['g24','عيار 24'],['g22','عيار 22'],['g21','عيار 21'],['g18','عيار 18']];
+    const v=r.vals,rows=[['xau','أونصة الذهب (USD)'],['g24','عيار 24'],['g22','عيار 22'],['g21','عيار 21'],['g18','عيار 18']];
     res.innerHTML=`<p class="scanres show ok">✓ تم العثور على الأسعار. راجعها ثم اضغط «حفظ واستخدام الرابط».</p><div class="tablewrap"><table class="mini"><thead><tr><th>البند</th><th>القيمة</th><th>الموضع</th></tr></thead><tbody>${rows.map(([k,l])=>`<tr><td>${l}</td><td><b>${v[k]>0?fmt(v[k]):'—'}</b></td><td class="mono" dir="ltr">${esc((r.paths&&r.paths[k])||(r.paths?'':'نص الصفحة'))}</td></tr>`).join('')}</tbody></table></div>`;
     const u=$('#pfeeduse');if(u)u.disabled=false;
   }catch(e){pfeedLast=null;res.innerHTML='<p class="scanres show bad">'+esc(feedErrMsg(e))+'</p>';const u=$('#pfeeduse');if(u)u.disabled=true;}
