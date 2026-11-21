@@ -1537,7 +1537,7 @@ document.addEventListener('click',e=>{
 function go(v){if(location.hash==='#'+v){fromHash();render(true);}else location.hash=v;}
 function fromHash(){const h=location.hash.replace('#','');view=TABS.some(t=>t[0]===h)?h:'dashboard';}
 window.addEventListener('hashchange',()=>{fromHash();render(true);});
-function render(top){if(view!=='intake')genBulk=false;document.body.classList.toggle('v-calc',view==='calc');renderNav();const m=$('#main');({dashboard:vDash,intake:vIntake,stock:vStock,count:vCount,sale:vSale,old:vOld,calc:vCalc,ledger:vLedger,prefs:vPrefs}[view])(m);pcalcApply();if(top)window.scrollTo(0,0);}
+function render(top){if(view!=='intake')genBulk=false;document.body.classList.toggle('v-calc',view==='calc');renderNav();const m=$('#main');({dashboard:vDash,intake:vIntake,stock:vStock,count:vCount,sale:vSale,old:vOld,calc:vCalc,ledger:vLedger,prefs:vPrefs}[view])(m);pcalcApply();if(top){window.scrollTo(0,0);if(view==='intake'&&window.innerWidth<=760){const fit=()=>{const e=$('#pmini');if(e)window.scrollTo(0,Math.max(0,e.getBoundingClientRect().top+(window.scrollY||0)-10));};fit();setTimeout(fit,80);}}}
 
 /* ================= used gold (buy from customers / sell) ================= */
 const OLDF={mode:'buy',k:'',gross:'',stone:'',disc:null,ppg:'',total:'',party:'',note:''};
