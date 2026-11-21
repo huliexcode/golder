@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="3.2.1">
+<meta name="app-version" content="3.2.2">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -1016,6 +1016,13 @@ dialog::backdrop{background:rgba(40,28,6,.55);backdrop-filter:blur(3px)}
  body.v-calc .chead p{display:none}
  body.v-calc .cres span.hint{display:none}
 }
+
+/* v3.2.2 */
+#kbar{z-index:80}
+.pcalc .segb button{white-space:nowrap!important;font-size:13px!important;padding:4px 6px!important;line-height:1.2}
+.pcalc .segb{flex-wrap:nowrap}
+.pacts>.btn{font-size:clamp(11px,3.1vw,13px)!important;padding:0 3px!important}
+#prefBody .row>.btn,#prefBody .row>button{font-size:clamp(11.5px,3.4vw,14px)}
 </style>
 </head>
 <body>
@@ -2923,14 +2930,17 @@ function calcCfg(){
   if(!S.settings.calc.margin||typeof S.settings.calc.margin!=='object')S.settings.calc.margin={};
   return S.settings.calc;
 }
-const pcwGet=()=>{try{return localStorage.getItem('jard.pcw')||'';}catch(e){return '';}};
-const pcwSet=v=>{try{localStorage.setItem('jard.pcw',String(v||''));}catch(e){}};
-const pcstGet=()=>{try{return localStorage.getItem('jard.pcst')||'';}catch(e){return '';}};
-const pcstSet=v=>{try{localStorage.setItem('jard.pcst',String(v||''));}catch(e){}};
-const pcsaGet=()=>{try{return localStorage.getItem('jard.pcsa')||'';}catch(e){return '';}};
-const pcsaSet=v=>{try{localStorage.setItem('jard.pcsa',String(v||''));}catch(e){}};
-const pcofGet=()=>{try{return localStorage.getItem('jard.pcof')||'';}catch(e){return '';}};
-const pcofSet=v=>{try{localStorage.setItem('jard.pcof',String(v||''));}catch(e){}};
+let _pcT=null;function pcSaveSoon(){clearTimeout(_pcT);_pcT=setTimeout(()=>{try{save()}catch(e){}},500)}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){clearTimeout(_pcT);try{save()}catch(e){}}});
+window.addEventListener('pagehide',()=>{clearTimeout(_pcT);try{save()}catch(e){}});
+const pcwGet=()=>{let v='';try{v=localStorage.getItem('jard.pcw')||'';}catch(e){}if(!v){try{v=(S.settings.pcv||{}).w||'';}catch(e){}}return v;};
+const pcwSet=v=>{try{localStorage.setItem('jard.pcw',String(v||''));}catch(e){}try{(S.settings.pcv=S.settings.pcv||{}).w=String(v||'');pcSaveSoon();}catch(e){}};
+const pcstGet=()=>{let v='';try{v=localStorage.getItem('jard.pcst')||'';}catch(e){}if(!v){try{v=(S.settings.pcv||{}).st||'';}catch(e){}}return v;};
+const pcstSet=v=>{try{localStorage.setItem('jard.pcst',String(v||''));}catch(e){}try{(S.settings.pcv=S.settings.pcv||{}).st=String(v||'');pcSaveSoon();}catch(e){}};
+const pcsaGet=()=>{let v='';try{v=localStorage.getItem('jard.pcsa')||'';}catch(e){}if(!v){try{v=(S.settings.pcv||{}).sa||'';}catch(e){}}return v;};
+const pcsaSet=v=>{try{localStorage.setItem('jard.pcsa',String(v||''));}catch(e){}try{(S.settings.pcv=S.settings.pcv||{}).sa=String(v||'');pcSaveSoon();}catch(e){}};
+const pcofGet=()=>{let v='';try{v=localStorage.getItem('jard.pcof')||'';}catch(e){}if(!v){try{v=(S.settings.pcv||{}).of||'';}catch(e){}}return v;};
+const pcofSet=v=>{try{localStorage.setItem('jard.pcof',String(v||''));}catch(e){}try{(S.settings.pcv=S.settings.pcv||{}).of=String(v||'');pcSaveSoon();}catch(e){}};
 function pcalcBar(){
   const c=calcCfg();
   return `<div class="pcalc pcmain" role="group" aria-label="حاسبة القيمة والربح"><b>حاسبة القيمة والربح</b>
@@ -2969,7 +2979,7 @@ document.addEventListener('input',e=>{
   else if(t.dataset.pc==='st'){pcstSet(t.value);pcalcApply();}
   else if(t.dataset.pc==='sa'){pcsaSet(t.value);pcalcApply();}
   else if(t.dataset.pc==='of'){pcofSet(t.value);pcalcApply();}
-  else if(t.dataset.pck!==undefined){const c=calcCfg();(c.mode==='margin'?c.margin:c.sell)[t.dataset.pck]=t.value;pcalcApply();}
+  else if(t.dataset.pck!==undefined){const c=calcCfg();(c.mode==='margin'?c.margin:c.sell)[t.dataset.pck]=t.value;pcalcApply();pcSaveSoon();}
 });
 document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.pck!==undefined)save();});
 function priceBoardHTML(){
@@ -4719,7 +4729,10 @@ document.addEventListener('input',e=>{
   document.body.appendChild(bar);
   let cur=null;
   const fields=()=>{const sc=cur&&(cur.closest('form')||document);return [...sc.querySelectorAll('input,select,textarea')].filter(x=>!x.disabled&&!x.readOnly&&!['hidden','checkbox','radio','button','submit','file'].includes(x.type)&&!x.hidden&&!x.closest('[hidden]')&&!x.closest('details:not([open])')&&x.offsetParent!==null);};
-  const place=()=>{const vv=window.visualViewport;if(!vv){bar.style.bottom='0px';return;}bar.style.bottom=Math.max(0,window.innerHeight-vv.height-vv.offsetTop)+'px';};
+  const place=()=>{const vv=window.visualViewport,nv=document.getElementById('nav');let b=0;
+    if(vv)b=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);
+    try{if(nv&&matchMedia('(max-width:899px)').matches){const r=nv.getBoundingClientRect(),vb=vv?vv.offsetTop+vv.height:window.innerHeight;if(r.height>0&&r.bottom<=vb+2)b=Math.max(0,window.innerHeight-r.top);}}catch(e){}
+    bar.style.bottom=b+'px';};
   const upd=()=>{
     const t=document.activeElement,ok=t&&t.matches&&t.matches('input,select,textarea')&&!['checkbox','radio','button','submit','file','hidden'].includes(t.type)&&t.id!=='scanIn'&&!t.closest('.scan')&&!t.closest('#authScr');
     if(!ok){bar.classList.remove('on');cur=null;return;}
@@ -4729,8 +4742,8 @@ document.addEventListener('input',e=>{
   };
   const reveal=el=>{
     if(!el||!el.getBoundingClientRect)return;
-    const vv=window.visualViewport,vh=vv?vv.height:window.innerHeight,top0=vv?vv.offsetTop:0,bh=bar.classList.contains('on')?bar.offsetHeight:0;
-    const r=el.getBoundingClientRect(),lo=top0+70,hi=top0+vh-bh-24;
+    const vv=window.visualViewport,vh=vv?vv.height:window.innerHeight,top0=vv?vv.offsetTop:0;
+    const r=el.getBoundingClientRect(),lo=top0+70,hi=(bar.classList.contains('on')?bar.getBoundingClientRect().top:top0+vh)-24;
     if(r.top>=lo&&r.bottom<=hi)return;
     const lab=el.closest('label'),rr=lab?lab.getBoundingClientRect():r;
     window.scrollBy({top:rr.top-top0-vh*0.28,behavior:'smooth'});
@@ -5701,8 +5714,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='3.2.1';
+const APP_VERSION='3.2.2';
 const CHANGELOG=[
+ {v:'3.2.2',date:'2026-11-21',title:'حفظ الحاسبة وشريط التنقل',items:['حاسبة القيمة والربح تحتفظ بأرقامها بعد الخروج من التطبيق وإعادة فتحه.','زرا «السابق» و«التالي» صارا فوق الشريط السفلي الذي يبقى ظاهرًا.','أزرار الرئيسية وحاسبة القيمة بخط يناسب الزر وفي سطر واحد.'],},
  {v:'3.2.1',date:'2026-11-20',title:'حاسبة بملء الشاشة',items:['الحاسبة تملأ شاشة الجوال كاملة دون تمرير: لوحة الأرقام تتمدد وتتقلص حسب ارتفاع الشاشة.','زر «مسح» صار داخل شاشة العرض.'],},
  {v:'3.2.0',date:'2026-11-20',title:'حاسبة الجملة',items:['قسم «حاسبة» جديد: اختر العيار واكتب الوزن لتظهر قيمة «نبيع لك» و«نشتري منك» فورًا.','زر العكس يحوّل من المبلغ إلى الجرام.','لوحة أرقام كبيرة للجوال، ويعمل لوحة مفاتيح الجهاز على الحاسوب أيضًا.'],},
  {v:'3.1.1',date:'2026-11-20',title:'تنظيم الحقول والأزرار',items:['علاوة السوق: حقول متطابقة ومرتبة (الاسم ثم القيمة ثم النوع).','المخزون: الفلاتر في سطر واحد وكل فلتر قائمة منسدلة.','تقارير المستعمل: الأزرار بشبكة ثابتة ولا تقفز الشاشة عند الضغط.','الإعدادات: أقسام الإعدادات بشبكة كاملة الأسماء وأزرار موحدة الحجم.'],},
