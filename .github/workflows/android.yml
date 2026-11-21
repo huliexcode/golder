@@ -2,7 +2,7 @@ name: Build Android APK
 on:
   workflow_dispatch:
   push:
-    paths: ['android/**', '.github/workflows/android.yml']
+    branches: [main]
 permissions:
   contents: write
 jobs:
@@ -16,7 +16,7 @@ jobs:
         with: { gradle-version: '8.7' }
       - name: Build release APK
         working-directory: android
-        run: gradle --no-daemon assembleRelease
+        run: gradle --no-daemon assembleRelease -Pvc=$((100 + ${{ github.run_number }})) -Pvn=3.2.${{ github.run_number }}
       - name: Rename
         run: cp android/app/build/outputs/apk/release/app-release.apk jard-gold.apk
       - uses: actions/upload-artifact@v4

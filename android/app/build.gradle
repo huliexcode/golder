@@ -6,8 +6,8 @@ android {
         applicationId 'io.github.huliexcode.jardgold'
         minSdk 24
         targetSdk 34
-        versionCode 2
-        versionName '3.2.2'
+        versionCode (project.findProperty('vc') ?: 2).toInteger()
+        versionName (project.findProperty('vn') ?: '3.2.2')
     }
     signingConfigs {
         release {
