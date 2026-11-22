@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="3.2.3">
+<meta name="app-version" content="3.2.4">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -3972,7 +3972,7 @@ function syncDraft(){
 function afterSel(){
   renderWizard();syncDraft();
   if(imodeGet()==='manual'){if(selDone()&&sel.karat&&!draft){draft=genDraft();editingExisting=false;renderDraft();}}
-  else if(selDone()&&!draft&&fine()){const i=$('#scanIn');if(i)i.focus();}
+  else if(selDone()&&!draft){const i=$('#scanIn');if(i){if(!fine()){i.inputMode='none';i.addEventListener('pointerdown',()=>{i.inputMode='text'},{once:true});}i.focus({preventScroll:true});try{i.scrollIntoView({block:'center',behavior:'smooth'})}catch(e){}}}
 }
 function renderDraft(){
   const box=$('#draftBox');if(!box)return;
@@ -5720,8 +5720,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='3.2.3';
+const APP_VERSION='3.2.4';
 const CHANGELOG=[
+ {v:'3.2.4',date:'2026-11-22',title:'المؤشر في حقل المسح',items:['بعد اكتمال اختيار العيار والفئة والصنف والحالة ينتقل المؤشر تلقائيًا إلى حقل مسح الباركود (على الجوال أيضًا) دون ظهور لوحة المفاتيح، وتظهر عند الضغط على الحقل.'],},
  {v:'3.2.3',date:'2026-11-22',title:'تبسيط شاشة الإدخال',items:['إزالة النص الشرحي الطويل أسفل عنوان «إدخال قطع».'],},
  {v:'3.2.2',date:'2026-11-21',title:'حفظ الحاسبة وشريط التنقل',items:['حاسبة القيمة والربح تحتفظ بأرقامها بعد الخروج من التطبيق وإعادة فتحه.','زرا «السابق» و«التالي» صارا فوق الشريط السفلي الذي يبقى ظاهرًا.','أزرار الرئيسية وحاسبة القيمة بخط يناسب الزر وفي سطر واحد.'],},
  {v:'3.2.1',date:'2026-11-20',title:'حاسبة بملء الشاشة',items:['الحاسبة تملأ شاشة الجوال كاملة دون تمرير: لوحة الأرقام تتمدد وتتقلص حسب ارتفاع الشاشة.','زر «مسح» صار داخل شاشة العرض.'],},
