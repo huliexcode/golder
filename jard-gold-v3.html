@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="3.2.2">
+<meta name="app-version" content="3.2.3">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -3852,7 +3852,7 @@ const needAud=k=>!!(k&&String(k)!=='24'&&S.settings.audiences.length);
 const selDone=()=>!!((sel.karat||(kvKarat()&&sel.skipK))&&selNode()&&isLeaf(selNode())&&(!needAud(sel.karat)||sel.aud)&&sel.condSet);
 function vIntake(m){
   const md=imodeGet();
-  m.innerHTML=`<header class="head"><div><h1>إدخال قطع</h1><p class="muted">اختر العيار ← الفئة ← الصنف ← الحالة، ثم أدخل القطع بإحدى طريقتين: <b>مسح الباركود</b> (تُضاف القطعة تلقائيًا ويبقى المؤشر في حقل المسح) أو <b>إدخال يدوي</b>.</p></div></header>
+  m.innerHTML=`<header class="head"><div><h1>إدخال قطع</h1></div></header>
   <div id="pmini" class="pmini"></div>
   <div class="intake">
     <section class="panel wiz" aria-label="اختيار العيار والصنف">
@@ -5720,8 +5720,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='3.2.2';
+const APP_VERSION='3.2.3';
 const CHANGELOG=[
+ {v:'3.2.3',date:'2026-11-22',title:'تبسيط شاشة الإدخال',items:['إزالة النص الشرحي الطويل أسفل عنوان «إدخال قطع».'],},
  {v:'3.2.2',date:'2026-11-21',title:'حفظ الحاسبة وشريط التنقل',items:['حاسبة القيمة والربح تحتفظ بأرقامها بعد الخروج من التطبيق وإعادة فتحه.','زرا «السابق» و«التالي» صارا فوق الشريط السفلي الذي يبقى ظاهرًا.','أزرار الرئيسية وحاسبة القيمة بخط يناسب الزر وفي سطر واحد.'],},
  {v:'3.2.1',date:'2026-11-20',title:'حاسبة بملء الشاشة',items:['الحاسبة تملأ شاشة الجوال كاملة دون تمرير: لوحة الأرقام تتمدد وتتقلص حسب ارتفاع الشاشة.','زر «مسح» صار داخل شاشة العرض.'],},
  {v:'3.2.0',date:'2026-11-20',title:'حاسبة الجملة',items:['قسم «حاسبة» جديد: اختر العيار واكتب الوزن لتظهر قيمة «نبيع لك» و«نشتري منك» فورًا.','زر العكس يحوّل من المبلغ إلى الجرام.','لوحة أرقام كبيرة للجوال، ويعمل لوحة مفاتيح الجهاز على الحاسوب أيضًا.'],},
