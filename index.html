@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="3.2.4">
+<meta name="app-version" content="3.3.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -1024,6 +1024,28 @@ dialog::backdrop{background:rgba(40,28,6,.55);backdrop-filter:blur(3px)}
 .pcalc .segb{flex-wrap:nowrap}
 .pacts>.btn{font-size:clamp(11px,3.1vw,13px)!important;padding:0 3px!important}
 #prefBody .row>.btn,#prefBody .row>button{font-size:clamp(11.5px,3.4vw,14px)}
+
+.cmk{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.cmk label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--muted);min-width:0}
+.cmk input{min-height:44px;border-radius:14px;text-align:center;font-weight:800;font-size:17px;width:100%;min-width:0}
+.cdet{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px}
+.cdet>div{background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:6px 8px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.cdet span{font-size:11px;color:var(--muted);font-weight:600}
+.cdet b{font-size:12.5px;font-weight:800;color:var(--ink);word-break:break-word}
+.cdet .cprofit{grid-column:1/-1;background:var(--goldbg);flex-direction:row;justify-content:space-between;align-items:center;gap:8px}
+.cdet .cprofit b{color:var(--accent-text);font-size:15px}
+@media (max-width:899px){
+ body.v-calc .cmk{flex:none;margin-bottom:6px}
+ body.v-calc .cmk input{min-height:38px;font-size:15px}
+ body.v-calc .cdet{flex:none;margin-bottom:6px}
+ body.v-calc .cdet>div{padding:4px 6px}
+ body.v-calc .cdet .cprofit{padding:5px 8px}
+ body.v-calc .cdisp{min-height:52px;margin:6px 0}
+ body.v-calc .cdisp output{font-size:28px}
+ body.v-calc .cres{margin-bottom:6px}
+ body.v-calc .cres>div{padding:6px}
+ body.v-calc .cres span.hint{display:none}
+}
 </style>
 </head>
 <body>
@@ -1713,7 +1735,7 @@ document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.datas
 
 
 /* ================= حاسبة العيار ================= */
-const CALC={k:null,mode:'g',v:''};
+const CALC={k:null,mode:'g',v:'',m:(()=>{try{return localStorage.getItem('jard.calcm')||''}catch(e){return ''}})(),f:(()=>{try{return localStorage.getItem('jard.calcf')||''}catch(e){return ''}})()};
 function calcRes(){
   const ks=S.settings.karats;if(!CALC.k||!ks.includes(CALC.k))CALC.k=ks.includes('21')?'21':ks[0];
   const sell=priceFor(CALC.k,false),buy=buyAuto(CALC.k,true)||priceFor(CALC.k,true)||0,x=num(CALC.v)||0;
@@ -1727,6 +1749,8 @@ function vCalc(m){
     <div class="seg" role="tablist" aria-label="العيار">${ks.map(k=>`<button type="button" data-calc="k" data-v="${esc(k)}" aria-pressed="${calcRes()&&CALC.k===k}">عيار ${esc(k)}</button>`).join('')}</div>
     <div class="cdisp"><button type="button" class="cunit" data-calc="mode" aria-label="عكس العملية">${ic('refresh')}<span id="cunit"></span></button><output id="cval" dir="ltr"></output><button type="button" class="cclr" data-calc="clr" aria-label="مسح">مسح</button></div>
     <div class="cres"><div class="cbuy"><b>نشتري منك</b><div><em id="crb"></em> <small id="cub"></small></div><span class="hint" id="cpb"></span></div><div class="csell"><b>نبيع لك</b><div><em id="crs"></em> <small id="cus"></small></div><span class="hint" id="cps"></span></div></div>
+    <div class="cmk"><label>مصنعية الجرام (${esc(cur())})<input data-calcf="m" inputmode="decimal" placeholder="0" value="${esc(CALC.m)}" aria-label="المصنعية للجرام"></label><label>مصنعية ثابتة (${esc(cur())})<input data-calcf="f" inputmode="decimal" placeholder="0" value="${esc(CALC.f)}" aria-label="مصنعية ثابتة"></label></div>
+    <div class="cdet" aria-live="polite"><div><span>قيمة الذهب</span><b id="cdg"></b></div><div><span>المصنعية</span><b id="cdm"></b></div><div><span>الإجمالي</span><b id="cdt"></b></div><div class="cprofit"><span>الفائدة (هامش البيع والشراء)</span><b id="cdp"></b></div></div>
     <div class="ckeys" dir="ltr">${['1','2','3','4','5','6','7','8','9','.','0','del'].map(k=>`<button type="button" data-calc="key" data-v="${k}" aria-label="${k==='del'?'حذف':k}">${k==='del'?ic('bksp'):k}</button>`).join('')}</div>
       </div>`;
   calcUpd();
@@ -1736,6 +1760,9 @@ function calcUpd(){
   set('cunit',g?'جرام':C);set('cval',CALC.v===''?'0':CALC.v);
   set('crs',g?fmt(r.rs):fmtW(r.rs));set('crb',g?fmt(r.rb):fmtW(r.rb));
   set('cus',g?C:'جرام');set('cub',g?C:'جرام');
+  {const w=g?(num(CALC.v)||0):r.rs,m=num(CALC.m)||0,f=num(CALC.f)||0,gold=w*r.sell,mk=w*m+f,tot=gold+mk,profit=tot-w*r.buy-mk;
+   set('cdg',fmt(gold)+' '+C);set('cdm',fmt(mk)+' '+C);set('cdt',fmt(tot)+' '+C);
+   set('cdp',fmt(profit)+' '+C+(w>0?' · '+fmt(profit/w)+'/جم':''));}
   set('cps','سعر الجرام '+(r.sell?fmt(r.sell):'—'));set('cpb','سعر الجرام '+(r.buy?fmt(r.buy):'—'));
   document.querySelectorAll('[data-calc="k"]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===CALC.k));
 }
@@ -1753,6 +1780,7 @@ document.addEventListener('click',e=>{
   else if(a==='clr'){CALC.v='';calcUpd();}
   else if(a==='mode'){CALC.mode=CALC.mode==='g'?'m':'g';CALC.v='';vCalc($('#main'));}
 });
+document.addEventListener('input',e=>{const t=e.target;if(!t||!t.dataset||!t.dataset.calcf)return;const k=t.dataset.calcf;CALC[k]=latin(t.value);try{localStorage.setItem('jard.calc'+k,CALC[k])}catch(_){}calcUpd();});
 document.addEventListener('keydown',e=>{
   if(view!=='calc'||e.ctrlKey||e.metaKey||e.altKey)return;
   const t=e.target;if(t&&/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))return;
@@ -5720,8 +5748,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='3.2.4';
+const APP_VERSION='3.3.0';
 const CHANGELOG=[
+ {v:'3.3.0',date:'2026-11-24',title:'المصنعية والفائدة في الحاسبة',items:['حقلان جديدان في الحاسبة: مصنعية الجرام ومصنعية ثابتة، وتظهر قيمة المصنعية تلقائيًا.','تظهر قيمة الذهب والمصنعية والإجمالي، والفائدة المتبقية بعد خصم سعر الذهب بسعر الشراء والمصنعية (هامش الفرق بين البيع والشراء) مع قيمتها للجرام.'],},
  {v:'3.2.4',date:'2026-11-22',title:'المؤشر في حقل المسح',items:['بعد اكتمال اختيار العيار والفئة والصنف والحالة ينتقل المؤشر تلقائيًا إلى حقل مسح الباركود (على الجوال أيضًا) دون ظهور لوحة المفاتيح، وتظهر عند الضغط على الحقل.'],},
  {v:'3.2.3',date:'2026-11-22',title:'تبسيط شاشة الإدخال',items:['إزالة النص الشرحي الطويل أسفل عنوان «إدخال قطع».'],},
  {v:'3.2.2',date:'2026-11-21',title:'حفظ الحاسبة وشريط التنقل',items:['حاسبة القيمة والربح تحتفظ بأرقامها بعد الخروج من التطبيق وإعادة فتحه.','زرا «السابق» و«التالي» صارا فوق الشريط السفلي الذي يبقى ظاهرًا.','أزرار الرئيسية وحاسبة القيمة بخط يناسب الزر وفي سطر واحد.'],},
