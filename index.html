@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="3.4.0">
+<meta name="app-version" content="3.4.1">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -3113,6 +3113,20 @@ function tickerHTML(ks,pn,pu){
 }
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-trh]');if(!b)return;TRH=b.dataset.trh;paintPrices();});
 
+/* تحديث الشريط عند كل دورة جديدة */
+function updateTicker(){
+  const el=document.querySelector('.ticker');if(!el)return;
+  const st=S.settings,ks=st.karats.slice().sort((a,b)=>num(b)-num(a));
+  const t=document.createElement('div');t.innerHTML=tickerHTML(ks,st.prices||{},st.pricesUsed||{});
+  const n=t.firstElementChild;if(n)el.replaceWith(n);
+}
+document.addEventListener('animationiteration',e=>{
+  const t=e.target;if(!t||!t.classList||!t.classList.contains('ttrack'))return;
+  const st=S.settings;
+  if(st.priceSrc!=='manual'&&Date.now()-pstate.last>45000){try{refreshPrices();}catch(err){}}
+  updateTicker();
+});
+
 function priceBoardHTML(){
   const s=S.settings,pd=s.pday||{},op=pd.open||{},pn=s.prices||{},pu=s.pricesUsed||{},hide=phideGet();
   const ks=s.karats.slice().sort((a,b)=>num(b)-num(a));
@@ -5845,8 +5859,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='3.4.0';
+const APP_VERSION='3.4.1';
 const CHANGELOG=[
+ {v:'3.4.1',date:'2026-11-24',title:'تحديث الشريط عند كل دورة',items:['الشريط الإخباري يجدّد أسعاره مع بداية كل دورة جديدة (ويجلب الأسعار من السوق إذا مضت 45 ثانية على آخر تحديث).'],},
  {v:'3.4.0',date:'2026-11-24',title:'مؤشر الذهب وشريط الأسعار',items:['بدل بطاقة الفضة: مؤشر الذهب (صعود ونزول اليوم والأسبوع والشهر) مع قراءة للحركة.','توقع ارتفاع أو نزول (يوم أو أسبوع أو شهر) مبني على تحرك الذهب في آخر 20 سنة لنفس الشهر وزخم الأشهر الأخيرة وحركة التطبيق.','«الجديد والمستعمل» صار شريطًا إخباريًا متحركًا بالأسعار والحركة والتوقع.'],},
  {v:'3.3.1',date:'2026-11-24',title:'حفظ مصنعية الحاسبة',items:['قيمتا المصنعية والعيار المختار في الحاسبة تُحفظان مع بيانات حسابك فتبقيان بعد إغلاق التطبيق وفتحه.'],},
  {v:'3.3.0',date:'2026-11-24',title:'المصنعية والفائدة في الحاسبة',items:['حقلان جديدان في الحاسبة: مصنعية الجرام ومصنعية ثابتة، وتظهر قيمة المصنعية تلقائيًا.','تظهر قيمة الذهب والمصنعية والإجمالي، والفائدة المتبقية بعد خصم سعر الذهب بسعر الشراء والمصنعية (هامش الفرق بين البيع والشراء) مع قيمتها للجرام.'],},
