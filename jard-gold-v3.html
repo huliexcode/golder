@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="3.4.2">
+<meta name="app-version" content="3.4.3">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -1118,6 +1118,16 @@ dialog::backdrop{background:rgba(40,28,6,.55);backdrop-filter:blur(3px)}
  body.v-calc .head{margin-bottom:4px}
  body.v-calc .head h1{font-size:22px}
 }
+
+.cpbtn{font-size:12px;font-weight:800;padding:0 10px;min-height:34px}
+.cpbtn[aria-pressed="true"]{background:var(--gold-grad);color:#fff}
+.cvt{display:flex;flex-direction:column;gap:4px;justify-content:center}
+.cvt label{flex-direction:row!important;align-items:center;gap:6px!important;font-size:12px;font-weight:700;color:var(--ink)}
+.cvt input{width:18px!important;min-height:18px!important;height:18px;flex:none}
+.cdet .cverd{grid-column:1/-1;display:block;border-radius:12px;padding:6px 8px;font-size:13px;font-weight:800;text-align:center;background:var(--soft);color:var(--muted)}
+.cverd.ok{background:#E3F1DC;color:#2F6B1F}.cverd.comp{background:#DDEBF5;color:#1F5A85}.cverd.hi{background:#F8E0D6;color:#9A3412}.cverd.low{background:#F6D9D9;color:#9B1C1C}
+.cdet .cprofit small{font-size:10.5px;color:var(--muted);font-weight:600}
+body.v-calc .cpw{align-items:center}
 </style>
 </head>
 <body>
@@ -1807,30 +1817,50 @@ document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.datas
 
 
 /* ================= حاسبة العيار ================= */
-const CALC={k:null,mode:'g',v:'',m:(()=>{try{return localStorage.getItem('jard.calcm')||''}catch(e){return ''}})(),f:(()=>{try{return localStorage.getItem('jard.calcf')||''}catch(e){return ''}})()};
+const CALC={k:null,mode:'g',v:'',pw:'',vt:'',m:(()=>{try{return localStorage.getItem('jard.calcm')||''}catch(e){return ''}})(),f:(()=>{try{return localStorage.getItem('jard.calcf')||''}catch(e){return ''}})()};
 function calcRes(){
   const ks=S.settings.karats;if(!CALC.k||!ks.includes(CALC.k))CALC.k=ks.includes('21')?'21':ks[0];
   const sell=priceFor(CALC.k,false),buy=buyAuto(CALC.k,true)||priceFor(CALC.k,true)||0,x=num(CALC.v)||0;
   const f=(pr)=>CALC.mode==='g'?(x*pr):(pr>0?x/pr:0);
   return{sell,buy,rs:f(sell),rb:f(buy)};
 }
-function calcLoad(){try{const c=S.settings.cmk;if(c){if(c.m!=null)CALC.m=String(c.m);if(c.f!=null)CALC.f=String(c.f);if(c.k)CALC.k=String(c.k);}}catch(e){}}
-function calcStore(){try{S.settings.cmk={m:CALC.m,f:CALC.f,k:CALC.k};pcSaveSoon();}catch(e){}}
+function calcLoad(){try{const c=S.settings.cmk;if(c){if(c.m!=null)CALC.m=String(c.m);if(c.f!=null)CALC.f=String(c.f);if(c.k)CALC.k=String(c.k);if(c.pw!=null)CALC.pw=String(c.pw);if(c.vt!=null)CALC.vt=String(c.vt);}}catch(e){}}
+function calcStore(){try{S.settings.cmk={m:CALC.m,f:CALC.f,k:CALC.k,pw:CALC.pw,vt:CALC.vt};pcSaveSoon();}catch(e){}}
 function vCalc(m){
   calcLoad();
   const ks=S.settings.karats;
-  m.innerHTML=`<header class="head chead"><h1>حاسبة الجملة</h1><p>${CALC.mode==='g'?'تحويل الجرام إلى مبلغ':'تحويل المبلغ إلى جرام'} حسب العيار</p></header>
+  m.innerHTML=`<header class="head chead"><h1>حاسبة الجملة</h1><p>${CALC.mode==='p'?'تسعير مبلغ شامل':CALC.mode==='g'?'تحويل الجرام إلى مبلغ':'تحويل المبلغ إلى جرام'} حسب العيار</p></header>
   <div class="panel calc" data-calc-root>
     <div class="seg" role="tablist" aria-label="العيار">${ks.map(k=>`<button type="button" data-calc="k" data-v="${esc(k)}" aria-pressed="${calcRes()&&CALC.k===k}">عيار ${esc(k)}</button>`).join('')}</div>
-    <div class="cdisp"><button type="button" class="cunit" data-calc="mode" aria-label="عكس العملية">${ic('refresh')}<span id="cunit"></span></button><output id="cval" dir="ltr"></output><button type="button" class="cclr" data-calc="clr" aria-label="مسح">مسح</button></div>
-    <div class="cres"><div class="cbuy"><b>نشتري منك</b><div><em id="crb"></em> <small id="cub"></small></div><span class="hint" id="cpb"></span></div><div class="csell"><b>نبيع لك</b><div><em id="crs"></em> <small id="cus"></small></div><span class="hint" id="cps"></span></div></div>
+    <div class="cdisp"><button type="button" class="cunit" data-calc="mode" aria-label="عكس العملية">${ic('refresh')}<span id="cunit"></span></button><button type="button" class="cunit cpbtn" data-calc="price" aria-pressed="${CALC.mode==='p'}">تسعير</button><output id="cval" dir="ltr"></output><button type="button" class="cclr" data-calc="clr" aria-label="مسح">مسح</button></div>
+    ${CALC.mode==='p'?`<div class="cmk cpw"><label>الوزن (جم)<input data-calcf="pw" inputmode="decimal" placeholder="0" value="${esc(CALC.pw)}" aria-label="الوزن بالجرام"></label><div class="cvt" role="group" aria-label="الضريبة"><label><input type="checkbox" data-calcvt="a" ${CALC.vt==='a'?'checked':''}> إضافة الضريبة</label><label><input type="checkbox" data-calcvt="d" ${CALC.vt==='d'?'checked':''}> خصم الضريبة (المبلغ شامل)</label></div></div>`:`<div class="cres"><div class="cbuy"><b>نشتري منك</b><div><em id="crb"></em> <small id="cub"></small></div><span class="hint" id="cpb"></span></div><div class="csell"><b>نبيع لك</b><div><em id="crs"></em> <small id="cus"></small></div><span class="hint" id="cps"></span></div></div>`}
     <div class="cmk"><label>مصنعية الجرام (${esc(cur())})<input data-calcf="m" inputmode="decimal" placeholder="0" value="${esc(CALC.m)}" aria-label="المصنعية للجرام"></label><label>مصنعية ثابتة (${esc(cur())})<input data-calcf="f" inputmode="decimal" placeholder="0" value="${esc(CALC.f)}" aria-label="مصنعية ثابتة"></label></div>
-    <div class="cdet" aria-live="polite"><div><span>قيمة الذهب</span><b id="cdg"></b></div><div><span>المصنعية</span><b id="cdm"></b></div><div><span>الإجمالي</span><b id="cdt"></b></div><div class="cprofit"><span>الفائدة (هامش البيع والشراء)</span><b id="cdp"></b></div></div>
+    <div class="cdet" aria-live="polite">${CALC.mode==='p'?`<div><span>قبل الضريبة</span><b id="cdg"></b></div><div><span>الضريبة</span><b id="cdm"></b></div><div><span>الإجمالي</span><b id="cdt"></b></div><div class="cprofit"><span>سعر الجرام <small id="cpr"></small></span><b id="cdp"></b></div><div class="cverd" id="cvd"></div>`:`<div><span>قيمة الذهب</span><b id="cdg"></b></div><div><span>المصنعية</span><b id="cdm"></b></div><div><span>الإجمالي</span><b id="cdt"></b></div><div class="cprofit"><span>الفائدة (هامش البيع والشراء)</span><b id="cdp"></b></div>`}</div>
     <div class="ckeys" dir="ltr">${['1','2','3','4','5','6','7','8','9','.','0','del'].map(k=>`<button type="button" data-calc="key" data-v="${k}" aria-label="${k==='del'?'حذف':k}">${k==='del'?ic('bksp'):k}</button>`).join('')}</div>
       </div>`;
   calcUpd();
 }
+function calcUpdP(){
+  const r=calcRes(),C=cur(),set=(i,t)=>{const e=$('#'+i);if(e)e.textContent=t};
+  const a=num(CALC.v)||0,w=num(CALC.pw)||0,rate=(defVat(CALC.k)||0)/100,vt=CALC.vt;
+  const net=vt==='d'?a/(1+rate):a,vat=vt==='d'?a-net:vt==='a'?a*rate:0,tot=net+vat;
+  const ppg=w>0?net/w:0,m=num(CALC.m)||0,f=num(CALC.f)||0,ref=r.sell+m+(w>0?f/w:0);
+  set('cunit',C);set('cval',CALC.v===''?'0':CALC.v);
+  set('cdg',fmt(net)+' '+C);set('cdm',fmt(vat)+' '+C);set('cdt',fmt(tot)+' '+C);
+  set('cdp',w>0&&a>0?fmt(ppg)+' '+C+'/جم':'—');
+  set('cpr','(المرجع '+(ref?fmt(ref):'—')+')');
+  const v=$('#cvd');
+  if(v){let t='أدخل الوزن والمبلغ لتقييم السعر',c='';
+    if(w>0&&a>0&&ref>0){const d=(ppg-ref)/ref*100,ds=(d>=0?'+':'')+d.toFixed(1)+'% عن المرجع';
+      if(r.buy>0&&ppg<r.buy-0.005){t='منخفض جدًا — أقل من سعر الشراء ('+ds+')';c='low';}
+      else if(d<-2){t='تنافسي — أقل من المرجع ('+ds+')';c='comp';}
+      else if(d<=3){t='مناسب — قريب من المرجع ('+ds+')';c='ok';}
+      else{t='مرتفع — أعلى من المرجع ('+ds+')';c='hi';}}
+    v.textContent=t;v.className='cverd'+(c?' '+c:'');}
+  document.querySelectorAll('[data-calc="k"]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===CALC.k));
+}
 function calcUpd(){
+  if(CALC.mode==='p')return calcUpdP();
   const r=calcRes(),C=cur(),g=CALC.mode==='g',set=(i,t)=>{const e=$('#'+i);if(e)e.textContent=t};
   set('cunit',g?'جرام':C);set('cval',CALC.v===''?'0':CALC.v);
   set('crs',g?fmt(r.rs):fmtW(r.rs));set('crb',g?fmt(r.rb):fmtW(r.rb));
@@ -1854,7 +1884,9 @@ document.addEventListener('click',e=>{
   else if(a==='k'){CALC.k=b.dataset.v;calcStore();calcUpd();}
   else if(a==='clr'){CALC.v='';calcUpd();}
   else if(a==='mode'){CALC.mode=CALC.mode==='g'?'m':'g';CALC.v='';vCalc($('#main'));}
+  else if(a==='price'){CALC.mode=CALC.mode==='p'?'g':'p';CALC.v='';vCalc($('#main'));}
 });
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||!t.dataset.calcvt)return;CALC.vt=t.checked?t.dataset.calcvt:'';document.querySelectorAll('[data-calcvt]').forEach(x=>{x.checked=x.dataset.calcvt===CALC.vt});calcStore();calcUpd();});
 document.addEventListener('input',e=>{const t=e.target;if(!t||!t.dataset||!t.dataset.calcf)return;const k=t.dataset.calcf;CALC[k]=latin(t.value);try{localStorage.setItem('jard.calc'+k,CALC[k])}catch(_){}calcStore();calcUpd();});
 document.addEventListener('keydown',e=>{
   if(view!=='calc'||e.ctrlKey||e.metaKey||e.altKey)return;
@@ -5901,8 +5933,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='3.4.2';
+const APP_VERSION='3.4.3';
 const CHANGELOG=[
+ {v:'3.4.3',date:'2026-11-24',title:'تسعير مبلغ شامل في الحاسبة',items:['زر «تسعير»: أدخل المبلغ الشامل والوزن فيظهر سعر الجرام المحسوب','تقييم السعر مقارنة بالمرجع (سعر البيع + المصنعية): منخفض / تنافسي / مناسب / مرتفع','خياران للضريبة: إضافتها أو خصمها من المبلغ الشامل']},
  {v:'3.4.2',date:'2026-11-24',title:'رأس مضغوط وشريط في المقدمة',items:['إزالة معلومات الرأس على الجوال (حالة المزامنة والإصدار والوصف تحت العنوان) لتوفير المساحة.','الشريط الإخباري صار في مقدمة كل قسم.','لوحة أرقام الحاسبة تظهر كاملة على الشاشة.'],},
  {v:'3.4.1',date:'2026-11-24',title:'تحديث الشريط عند كل دورة',items:['الشريط الإخباري يجدّد أسعاره مع بداية كل دورة جديدة (ويجلب الأسعار من السوق إذا مضت 45 ثانية على آخر تحديث).'],},
  {v:'3.4.0',date:'2026-11-24',title:'مؤشر الذهب وشريط الأسعار',items:['بدل بطاقة الفضة: مؤشر الذهب (صعود ونزول اليوم والأسبوع والشهر) مع قراءة للحركة.','توقع ارتفاع أو نزول (يوم أو أسبوع أو شهر) مبني على تحرك الذهب في آخر 20 سنة لنفس الشهر وزخم الأشهر الأخيرة وحركة التطبيق.','«الجديد والمستعمل» صار شريطًا إخباريًا متحركًا بالأسعار والحركة والتوقع.'],},
