@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="3.4.1">
+<meta name="app-version" content="3.4.2">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -1077,6 +1077,47 @@ dialog::backdrop{background:rgba(40,28,6,.55);backdrop-filter:blur(3px)}
 .tsep{color:var(--accent);font-size:9px}
 @keyframes tick{from{transform:translateX(0)}to{transform:translateX(50%)}}
 @media (prefers-reduced-motion:reduce){.ticker{overflow-x:auto}.ttrack{animation:none}}
+
+/* v3.4.2 رأس مضغوط وشريط في المقدمة */
+.main>.ticker{margin:0 0 12px;flex:none}
+@media (max-width:899px){
+ .sidefoot{display:none!important}
+ .main{padding-top:calc(10px + env(safe-area-inset-top,0px))!important}
+ .head p,.head .muted{display:none}
+ .head{margin-bottom:8px}
+ .head h1{font-size:26px;margin:0}
+ .main>.ticker{margin-bottom:8px;padding:7px 0}
+ body.v-calc .chead p{display:none}
+ body.v-calc .panel.calc{overflow:hidden}
+ body.v-calc .ckeys{flex:1 1 0;min-height:150px;grid-template-rows:repeat(4,minmax(0,1fr))}
+ body.v-calc .ckeys button{height:100%;min-height:0;font-size:24px}
+}
+
+@media (max-width:899px){
+ body.v-calc .panel.calc{padding:8px!important;overflow-y:auto}
+ body.v-calc .calc .seg button{min-height:34px;font-size:13.5px}
+ body.v-calc .cdisp{min-height:46px!important;margin:6px 0!important;padding:4px 10px!important;border-radius:20px}
+ body.v-calc .cdisp output{font-size:26px!important}
+ body.v-calc .cunit{min-height:36px;font-size:14px;padding:0 10px}
+ body.v-calc .cclr{min-height:32px}
+ body.v-calc .cres{gap:6px;margin-bottom:6px!important}
+ body.v-calc .cres>div{padding:5px 6px!important;border-radius:16px}
+ body.v-calc .cres b{font-size:12px!important;margin-bottom:1px!important}
+ body.v-calc .cres em{font-size:19px!important}
+ body.v-calc .cres small{font-size:11px}
+ body.v-calc .cmk{gap:6px;margin-bottom:5px!important}
+ body.v-calc .cmk label{font-size:11px;gap:2px}
+ body.v-calc .cmk input{min-height:34px!important;font-size:14px!important;border-radius:12px}
+ body.v-calc .cdet{gap:5px;margin-bottom:6px!important}
+ body.v-calc .cdet>div{padding:3px 6px!important;border-radius:12px}
+ body.v-calc .cdet span{font-size:10.5px}
+ body.v-calc .cdet b{font-size:12px!important;white-space:nowrap}
+ body.v-calc .cdet .cprofit{padding:4px 8px!important}
+ body.v-calc .cdet .cprofit b{font-size:13px!important}
+ body.v-calc .ckeys{min-height:120px!important;gap:6px}
+ body.v-calc .head{margin-bottom:4px}
+ body.v-calc .head h1{font-size:22px}
+}
 </style>
 </head>
 <body>
@@ -1590,7 +1631,7 @@ document.addEventListener('click',e=>{
 function go(v){if(location.hash==='#'+v){fromHash();render(true);}else location.hash=v;}
 function fromHash(){const h=location.hash.replace('#','');view=TABS.some(t=>t[0]===h)?h:'dashboard';}
 window.addEventListener('hashchange',()=>{fromHash();render(true);});
-function render(top){if(view!=='intake')genBulk=false;document.body.classList.toggle('v-calc',view==='calc');renderNav();const m=$('#main');({dashboard:vDash,intake:vIntake,stock:vStock,count:vCount,sale:vSale,old:vOld,calc:vCalc,ledger:vLedger,prefs:vPrefs}[view])(m);pcalcApply();if(top){window.scrollTo(0,0);if(view==='intake'&&window.innerWidth<=760){const fit=()=>{const e=$('#pmini');if(e)window.scrollTo(0,Math.max(0,e.getBoundingClientRect().top+(window.scrollY||0)-10));};fit();setTimeout(fit,80);}}}
+function render(top){if(view!=='intake')genBulk=false;document.body.classList.toggle('v-calc',view==='calc');renderNav();const m=$('#main');({dashboard:vDash,intake:vIntake,stock:vStock,count:vCount,sale:vSale,old:vOld,calc:vCalc,ledger:vLedger,prefs:vPrefs}[view])(m);try{const gt=tickerGlobal();if(gt)m.insertAdjacentHTML('afterbegin',gt);}catch(e){}pcalcApply();if(top){window.scrollTo(0,0);if(view==='intake'&&window.innerWidth<=760){const fit=()=>{const e=$('#pmini');if(e)window.scrollTo(0,Math.max(0,e.getBoundingClientRect().top+(window.scrollY||0)-10));};fit();setTimeout(fit,80);}}}
 
 /* ================= used gold (buy from customers / sell) ================= */
 const OLDF={mode:'buy',k:'',gross:'',stone:'',disc:null,ppg:'',total:'',party:'',note:''};
@@ -3114,11 +3155,12 @@ function tickerHTML(ks,pn,pu){
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-trh]');if(!b)return;TRH=b.dataset.trh;paintPrices();});
 
 /* تحديث الشريط عند كل دورة جديدة */
+function tickerGlobal(){const st=S.settings,ks=st.karats.slice().sort((a,b)=>num(b)-num(a)),pn=st.prices||{};if(!ks.some(k=>pn[k]>0))return '';return tickerHTML(ks,pn,st.pricesUsed||{});}
 function updateTicker(){
   const el=document.querySelector('.ticker');if(!el)return;
   const st=S.settings,ks=st.karats.slice().sort((a,b)=>num(b)-num(a));
-  const t=document.createElement('div');t.innerHTML=tickerHTML(ks,st.prices||{},st.pricesUsed||{});
-  const n=t.firstElementChild;if(n)el.replaceWith(n);
+  const t=document.createElement('div');t.innerHTML=tickerGlobal();
+  const n=t.firstElementChild;if(n)el.replaceWith(n);else el.remove();
 }
 document.addEventListener('animationiteration',e=>{
   const t=e.target;if(!t||!t.classList||!t.classList.contains('ttrack'))return;
@@ -3135,7 +3177,7 @@ function priceBoardHTML(){
   const msg=pstate.st==='fail'?`<p class="hint warn" style="margin:0 0 10px">تعذّر التحديث التلقائي${s.pricesAt?'، وتُعرض آخر أسعار محفوظة':''}.${pstate.err?' '+esc(pstate.err):''}</p>`:'';
   const big=`<div class="pgrid big"><div class="pcard gold"><div class="pl"><span>أونصة الذهب</span><small>USD</small></div><div class="pv">${cell(s.usd)}</div><div class="pf"><span>سعر عالمي</span>${pdelta(s.usd,op.xau)}</div></div>${trendCardHTML()}</div>`;
   const grid=`<div class="pgrid">${ks.map(k=>`<div class="pcard ${k==='24'?'gold':''}"><div class="pl"><span>ذهب عيار ${esc(k)}</span><small>${esc(cur())}</small></div><div class="pv">${cell(pn[k])}</div><div class="pf"><span>للجرام</span>${pdelta(pn[k],op['g'+k])}</div>${pcalcCard(k)}</div>`).join('')}</div>`;
-  const used=tickerHTML(ks,pn,pu);
+  const used='';
   const acts=`<div class="row pacts" style="margin-top:12px"><button class="btn ghost sm" data-act="refreshPrices">${ic('refresh')||''}<span>تحديث الآن</span></button><button class="btn ghost sm" data-act="prices">إدخال يدوي</button><button class="btn ghost sm" data-act="pgosrc">مصدر الأسعار</button><button class="btn ghost sm" data-act="applyPrices">تطبيق على القطع المتوفرة</button><button class="btn ghost sm" data-act="phide">${hide?'إظهار الأسعار':'إخفاء الأسعار'}</button>${premEditorHTML()}</div>`;
   return `<div class="pboard" data-enter>${head}${hide?'':msg+big+pcalcBar()+grid+used}${acts}</div>`;
 }
@@ -5859,8 +5901,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='3.4.1';
+const APP_VERSION='3.4.2';
 const CHANGELOG=[
+ {v:'3.4.2',date:'2026-11-24',title:'رأس مضغوط وشريط في المقدمة',items:['إزالة معلومات الرأس على الجوال (حالة المزامنة والإصدار والوصف تحت العنوان) لتوفير المساحة.','الشريط الإخباري صار في مقدمة كل قسم.','لوحة أرقام الحاسبة تظهر كاملة على الشاشة.'],},
  {v:'3.4.1',date:'2026-11-24',title:'تحديث الشريط عند كل دورة',items:['الشريط الإخباري يجدّد أسعاره مع بداية كل دورة جديدة (ويجلب الأسعار من السوق إذا مضت 45 ثانية على آخر تحديث).'],},
  {v:'3.4.0',date:'2026-11-24',title:'مؤشر الذهب وشريط الأسعار',items:['بدل بطاقة الفضة: مؤشر الذهب (صعود ونزول اليوم والأسبوع والشهر) مع قراءة للحركة.','توقع ارتفاع أو نزول (يوم أو أسبوع أو شهر) مبني على تحرك الذهب في آخر 20 سنة لنفس الشهر وزخم الأشهر الأخيرة وحركة التطبيق.','«الجديد والمستعمل» صار شريطًا إخباريًا متحركًا بالأسعار والحركة والتوقع.'],},
  {v:'3.3.1',date:'2026-11-24',title:'حفظ مصنعية الحاسبة',items:['قيمتا المصنعية والعيار المختار في الحاسبة تُحفظان مع بيانات حسابك فتبقيان بعد إغلاق التطبيق وفتحه.'],},
