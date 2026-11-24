@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="3.3.1">
+<meta name="app-version" content="3.4.0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جرد الذهب — المخزون والحسابات</title>
@@ -1046,6 +1046,37 @@ dialog::backdrop{background:rgba(40,28,6,.55);backdrop-filter:blur(3px)}
  body.v-calc .cres>div{padding:6px}
  body.v-calc .cres span.hint{display:none}
 }
+
+/* v3.4.0 مؤشر وشريط */
+.pgrid.big{grid-template-columns:1fr!important}
+.pgrid.big .pcard{grid-column:1/-1}
+.pcard.trend .tper{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}
+.pcard.trend .tc{border-radius:16px;border:1px solid var(--line);padding:8px 6px;text-align:center;background:var(--soft);min-width:0}
+.pcard.trend .tc span{display:block;font-size:12px;color:var(--muted);font-weight:700}
+.pcard.trend .tc b{display:block;font-size:16px;font-weight:800;margin-top:3px;white-space:nowrap}
+.tc.up b{color:#2E7D4F}.tc.dn b{color:#B3382B}.tc.flat b{color:var(--muted)}
+.tc.up{background:rgba(46,125,79,.1)}.tc.dn{background:rgba(179,56,43,.1)}
+.tc i{font-style:normal;font-size:12px}
+.tread{margin:4px 0 8px;font-size:14px;line-height:1.7;color:var(--ink)}
+.tfsel{display:flex;gap:6px;margin:6px 0}
+.tfsel button{flex:1;min-height:36px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font:inherit;font-weight:700;font-size:13px;color:var(--ink);cursor:pointer}
+.tfsel button[aria-pressed="true"]{background:var(--gold-grad);border-color:var(--accent);box-shadow:0 3px 8px rgba(138,106,20,.25)}
+.tfc{border-radius:16px;padding:10px 12px;border:1px solid var(--line);background:var(--goldbg)}
+.tfc.up{background:rgba(46,125,79,.1)}.tfc.dn{background:rgba(179,56,43,.1)}
+.tfh{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
+.tfh b{font-size:15px}.tfh small{color:var(--muted);font-weight:700}
+.tfc .hint{display:block;margin-top:4px;font-size:12.5px}
+.tnote{margin:8px 0 0;font-size:11.5px;color:var(--muted)}
+.ticker{overflow:hidden;white-space:nowrap;margin-top:12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);padding:9px 0;direction:rtl;position:relative}
+.ttrack{display:inline-flex;width:max-content;animation:tick calc(var(--n,6)*7s) linear infinite}
+.ticker:hover .ttrack,.ticker:active .ttrack{animation-play-state:paused}
+.tg{display:inline-flex;align-items:center;gap:14px;padding-inline:14px;font-size:14px}
+.ti em{font-style:normal;font-weight:800;color:var(--accent-text);margin-inline-end:4px}
+.ti b{font-weight:800}
+.ti i{font-style:normal;font-weight:800}.ti i.up{color:#2E7D4F}.ti i.dn{color:#B3382B}.ti i.flat{color:var(--muted)}
+.tsep{color:var(--accent);font-size:9px}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(50%)}}
+@media (prefers-reduced-motion:reduce){.ticker{overflow-x:auto}.ttrack{animation:none}}
 </style>
 </head>
 <body>
@@ -2932,6 +2963,7 @@ function trackPrices(){
   let pd=(s.pday&&typeof s.pday==='object')?s.pday:null;
   if(!pd||pd.d!==d){pd={d,open:Object.assign({},pd&&pd.last?pd.last:snap),lo:snap.xau||null,hi:snap.xau||null,last:snap};}
   pd.last=snap;
+  if(snap.xau>0){try{const h=s.phist=(s.phist&&typeof s.phist==='object')?s.phist:{};h[d]=snap.xau;const ks=Object.keys(h).sort();if(ks.length>900)ks.slice(0,ks.length-900).forEach(k=>delete h[k]);}catch(e){}}
   if(snap.xau>0){pd.lo=pd.lo==null?snap.xau:Math.min(pd.lo,snap.xau);pd.hi=pd.hi==null?snap.xau:Math.max(pd.hi,snap.xau);}
   s.pday=pd;
 }
@@ -3019,15 +3051,77 @@ document.addEventListener('input',e=>{
   else if(t.dataset.pck!==undefined){const c=calcCfg();(c.mode==='margin'?c.margin:c.sell)[t.dataset.pck]=t.value;pcalcApply();pcSaveSoon();}
 });
 document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.pck!==undefined)save();});
+
+/* ================= مؤشر الذهب والتوقع ================= */
+const GM0=2000,GM=[284,300,286,280,275,286,282,274.5,274,270,266,271,265,262,263,260,272,270,268,272,283,283,276,276,282,296,294,303,314,321,313,310,319,317,319,332,357,359,341,328,356,356,351,360,379,379,390,407,414,405,407,403,384,392,398,401,405,420,439,442,424,423,434,429,422,431,424,438,456,470,477,510,550,555,557,611,675,596,634,633,598,586,628,630,631,665,655,679,667,656,665,665,713,755,806,803,890,922,968,910,889,889,940,839,830,807,761,816,859,943,924,890,929,946,934,949,997,1043,1127,1135,1118,1095,1113,1149,1205,1233,1193,1216,1271,1342,1370,1391,1360,1375,1423,1481,1513,1529,1573,1759,1772,1666,1739,1640,1654,1745,1676,1649,1589,1599,1594,1630,1745,1747,1722,1685,1672,1628,1593,1488,1414,1343,1286,1352,1349,1317,1276,1222,1244,1300,1336,1298,1289,1279,1311,1295,1237,1222,1175,1201,1251,1227,1179,1199,1199,1182,1128,1118,1125,1159,1086,1076,1098,1200,1245,1242,1261,1276,1337,1340,1327,1267,1238,1157,1192,1234,1231,1267,1246,1260,1237,1283,1314,1280,1282,1264,1331,1331,1325,1335,1303,1282,1238,1202,1198,1215,1221,1250,1292,1320,1301,1286,1284,1359,1413,1500,1511,1495,1471,1479,1561,1597,1592,1683,1716,1732,1847,1969,1922,1900,1866,1858,1867,1808,1718,1760,1850,1835,1808,1785,1775,1777,1822,1790,1816,1856,1948,1937,1849,1837,1733,1765,1681,1664,1725,1798,1898,1855,1913,2000,1992,1943,1951,1919,1916,1916,1984,2026,2034,2023,2158,2331,2351,2326,2398,2470,2571,2690,2651,2648,2710,2895,2983,3218,3309,3353,3340,3368,3668,4058,4087,4309,4753,5020,4856,4721,4587,4228,4073,4411,4319,4105];
+const MNAME=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+let TRH='w';
+const gmAt=(y,m)=>GM[(y-GM0)*12+m]||0;
+const clampN=(x,a,b)=>Math.max(a,Math.min(b,x));
+function pchg(h){
+  const s=S.settings,cur=+s.usd||0;if(!(cur>0))return null;
+  if(h==='d'){const o=((s.pday||{}).open||{}).xau;return o>0?{pct:(cur/o-1)*100,age:0}:null;}
+  const days=h==='w'?7:30,H=s.phist||{},ks=Object.keys(H).sort();if(!ks.length)return null;
+  const t=new Date();t.setHours(12,0,0,0);const lim=dstr(new Date(t.getTime()-days*864e5)),old=dstr(new Date(t.getTime()-(days+6)*864e5));
+  let k=null;for(const x of ks){if(x<=lim&&x>=old)k=x;}
+  if(!k){const f=ks[0],age=Math.round((t-new Date(f+'T12:00:00'))/864e5);if(age>=Math.max(2,Math.floor(days*0.5))&&H[f]>0)return{pct:(cur/H[f]-1)*100,age};return null;}
+  const age=Math.round((t-new Date(k+'T12:00:00'))/864e5);return H[k]>0?{pct:(cur/H[k]-1)*100,age}:null;
+}
+function gForecast(h){
+  const now=new Date(),y=now.getFullYear(),m=now.getMonth(),li=GM.length-1;
+  const rets=[];for(let yy=y-20;yy<y;yy++){const a=gmAt(yy,m),ny=m===11?yy+1:yy,b=gmAt(ny,(m+1)%12);if(a>0&&b>0)rets.push(b/a-1);}
+  const n=rets.length;if(n<8||li<4)return null;
+  const up=rets.filter(r=>r>0).length,p=up/n,avg=rets.reduce((a,b)=>a+b,0)/n*100;
+  const scale={d:1/22,w:1/4.3,m:1}[h],sh=Math.sqrt(scale);
+  const mom=(GM[li]/GM[li-3]-1)*100,loc=pchg(h==='d'?'d':h==='w'?'w':'m');
+  const s1=(p-0.5)*2*sh,s2=clampN(mom/8,-1,1),lt={d:1,w:2.5,m:5}[h],s3=loc?clampN(loc.pct/lt,-1,1):null;
+  const sc=s3==null?(0.5*s1+0.5*s2):(0.35*s1+0.4*s2+0.25*s3);
+  const dir=sc>0.12?'up':sc<-0.12?'dn':'flat',a=Math.abs(sc);
+  return{dir,conf:a>0.5?'قوية':a>0.28?'متوسطة':'ضعيفة',p,up,n,avg,mom,mname:MNAME[m],loc};
+}
+function trendReadHTML(){
+  const d=pchg('d'),w=pchg('w'),mo=pchg('m'),sg=x=>x==null?0:x.pct>0.05?1:x.pct<-0.05?-1:0,sd=sg(d),sw=sg(w),sm=sg(mo);
+  const pd=(S.settings.pday||{}),op=(pd.open||{}).xau;let t;
+  if(!d&&!w&&!mo)t='لا توجد بيانات كافية بعد. تتراكم قراءة الأسبوع والشهر تلقائيًا مع كل يوم تفتح فيه التطبيق.';
+  else if(sd>0&&sw>0&&(sm>=0))t='زخم صاعد: الذهب فوق افتتاح اليوم ومرتفع على مدى الأسبوع'+(sm>0?' والشهر.':'.');
+  else if(sd<0&&sw<0&&(sm<=0))t='ضغط هابط: الذهب دون افتتاح اليوم ومنخفض على مدى الأسبوع'+(sm<0?' والشهر.':'.');
+  else if(sd>0&&sw<0)t='ارتداد قصير اليوم داخل اتجاه هابط أسبوعي.';
+  else if(sd<0&&sw>0)t='تراجع قصير اليوم داخل اتجاه صاعد أسبوعي.';
+  else if(sd===0&&sw===0)t='السوق شبه ثابت في اليوم والأسبوع.';
+  else t='حركة متباينة بين الفترات، والاتجاه غير حاسم.';
+  if(op>0&&pd.lo>0&&pd.hi>0)t+=' تذبذب اليوم '+((pd.hi-pd.lo)/op*100).toFixed(2)+'%.';
+  return t;
+}
+function trendCardHTML(){
+  const cell=(h,l)=>{const c=pchg(h);if(!c)return `<div class="tc flat"><span>${l}</span><b>—</b></div>`;const cl=c.pct>0.05?'up':c.pct<-0.05?'dn':'flat';return `<div class="tc ${cl}"><span>${l}${c.age&&c.age<(h==='w'?6:28)?' ('+c.age+'ي)':''}</span><b dir="ltr"><i>${cl==='up'?'▲':cl==='dn'?'▼':'●'}</i> ${c.pct>0?'+':''}${c.pct.toFixed(2)}%</b></div>`;};
+  const f=gForecast(TRH),hz={d:'اليوم',w:'الأسبوع القادم',m:'الشهر القادم'}[TRH];
+  const chips=[['d','يوم'],['w','أسبوع'],['m','شهر']].map(([k,l])=>`<button type="button" data-trh="${k}" aria-pressed="${TRH===k}">${l}</button>`).join('');
+  const fc=f?`<div class="tfc ${f.dir}"><div class="tfh"><b>توقع ${hz}: ${f.dir==='up'?'▲ ارتفاع محتمل':f.dir==='dn'?'▼ نزول محتمل':'● مستقر / غير واضح'}</b><small>ثقة ${f.conf}</small></div><span class="hint">ارتفع الذهب في ${f.up} من آخر ${f.n} سنة خلال شهر ${f.mname} (متوسط ${f.avg>0?'+':''}${f.avg.toFixed(1)}%) · زخم 3 أشهر ${f.mom>0?'+':''}${f.mom.toFixed(1)}%</span></div>`:'';
+  return `<div class="pcard trend"><div class="pl"><span>مؤشر الذهب</span><small>الاتجاه</small></div><div class="tper">${cell('d','اليوم')}${cell('w','الأسبوع')}${cell('m','الشهر')}</div><p class="tread">${trendReadHTML()}</p><div class="tfsel" role="group" aria-label="أفق التوقع">${chips}</div>${fc}<p class="tnote">تقدير إحصائي مبني على أسعار 20 سنة سابقة وحركة السوق الأخيرة، وليس توصية بالبيع أو الشراء.</p></div>`;
+}
+function tickerHTML(ks,pn,pu){
+  const s=S.settings,cell=v=>v>0?fmt(v):'—',d=pchg('d'),w=pchg('w'),mo=pchg('m'),f=gForecast('w');
+  const ar=c=>!c?'—':`<i class="${c.pct>0.05?'up':c.pct<-0.05?'dn':'flat'}">${c.pct>0.05?'▲':c.pct<-0.05?'▼':'●'} ${c.pct>0?'+':''}${c.pct.toFixed(2)}%</i>`;
+  const it=[];
+  ks.forEach(k=>it.push(`<span class="ti"><em>عيار ${esc(k)}</em> جديد <b>${cell(pn[k])}</b> · مستعمل <b>${cell(pu[k])}</b> ${esc(cur())}</span>`));
+  if(s.usd>0)it.push(`<span class="ti"><em>الأونصة</em> <b>${fmt(s.usd)}</b> USD</span>`);
+  if(d||w||mo)it.push(`<span class="ti"><em>الحركة</em> اليوم ${ar(d)} · الأسبوع ${ar(w)} · الشهر ${ar(mo)}</span>`);
+  if(f)it.push(`<span class="ti"><em>التوقع</em> الأسبوع القادم ${f.dir==='up'?'<i class="up">▲ ارتفاع محتمل</i>':f.dir==='dn'?'<i class="dn">▼ نزول محتمل</i>':'<i class="flat">● مستقر</i>'} (ثقة ${f.conf})</span>`);
+  it.push(`<span class="ti">${s.priceSrc==='auto'?'سعر الصرف '+s.fx+' · علاوة السوق: جديد '+(num(s.premium)||0)+'% ومستعمل '+(num(s.premiumUsed)||0)+'%':s.priceSrc==='feed'?'أسعار الجرام من الرابط المخصص':'أسعار أُدخلت يدويًا'}</span>`);
+  const h=it.join('<span class="tsep">◆</span>');
+  return `<div class="ticker" role="marquee" aria-label="شريط الأسعار" style="--n:${it.length}"><div class="ttrack"><div class="tg">${h}<span class="tsep">◆</span></div><div class="tg" aria-hidden="true">${h}<span class="tsep">◆</span></div></div></div>`;
+}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-trh]');if(!b)return;TRH=b.dataset.trh;paintPrices();});
+
 function priceBoardHTML(){
   const s=S.settings,pd=s.pday||{},op=pd.open||{},pn=s.prices||{},pu=s.pricesUsed||{},hide=phideGet();
   const ks=s.karats.slice().sort((a,b)=>num(b)-num(a));
   const cell=v=>v>0?fmt(v):'—';
-  const head=`<div class="phead"><h3>${ic('trend')}<span>أسعار الذهب والفضة</span> ${priceSrcBadge()}</h3><div class="pmeta">${pd.lo>0&&pd.hi>0?'نطاق اليوم: <b dir="ltr">'+fmt(pd.lo)+' – '+fmt(pd.hi)+'</b> · ':''}${s.pricesAt?'آخر تحديث: '+dtf(s.pricesAt)+' · ':'لم تُحدَّد أسعار بعد · '}يتحدّث كل ${s.priceEvery||5} دقائق</div></div>`;
+  const head=`<div class="phead"><h3>${ic('trend')}<span>أسعار الذهب</span> ${priceSrcBadge()}</h3><div class="pmeta">${pd.lo>0&&pd.hi>0?'نطاق اليوم: <b dir="ltr">'+fmt(pd.lo)+' – '+fmt(pd.hi)+'</b> · ':''}${s.pricesAt?'آخر تحديث: '+dtf(s.pricesAt)+' · ':'لم تُحدَّد أسعار بعد · '}يتحدّث كل ${s.priceEvery||5} دقائق</div></div>`;
   const msg=pstate.st==='fail'?`<p class="hint warn" style="margin:0 0 10px">تعذّر التحديث التلقائي${s.pricesAt?'، وتُعرض آخر أسعار محفوظة':''}.${pstate.err?' '+esc(pstate.err):''}</p>`:'';
-  const big=`<div class="pgrid big"><div class="pcard gold"><div class="pl"><span>أونصة الذهب</span><small>USD</small></div><div class="pv">${cell(s.usd)}</div><div class="pf"><span>سعر عالمي</span>${pdelta(s.usd,op.xau)}</div></div><div class="pcard"><div class="pl"><span>الفضة</span><small>الاتجاه</small></div><div class="pv ind">${pind(s.xag,op.xag)}</div><div class="pf"><span>مقارنة بافتتاح اليوم</span>${pdelta(s.xag,op.xag)}</div></div></div>`;
+  const big=`<div class="pgrid big"><div class="pcard gold"><div class="pl"><span>أونصة الذهب</span><small>USD</small></div><div class="pv">${cell(s.usd)}</div><div class="pf"><span>سعر عالمي</span>${pdelta(s.usd,op.xau)}</div></div>${trendCardHTML()}</div>`;
   const grid=`<div class="pgrid">${ks.map(k=>`<div class="pcard ${k==='24'?'gold':''}"><div class="pl"><span>ذهب عيار ${esc(k)}</span><small>${esc(cur())}</small></div><div class="pv">${cell(pn[k])}</div><div class="pf"><span>للجرام</span>${pdelta(pn[k],op['g'+k])}</div>${pcalcCard(k)}</div>`).join('')}</div>`;
-  const used=`<details style="margin-top:12px"><summary>الجديد والمستعمل</summary><div class="tablewrap" style="margin-top:8px"><table class="mini"><thead><tr><th></th>${ks.map(k=>`<th>عيار ${esc(k)}</th>`).join('')}</tr></thead><tbody><tr><td><b>جديد</b></td>${ks.map(k=>`<td>${cell(pn[k])}</td>`).join('')}</tr><tr><td><b>مستعمل</b></td>${ks.map(k=>`<td>${cell(pu[k])}</td>`).join('')}</tr></tbody></table></div><small class="muted">${s.priceSrc==='auto'?'سعر الصرف '+s.fx+' · علاوة السوق: جديد '+(num(s.premium)||0)+'% ومستعمل '+(num(s.premiumUsed)||0)+'%':s.priceSrc==='feed'?'أسعار الجرام مأخوذة من الرابط المخصص':'أسعار أُدخلت يدويًا'}</small></details>`;
+  const used=tickerHTML(ks,pn,pu);
   const acts=`<div class="row pacts" style="margin-top:12px"><button class="btn ghost sm" data-act="refreshPrices">${ic('refresh')||''}<span>تحديث الآن</span></button><button class="btn ghost sm" data-act="prices">إدخال يدوي</button><button class="btn ghost sm" data-act="pgosrc">مصدر الأسعار</button><button class="btn ghost sm" data-act="applyPrices">تطبيق على القطع المتوفرة</button><button class="btn ghost sm" data-act="phide">${hide?'إظهار الأسعار':'إخفاء الأسعار'}</button>${premEditorHTML()}</div>`;
   return `<div class="pboard" data-enter>${head}${hide?'':msg+big+pcalcBar()+grid+used}${acts}</div>`;
 }
@@ -5751,8 +5845,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#scanDlg').open)
 
 
 /* ================= version & what's new ================= */
-const APP_VERSION='3.3.1';
+const APP_VERSION='3.4.0';
 const CHANGELOG=[
+ {v:'3.4.0',date:'2026-11-24',title:'مؤشر الذهب وشريط الأسعار',items:['بدل بطاقة الفضة: مؤشر الذهب (صعود ونزول اليوم والأسبوع والشهر) مع قراءة للحركة.','توقع ارتفاع أو نزول (يوم أو أسبوع أو شهر) مبني على تحرك الذهب في آخر 20 سنة لنفس الشهر وزخم الأشهر الأخيرة وحركة التطبيق.','«الجديد والمستعمل» صار شريطًا إخباريًا متحركًا بالأسعار والحركة والتوقع.'],},
  {v:'3.3.1',date:'2026-11-24',title:'حفظ مصنعية الحاسبة',items:['قيمتا المصنعية والعيار المختار في الحاسبة تُحفظان مع بيانات حسابك فتبقيان بعد إغلاق التطبيق وفتحه.'],},
  {v:'3.3.0',date:'2026-11-24',title:'المصنعية والفائدة في الحاسبة',items:['حقلان جديدان في الحاسبة: مصنعية الجرام ومصنعية ثابتة، وتظهر قيمة المصنعية تلقائيًا.','تظهر قيمة الذهب والمصنعية والإجمالي، والفائدة المتبقية بعد خصم سعر الذهب بسعر الشراء والمصنعية (هامش الفرق بين البيع والشراء) مع قيمتها للجرام.'],},
  {v:'3.2.4',date:'2026-11-22',title:'المؤشر في حقل المسح',items:['بعد اكتمال اختيار العيار والفئة والصنف والحالة ينتقل المؤشر تلقائيًا إلى حقل مسح الباركود (على الجوال أيضًا) دون ظهور لوحة المفاتيح، وتظهر عند الضغط على الحقل.'],},
